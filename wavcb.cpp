@@ -77,7 +77,6 @@ int main(int argc, char *argv[]) {
     vector<vector<short>> codebook;
 
     vector<short> samples(FRAMES_BUFFER_SIZE * sndFile.channels());
-    WAVHist hist { sndFile };
     while((nFrames = sndFile.readf(samples.data(), 4))) {
         samples.resize(8);
         vector<short> A = {samples[0], samples[2], samples[4], samples[6]};
@@ -97,6 +96,7 @@ int main(int argc, char *argv[]) {
     cout << "get v" << endl;
     
     bool change;
+    int teste = 0;
     do{
         change = false;
         map<uint32_t, vector<vector<short>>> mapDst {};
@@ -114,9 +114,40 @@ int main(int argc, char *argv[]) {
                 change = true;
             }
         }
-    }while(change);
+        teste ++;
+    }while(teste < 10);
 
 
+
+	SndfileHandle sndFileN { argv[1] };
+
+    SndfileHandle sndFileOut;
+    sndFileOut = SndfileHandle("sampleOutVector.wav", SFM_WRITE, sndFile.format(), sndFile.channels(), sndFile.samplerate());
+
+    short frame [2];
+    int channels = sndFile.channels();
+    while((nFrames = sndFileN.readf(samples.data(), 4))) {
+        samples.resize(8);
+        vector<short> A = {samples[0], samples[2], samples[4], samples[6]};
+        vector<short> B = {samples[1], samples[3], samples[5], samples[7]};
+        int idxA = getBestMatchingUnit(codebook, A);
+        int idxB = getBestMatchingUnit(codebook, B);
+
+        frame[0] = codebook[idxA][0];
+        frame[1] = codebook[idxB][0];
+        sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
+        frame[0] = codebook[idxA][1];
+        frame[1] = codebook[idxB][1];
+        sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
+        frame[0] = codebook[idxA][2];
+        frame[1] = codebook[idxB][2];
+        sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
+        frame[0] = codebook[idxA][3];
+        frame[1] = codebook[idxB][3];
+        sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
+
+
+    }
 
 
     cout << dataSet.size() << endl;
