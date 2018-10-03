@@ -1,0 +1,7 @@
+To build:
+	make
+
+To test:
+	../bin-example/wavcp sample.wav copy.wav // copies "sample.wav" into "copy.wav"
+	../bin-example/wavhist sample.wav 0 // outputs the histogram of channel 0 (left)
+

@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/media/ramalho/hddUnix/ECT/CAV/pratica/trabalho1/src-example/wavcmp.cpp
+iostream
+-
+math.h
+-
+sndfile.hh
+-
+vector
+-
+

@@ -1,0 +1,7 @@
+/media/ramalho/hddUnix/ECT/CAV/pratica/trabalho1/src-example/build/CMakeFiles/wavhist.dir
+/media/ramalho/hddUnix/ECT/CAV/pratica/trabalho1/src-example/build/CMakeFiles/wavcp.dir
+/media/ramalho/hddUnix/ECT/CAV/pratica/trabalho1/src-example/build/CMakeFiles/rebuild_cache.dir
+/media/ramalho/hddUnix/ECT/CAV/pratica/trabalho1/src-example/build/CMakeFiles/wavquant.dir
+/media/ramalho/hddUnix/ECT/CAV/pratica/trabalho1/src-example/build/CMakeFiles/wavcb.dir
+/media/ramalho/hddUnix/ECT/CAV/pratica/trabalho1/src-example/build/CMakeFiles/wavcmp.dir
+/media/ramalho/hddUnix/ECT/CAV/pratica/trabalho1/src-example/build/CMakeFiles/edit_cache.dir
