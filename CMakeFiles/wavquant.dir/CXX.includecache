@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/ludee/Documents/CAV/AVC/fstreamBits.h
+iostream
+-
+fstream
+-
+string
+-
+
+/home/ludee/Documents/CAV/AVC/wavquant.cpp
+fstreamBits.h
+/home/ludee/Documents/CAV/AVC/fstreamBits.h
+iostream
+-
+sndfile.hh
+-
+stdio.h
+-
+string.h
+-
+vector
+-
+
