@@ -97,43 +97,6 @@ clean: CMakeFiles/wavhist.dir/clean
 .PHONY : clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/wavcp.dir
-
-# All Build rule for target.
-CMakeFiles/wavcp.dir/all:
-	$(MAKE) -f CMakeFiles/wavcp.dir/build.make CMakeFiles/wavcp.dir/depend
-	$(MAKE) -f CMakeFiles/wavcp.dir/build.make CMakeFiles/wavcp.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ludee/Documents/CAV/AVC/CMakeFiles --progress-num=5,6 "Built target wavcp"
-.PHONY : CMakeFiles/wavcp.dir/all
-
-# Include target in all.
-all: CMakeFiles/wavcp.dir/all
-
-.PHONY : all
-
-# Build rule for subdir invocation for target.
-CMakeFiles/wavcp.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/ludee/Documents/CAV/AVC/CMakeFiles 2
-	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/wavcp.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/ludee/Documents/CAV/AVC/CMakeFiles 0
-.PHONY : CMakeFiles/wavcp.dir/rule
-
-# Convenience name for target.
-wavcp: CMakeFiles/wavcp.dir/rule
-
-.PHONY : wavcp
-
-# clean rule for target.
-CMakeFiles/wavcp.dir/clean:
-	$(MAKE) -f CMakeFiles/wavcp.dir/build.make CMakeFiles/wavcp.dir/clean
-.PHONY : CMakeFiles/wavcp.dir/clean
-
-# clean rule for target.
-clean: CMakeFiles/wavcp.dir/clean
-
-.PHONY : clean
-
-#=============================================================================
 # Target rules for target CMakeFiles/wavquant.dir
 
 # All Build rule for target.
@@ -241,6 +204,80 @@ CMakeFiles/wavcmp.dir/clean:
 
 # clean rule for target.
 clean: CMakeFiles/wavcmp.dir/clean
+
+.PHONY : clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/wavcp.dir
+
+# All Build rule for target.
+CMakeFiles/wavcp.dir/all:
+	$(MAKE) -f CMakeFiles/wavcp.dir/build.make CMakeFiles/wavcp.dir/depend
+	$(MAKE) -f CMakeFiles/wavcp.dir/build.make CMakeFiles/wavcp.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ludee/Documents/CAV/AVC/CMakeFiles --progress-num=5,6 "Built target wavcp"
+.PHONY : CMakeFiles/wavcp.dir/all
+
+# Include target in all.
+all: CMakeFiles/wavcp.dir/all
+
+.PHONY : all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/wavcp.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/ludee/Documents/CAV/AVC/CMakeFiles 2
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/wavcp.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/ludee/Documents/CAV/AVC/CMakeFiles 0
+.PHONY : CMakeFiles/wavcp.dir/rule
+
+# Convenience name for target.
+wavcp: CMakeFiles/wavcp.dir/rule
+
+.PHONY : wavcp
+
+# clean rule for target.
+CMakeFiles/wavcp.dir/clean:
+	$(MAKE) -f CMakeFiles/wavcp.dir/build.make CMakeFiles/wavcp.dir/clean
+.PHONY : CMakeFiles/wavcp.dir/clean
+
+# clean rule for target.
+clean: CMakeFiles/wavcp.dir/clean
+
+.PHONY : clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/wavvq.dir
+
+# All Build rule for target.
+CMakeFiles/wavvq.dir/all:
+	$(MAKE) -f CMakeFiles/wavvq.dir/build.make CMakeFiles/wavvq.dir/depend
+	$(MAKE) -f CMakeFiles/wavvq.dir/build.make CMakeFiles/wavvq.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ludee/Documents/CAV/AVC/CMakeFiles --progress-num=11,12 "Built target wavvq"
+.PHONY : CMakeFiles/wavvq.dir/all
+
+# Include target in all.
+all: CMakeFiles/wavvq.dir/all
+
+.PHONY : all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/wavvq.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/ludee/Documents/CAV/AVC/CMakeFiles 2
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/wavvq.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/ludee/Documents/CAV/AVC/CMakeFiles 0
+.PHONY : CMakeFiles/wavvq.dir/rule
+
+# Convenience name for target.
+wavvq: CMakeFiles/wavvq.dir/rule
+
+.PHONY : wavvq
+
+# clean rule for target.
+CMakeFiles/wavvq.dir/clean:
+	$(MAKE) -f CMakeFiles/wavvq.dir/build.make CMakeFiles/wavvq.dir/clean
+.PHONY : CMakeFiles/wavvq.dir/clean
+
+# clean rule for target.
+clean: CMakeFiles/wavvq.dir/clean
 
 .PHONY : clean
 

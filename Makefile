@@ -56,17 +56,6 @@ CMAKE_BINARY_DIR = /home/ludee/Documents/CAV/AVC
 #=============================================================================
 # Targets provided globally by CMake.
 
-# Special rule for the target rebuild_cache
-rebuild_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/usr/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
-.PHONY : rebuild_cache
-
-# Special rule for the target rebuild_cache
-rebuild_cache/fast: rebuild_cache
-
-.PHONY : rebuild_cache/fast
-
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
@@ -77,6 +66,17 @@ edit_cache:
 edit_cache/fast: edit_cache
 
 .PHONY : edit_cache/fast
+
+# Special rule for the target rebuild_cache
+rebuild_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
+	/usr/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+.PHONY : rebuild_cache
+
+# Special rule for the target rebuild_cache
+rebuild_cache/fast: rebuild_cache
+
+.PHONY : rebuild_cache/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -124,19 +124,6 @@ wavhist/fast:
 .PHONY : wavhist/fast
 
 #=============================================================================
-# Target rules for targets named wavcp
-
-# Build rule for target.
-wavcp: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 wavcp
-.PHONY : wavcp
-
-# fast build rule for target.
-wavcp/fast:
-	$(MAKE) -f CMakeFiles/wavcp.dir/build.make CMakeFiles/wavcp.dir/build
-.PHONY : wavcp/fast
-
-#=============================================================================
 # Target rules for targets named wavquant
 
 # Build rule for target.
@@ -174,6 +161,32 @@ wavcmp: cmake_check_build_system
 wavcmp/fast:
 	$(MAKE) -f CMakeFiles/wavcmp.dir/build.make CMakeFiles/wavcmp.dir/build
 .PHONY : wavcmp/fast
+
+#=============================================================================
+# Target rules for targets named wavcp
+
+# Build rule for target.
+wavcp: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 wavcp
+.PHONY : wavcp
+
+# fast build rule for target.
+wavcp/fast:
+	$(MAKE) -f CMakeFiles/wavcp.dir/build.make CMakeFiles/wavcp.dir/build
+.PHONY : wavcp/fast
+
+#=============================================================================
+# Target rules for targets named wavvq
+
+# Build rule for target.
+wavvq: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 wavvq
+.PHONY : wavvq
+
+# fast build rule for target.
+wavvq/fast:
+	$(MAKE) -f CMakeFiles/wavvq.dir/build.make CMakeFiles/wavvq.dir/build
+.PHONY : wavvq/fast
 
 wavcb.o: wavcb.cpp.o
 
@@ -310,19 +323,47 @@ wavquant.cpp.s:
 	$(MAKE) -f CMakeFiles/wavquant.dir/build.make CMakeFiles/wavquant.dir/wavquant.cpp.s
 .PHONY : wavquant.cpp.s
 
+wavvq.o: wavvq.cpp.o
+
+.PHONY : wavvq.o
+
+# target to build an object file
+wavvq.cpp.o:
+	$(MAKE) -f CMakeFiles/wavvq.dir/build.make CMakeFiles/wavvq.dir/wavvq.cpp.o
+.PHONY : wavvq.cpp.o
+
+wavvq.i: wavvq.cpp.i
+
+.PHONY : wavvq.i
+
+# target to preprocess a source file
+wavvq.cpp.i:
+	$(MAKE) -f CMakeFiles/wavvq.dir/build.make CMakeFiles/wavvq.dir/wavvq.cpp.i
+.PHONY : wavvq.cpp.i
+
+wavvq.s: wavvq.cpp.s
+
+.PHONY : wavvq.s
+
+# target to generate assembly for a file
+wavvq.cpp.s:
+	$(MAKE) -f CMakeFiles/wavvq.dir/build.make CMakeFiles/wavvq.dir/wavvq.cpp.s
+.PHONY : wavvq.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
+	@echo "... edit_cache"
 	@echo "... wavhist"
-	@echo "... wavcp"
 	@echo "... rebuild_cache"
 	@echo "... wavquant"
 	@echo "... wavcb"
 	@echo "... wavcmp"
-	@echo "... edit_cache"
+	@echo "... wavcp"
+	@echo "... wavvq"
 	@echo "... wavcb.o"
 	@echo "... wavcb.i"
 	@echo "... wavcb.s"
@@ -338,6 +379,9 @@ help:
 	@echo "... wavquant.o"
 	@echo "... wavquant.i"
 	@echo "... wavquant.s"
+	@echo "... wavvq.o"
+	@echo "... wavvq.i"
+	@echo "... wavvq.s"
 .PHONY : help
 
 

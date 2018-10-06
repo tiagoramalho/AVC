@@ -14,9 +14,24 @@ using namespace std;
 constexpr size_t FRAMES_BUFFER_SIZE = 65536; // Buffer for reading frames
 
 double euclid_distance_squared(vector<short> &v1, vector<short> &v2){
+  //cout << "euclid_distance" << endl;
+
+
+  //cout << "v1" << endl;
+  //for (int i = 0; i < signed( v1.size()); i++){
+  //  cout << v1.at(i) << " " ;
+  //}
+  //cout << endl;
+
+  //cout << "v2" << endl;
+  //for (int i = 0; i < signed( v2.size()); i++){
+  //  cout << v2.at(i) << " " ;
+  //}
+  //cout << endl;
 
   double dist = 0.0;
   double d;
+
 
   for( unsigned f = 0; f < v1.size(); f++){
     d = v1[f] - v2[f];
@@ -28,6 +43,7 @@ double euclid_distance_squared(vector<short> &v1, vector<short> &v2){
 }
 
 double avg_distortion_c0( vector<short> &c0, vector<vector<short>> &dataset){
+  //cout << "avg_distortion_c0" << endl;
 
   vector<double> distances;
 
@@ -41,13 +57,13 @@ double avg_distortion_c0( vector<short> &c0, vector<vector<short>> &dataset){
 
 double avg_distortion_c_list( vector<vector<short>> &c_list, vector<vector<short>> &dataset){
 
+  //cout << "avg_distortion_c_list" << endl;
   vector<double> distances;
-  int index = 0;
 
-  for ( auto  &c_i : c_list ){
-    distances.push_back(euclid_distance_squared(c_i,dataset[index]));
-    index ++;
+  for( int index = 0; index < signed(c_list.size()); index++){
+    distances.push_back(euclid_distance_squared(c_list.at(index),dataset.at(index)));
   }
+
 
   return  accumulate( distances.begin(), distances.end(), 0.0)/distances.size();
 
@@ -56,25 +72,29 @@ double avg_distortion_c_list( vector<vector<short>> &c_list, vector<vector<short
 vector<short> avg_vec_of_vecs(vector<vector<short>> &cluster){
 
   int size = cluster.size();
-  vector<short> avg (cluster[0].size(), 0);
-  int index;
+  vector<long> avg (cluster.at(0).size(), 0);
+  vector<short> tmp;
 
-  for ( auto const& block: cluster){
-    index = 0;
-    for ( auto const &value : block ){
-      avg[index] += value / size;
-
+  for ( unsigned indexD = 0; indexD < cluster.size() ; indexD++){
+    tmp = cluster.at(indexD);
+    for ( unsigned indexB=0;indexB < avg.size(); indexB++){
+      avg.at(indexB) = avg.at(indexB) +(tmp.at(indexB));
     }
   }
 
-  return avg;
+  vector<short> ret ( avg.size());
+  for ( unsigned indexB=0;indexB < avg.size(); indexB++){
+    avg.at(indexB) =  avg.at(indexB) / size;
+    ret.at(indexB) = ( (short) avg.at(indexB) );
+  }
+  return ret;
 }
 
-vector<short> new_block(vector<short> &block, int move_distance){
+vector<short> new_block(vector<short> &block, float move_distance){
 
-  vector<short> new_block (block.size(), 0);
+  vector<short> new_block (block.size(),0);
   for ( unsigned i = 0; i < block.size(); i++){
-    new_block[i] = block[i]*( 1 + move_distance);
+    new_block.at(i) = block.at(i) * ( 1 + move_distance);
   }
 
   return new_block;
@@ -83,23 +103,28 @@ vector<short> new_block(vector<short> &block, int move_distance){
 void split_codebook(
     vector<vector<short>> &dataset,
     vector<vector<short>> &cb
-    , double epsilon
+    , float epsilon
     , double initial_avg_dist
     ,vector<int> &abs_weights
     ,vector<float> &rel_weights
     , double &avg_dist ){
+  //cout << "split_codebook" << endl;
 
   vector<vector<short>> new_blocks;
   vector<short> c1;
   vector<short> c2;
-  for ( auto &block : cb ){
-    c1 = new_block(block, epsilon);
-    c1 = new_block(block, -epsilon);
+
+  for ( int i = 0; i < signed(cb.size()); i++){
+    c1 = new_block(cb.at(i), epsilon);
+    c2 = new_block(cb.at(i), -epsilon);
     new_blocks.push_back(c1);
     new_blocks.push_back(c2);
   }
 
-  cb = new_blocks;
+  cb.clear();
+  for ( int i = 0; i < signed(new_blocks.size()); i++){
+    cb.push_back(new_blocks.at(i));
+  }
 
   int len_codebook = cb.size();
 
@@ -107,40 +132,64 @@ void split_codebook(
   rel_weights.resize(len_codebook, 0.0);
 
   cout << "new size: " << len_codebook << endl;
+  cout << "new codebook: " << len_codebook << endl;
+
+  for ( int i = 0; i < signed(new_blocks.size()); i++){
+
+    for ( int j = 0; j < signed(new_blocks.at(i).size()); j++){
+
+      cout << new_blocks.at(i).at(j) <<" ";
+
+    }
+
+    cout << endl;
+
+
+  }
+
+
 
   avg_dist = 0;
   double err = epsilon + 1;
   int num_iter = 0;
 
 
-  vector<vector<short>> closest_c_list (dataset.size());
-  map<int, vector<vector<short>>> vecs_near_c;
-  map<int, vector<int>> vec_idxs_near_c;
+
 
   while (err>epsilon){
-    int indexA = 0;
-    for ( auto &vec : dataset ){
+
+    int d;
+    vector<vector<short>> closest_c_list (dataset.size());
+    map<int, vector<vector<short>>> vecs_near_c;
+    map<int, vector<int>> vec_idxs_near_c;
+
+    for( unsigned i = 0; i< dataset.size() ;i++){
 
       int first_time = 1;
       int min_dist;
       int closest_c_index;
 
-      int index = 0;
-      for ( auto &c : cb ){
-        int d = euclid_distance_squared(vec,c);
+
+      for( unsigned i_c = 0; i_c<cb.size();i_c++){
+        // cout << "cb size: "<<cb.size()<< endl;
+        // cout << "index_cb: "<<i_c<< endl;
+        // cout << "index_ds: "<<i<< endl;
+        // cout << "cb teste: "<<cb.at(i_c)[0]<< endl;
+
+        d = euclid_distance_squared(dataset.at(i), cb.at(i_c));
+
+        // cout << "distance: "<<d<< endl;
+
         if ( first_time || d < min_dist){
           first_time = 0;
           min_dist = d;
-          closest_c_list[index] = c;
-          closest_c_index = index;
+          closest_c_list[i] = cb.at(i_c);
+          closest_c_index = i_c;
         }
-
-        index++;
       }
 
-      vecs_near_c[closest_c_index].push_back(vec);
-      vec_idxs_near_c[closest_c_index].push_back(indexA);
-      indexA ++;
+      vecs_near_c[closest_c_index].push_back(dataset.at(i));
+      vec_idxs_near_c[closest_c_index].push_back(i);
     }
 
     // Update codebook
@@ -186,8 +235,8 @@ void split_codebook(
 }
 
 
-vector<vector<short>> generate_codebook(vector<vector<short>> dataset, int size, int epsilon=0.00001){
-
+vector<vector<short>> generate_codebook(vector<vector<short>> dataset, int size, float epsilon=0.00001){
+  //cout << "generate_codebook" << endl;
   vector<vector<short>> codebook;
 
   vector<short> c0 = avg_vec_of_vecs(dataset);
@@ -202,6 +251,7 @@ vector<vector<short>> generate_codebook(vector<vector<short>> dataset, int size,
   double avg_dist;
 
   while(signed(codebook.size()) < size){
+    cout << "split_codebook" << endl;
     split_codebook( dataset,
                     codebook,
                     epsilon,
@@ -213,6 +263,21 @@ vector<vector<short>> generate_codebook(vector<vector<short>> dataset, int size,
   }
 
   return codebook;
+}
+
+uint32_t getBestMatchingUnit(vector<vector<short>> &cb, vector<short> &row){
+
+    int idx = 0;
+    int dst {};
+    int smallDst = euclid_distance_squared(cb.at(0), row);
+    for(uint32_t i = 1; i< cb.size(); i++){
+        dst = euclid_distance_squared(cb[i], row);
+        if( dst < smallDst){
+            smallDst = dst;
+            idx =i;
+        }
+    }
+    return idx;
 }
 
 int main(int argc, char *argv[]) {
@@ -255,13 +320,9 @@ int main(int argc, char *argv[]) {
 
   cout << "create cb" << endl;
 
-  //cout << sndFile.frames();
-  //for(int i = 0; i < stoi(argv[4]); i++){
-  //  codebook.push_back(dataSet[rand() % dataSet.size()]);
-  //}
-  //
+  codebook = generate_codebook(dataSet, stoi(argv[4]));
 
-  codebook = generate_codebook(dataSet, 1024);
+  cout << "write cb" << endl;
 
   ofstream outFile("cb.txt");
   for( const auto &e : codebook){
@@ -272,54 +333,47 @@ int main(int argc, char *argv[]) {
     outFile << endl;
   }
 
-  cout << "get v" << endl;
+  cout << "get v " <<sndFile.channels()<< endl;
+  cout << "get v " <<sndFile.samplerate()<< endl;
 
-
-
-
-  ofstream outFile2("cb2.txt");
-  for( const auto &e : codebook){
-    for ( const auto &f : e){
-      outFile2 << f;
-      outFile2 << " " ;
-    }
-    outFile2 << endl;
-  }
-
-  //SndfileHandle sndFileN { argv[1] };
+  SndfileHandle sndFileN { argv[1] };
 
   //SndfileHandle sndFileOut;
   //sndFileOut = SndfileHandle("sampleOutVector.wav", SFM_WRITE, sndFile.format(), sndFile.channels(), sndFile.samplerate());
 
-  //short frame [2];
-  //int channels = sndFile.channels();
+  ofstream outFileIndexes("indexes.txt");
+  short frame [2];
+  int channels = sndFile.channels();
 
-  //vector<short> samples2(8);
-  //while((nFrames = sndFileN.readf(samples2.data(), 4))) {
-  //  vector<short> A = {samples2[0], samples2[2], samples2[4], samples2[6]};
-  //  vector<short> B = {samples2[1], samples2[3], samples2[5], samples2[7]};
-  //  int idxA = getBestMatchingUnit(codebook, A);
-  //  int idxB = getBestMatchingUnit(codebook, B);
+  vector<short> samples2(8);
+  while((nFrames = sndFileN.readf(samples2.data(), 4))) {
+    vector<short> A = {samples2[0], samples2[2], samples2[4], samples2[6]};
+    vector<short> B = {samples2[1], samples2[3], samples2[5], samples2[7]};
+    int idxA = getBestMatchingUnit(codebook, A);
+    int idxB = getBestMatchingUnit(codebook, B);
+    outFileIndexes << idxA << " " << idxB << endl;
 
-  //  frame[0] = codebook[idxA][0];
-  //  frame[1] = codebook[idxB][0];
-  //  sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
-  //  frame[0] = codebook[idxA][1];
-  //  frame[1] = codebook[idxB][1];
-  //  sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
-  //  frame[0] = codebook[idxA][2];
-  //  frame[1] = codebook[idxB][2];
-  //  sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
-  //  frame[0] = codebook[idxA][3];
-  //  frame[1] = codebook[idxB][3];
-  //  sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
+    //frame[0] = codebook[idxA][0];
+    //frame[1] = codebook[idxB][0];
+    //sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
+    //frame[0] = codebook[idxA][1];
+    //frame[1] = codebook[idxB][1];
+    //sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
+    //frame[0] = codebook[idxA][2];
+    //frame[1] = codebook[idxB][2];
+    //sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
+    //frame[0] = codebook[idxA][3];
+    //frame[1] = codebook[idxB][3];
+    //sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
+
+  }
 
 
-  //}
-
-
-  //cout << dataSet.size() << endl;
-  //cout << sndFile.frames();
+  cout << dataSet.size() << endl;
+  cout << sndFile.channels() << endl;
+  cout << sndFile.samplerate() << endl;
+  cout << sndFile.format() << endl;
+  cout << sndFile.frames();
 
   return 0;
 }

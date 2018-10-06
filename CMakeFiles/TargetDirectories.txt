@@ -1,7 +1,8 @@
+/home/ludee/Documents/CAV/AVC/CMakeFiles/edit_cache.dir
 /home/ludee/Documents/CAV/AVC/CMakeFiles/wavhist.dir
-/home/ludee/Documents/CAV/AVC/CMakeFiles/wavcp.dir
 /home/ludee/Documents/CAV/AVC/CMakeFiles/rebuild_cache.dir
 /home/ludee/Documents/CAV/AVC/CMakeFiles/wavquant.dir
 /home/ludee/Documents/CAV/AVC/CMakeFiles/wavcb.dir
 /home/ludee/Documents/CAV/AVC/CMakeFiles/wavcmp.dir
-/home/ludee/Documents/CAV/AVC/CMakeFiles/edit_cache.dir
+/home/ludee/Documents/CAV/AVC/CMakeFiles/wavcp.dir
+/home/ludee/Documents/CAV/AVC/CMakeFiles/wavvq.dir
