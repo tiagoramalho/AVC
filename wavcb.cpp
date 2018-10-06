@@ -9,7 +9,7 @@ using namespace std;
 
 constexpr size_t FRAMES_BUFFER_SIZE = 65536; // Buffer for reading frames
 
-double euclideanDistance(vector<short>&v1, vector<short>&v2){
+int euclideanDistance(vector<short>&v1, vector<short>&v2){
 
     double distance = 0;
     for(uint32_t i = 0; i<v1.size();i++){
@@ -17,13 +17,13 @@ double euclideanDistance(vector<short>&v1, vector<short>&v2){
         distance += pow((v1[i] - v2[i]),2);
 
     }
-    return sqrt(distance);
+    return distance;
 }
-int getBestMatchingUnit(vector<vector<short>> cb, vector<short> row){
+uint32_t getBestMatchingUnit(vector<vector<short>> &cb, vector<short> &row){
 
     int idx = 0;
-    double dst {};
-    double smallDst = euclideanDistance(cb[0], row);
+    int dst {};
+    int smallDst = euclideanDistance(cb[0], row);
     for(uint32_t i = 1; i< cb.size(); i++){
         dst = euclideanDistance(cb[i], row);
         if( dst < smallDst){
@@ -33,7 +33,7 @@ int getBestMatchingUnit(vector<vector<short>> cb, vector<short> row){
     }
     return idx;
 }
-vector<short> getCentroid(vector<vector<short>> v){
+vector<short> getCentroid(vector<vector<short>> &v){
     vector<short> vR;
     //cout << v[0][0] << endl;
     vR.resize( v[0].size()) ;
@@ -46,6 +46,16 @@ vector<short> getCentroid(vector<vector<short>> v){
     }
     return vR;
 
+}
+bool compareVector(vector<short> &v1, vector<short> &v2){
+
+    bool r = false;
+    for(uint32_t i = 0; i<v1.size(); i++){
+        if((v1[i] - v2[i]) > 1){
+            r = true; 
+        }
+    }
+    return r;
 }
 
 int main(int argc, char *argv[]) {
@@ -90,32 +100,32 @@ int main(int argc, char *argv[]) {
 
     //cout << sndFile.frames();
     for(int i = 0; i < stoi(argv[4]); i++){
-        codebook.push_back(dataSet[rand() % dataSet.size()]);
+        int idx = rand() % dataSet.size();
+        codebook.push_back(dataSet[i*15]);
     }
 
     cout << "get v" << endl;
+    cout << codebook.size() << endl;
     
     bool change;
-    int teste = 0;
     do{
         change = false;
         map<uint32_t, vector<vector<short>>> mapDst {};
         for(uint32_t i = 0; i<dataSet.size(); i++){
-            int idx = getBestMatchingUnit(codebook, dataSet[i]);
+            uint32_t idx = getBestMatchingUnit(codebook, dataSet[i]);
             mapDst[idx].push_back(dataSet[i]);
         
         }
 
         cout << "change cb" << endl;
         for(auto [value, vv] : mapDst){
-            vector<short> pilinhadobranco = getCentroid(vv);
-            if (codebook[value] != pilinhadobranco){
-                codebook[value] = pilinhadobranco;
+            vector<short> newVector = getCentroid(vv);
+            if (compareVector(codebook[value],newVector) ){
+                codebook[value] = newVector;
                 change = true;
             }
         }
-        teste ++;
-    }while(teste < 10);
+    }while(change);
 
 
 
@@ -123,13 +133,13 @@ int main(int argc, char *argv[]) {
 
     SndfileHandle sndFileOut;
     sndFileOut = SndfileHandle("sampleOutVector.wav", SFM_WRITE, sndFile.format(), sndFile.channels(), sndFile.samplerate());
-
+    vector<short> samples2(8);
     short frame [2];
     int channels = sndFile.channels();
-    while((nFrames = sndFileN.readf(samples.data(), 4))) {
-        samples.resize(8);
-        vector<short> A = {samples[0], samples[2], samples[4], samples[6]};
-        vector<short> B = {samples[1], samples[3], samples[5], samples[7]};
+    while((nFrames = sndFileN.readf(samples2.data(), 4))) {
+        samples2.resize(8);
+        vector<short> A = {samples2[0], samples2[2], samples2[4], samples2[6]};
+        vector<short> B = {samples2[1], samples2[3], samples2[5], samples2[7]};
         int idxA = getBestMatchingUnit(codebook, A);
         int idxB = getBestMatchingUnit(codebook, B);
 
@@ -148,8 +158,6 @@ int main(int argc, char *argv[]) {
 
 
     }
-
-
     cout << dataSet.size() << endl;
     cout << sndFile.frames();
 
