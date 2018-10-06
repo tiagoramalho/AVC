@@ -1,1 +1,0 @@
-/usr/bin/c++   -Wall -Wextra -std=c++17 -O3  -rdynamic CMakeFiles/wavcb.dir/wavcb.cpp.o  -o /home/ludee/Documents/CAV/bin-example/wavcb -lsndfile 

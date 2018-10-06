@@ -1,1 +1,0 @@
-/usr/bin/c++   -Wall -Wextra -std=c++17 -O3  -rdynamic CMakeFiles/wavquant.dir/wavquant.cpp.o  -o /home/ludee/Documents/CAV/bin-example/wavquant -lsndfile 
