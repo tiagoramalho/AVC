@@ -14,21 +14,6 @@ using namespace std;
 constexpr size_t FRAMES_BUFFER_SIZE = 65536; // Buffer for reading frames
 
 double euclid_distance_squared(vector<short> &v1, vector<short> &v2){
-  //cout << "euclid_distance" << endl;
-
-
-  //cout << "v1" << endl;
-  //for (int i = 0; i < signed( v1.size()); i++){
-  //  cout << v1.at(i) << " " ;
-  //}
-  //cout << endl;
-
-  //cout << "v2" << endl;
-  //for (int i = 0; i < signed( v2.size()); i++){
-  //  cout << v2.at(i) << " " ;
-  //}
-  //cout << endl;
-
   double dist = 0.0;
   double d;
 
@@ -43,8 +28,6 @@ double euclid_distance_squared(vector<short> &v1, vector<short> &v2){
 }
 
 double avg_distortion_c0( vector<short> &c0, vector<vector<short>> &dataset){
-  //cout << "avg_distortion_c0" << endl;
-
   vector<double> distances;
 
   for ( unsigned i = 0; i< dataset.size(); i++){
@@ -56,17 +39,13 @@ double avg_distortion_c0( vector<short> &c0, vector<vector<short>> &dataset){
 
 
 double avg_distortion_c_list( vector<vector<short>> &c_list, vector<vector<short>> &dataset){
-
-  //cout << "avg_distortion_c_list" << endl;
   vector<double> distances;
 
   for( int index = 0; index < signed(c_list.size()); index++){
     distances.push_back(euclid_distance_squared(c_list.at(index),dataset.at(index)));
   }
 
-
   return  accumulate( distances.begin(), distances.end(), 0.0)/distances.size();
-
 }
 
 vector<short> avg_vec_of_vecs(vector<vector<short>> &cluster){
@@ -324,7 +303,7 @@ int main(int argc, char *argv[]) {
 
   cout << "write cb" << endl;
 
-  ofstream outFile("cb.txt");
+  ofstream outFile("output/cb.txt");
   for( const auto &e : codebook){
     for ( const auto &f : e){
       outFile << f;
@@ -341,7 +320,7 @@ int main(int argc, char *argv[]) {
   //SndfileHandle sndFileOut;
   //sndFileOut = SndfileHandle("sampleOutVector.wav", SFM_WRITE, sndFile.format(), sndFile.channels(), sndFile.samplerate());
 
-  ofstream outFileIndexes("indexes.txt");
+  ofstream outFileIndexes("output/indexes.txt");
   short frame [2];
   int channels = sndFile.channels();
 
