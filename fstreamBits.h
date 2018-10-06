@@ -51,9 +51,7 @@ class READBits: public ifstream {
         string readHeader(){
             string header;
             std::getline(f, header);
-        
             return header;
-        
         }
 };
 
