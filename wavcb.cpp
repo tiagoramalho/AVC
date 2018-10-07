@@ -49,7 +49,7 @@ vector<short> getCentroid(vector<vector<short>> &v){
 }
 bool compareVector(vector<short> &v1, vector<short> &v2){
 
-    bool r = false;
+    bool r = false; 
     for(uint32_t i = 0; i<v1.size(); i++){
         if((v1[i] - v2[i]) > 1){
             r = true; 
@@ -101,23 +101,23 @@ int main(int argc, char *argv[]) {
     //cout << sndFile.frames();
     for(int i = 0; i < stoi(argv[4]); i++){
         int idx = rand() % dataSet.size();
-        codebook.push_back(dataSet[i*15]);
+        //cout << "idx: " << idx << endl;
+        codebook.push_back(dataSet[idx]);
     }
 
     cout << "get v" << endl;
     cout << codebook.size() << endl;
     
     bool change;
+    int i{};
+
     do{
         change = false;
         map<uint32_t, vector<vector<short>>> mapDst {};
         for(uint32_t i = 0; i<dataSet.size(); i++){
             uint32_t idx = getBestMatchingUnit(codebook, dataSet[i]);
             mapDst[idx].push_back(dataSet[i]);
-        
         }
-
-        cout << "change cb" << endl;
         for(auto [value, vv] : mapDst){
             vector<short> newVector = getCentroid(vv);
             if (compareVector(codebook[value],newVector) ){
@@ -125,9 +125,12 @@ int main(int argc, char *argv[]) {
                 change = true;
             }
         }
-    }while(change);
+        cout << "iteration: " << i << endl;
+        i++;
+    }while(i < 500);
 
 
+    std::map<int, size_t> counts ;
 
 	SndfileHandle sndFileN { argv[1] };
 
@@ -142,6 +145,10 @@ int main(int argc, char *argv[]) {
         vector<short> B = {samples2[1], samples2[3], samples2[5], samples2[7]};
         int idxA = getBestMatchingUnit(codebook, A);
         int idxB = getBestMatchingUnit(codebook, B);
+
+        // Histograma
+        counts[idxA]++;
+        // Fim Histgrama
 
         frame[0] = codebook[idxA][0];
         frame[1] = codebook[idxB][0];
@@ -158,8 +165,25 @@ int main(int argc, char *argv[]) {
 
 
     }
-    cout << dataSet.size() << endl;
-    cout << sndFile.frames();
+
+
+
+    for (uint32_t i = 0; i < codebook.size(); ++i)
+    {
+        cout << "idx: " << i << "\t";
+        for (uint32_t j = 0; j < codebook[i].size(); ++j)
+        {
+            cout << j << ": " << codebook[i][j] << ";\t";
+        }
+        cout << endl;
+    }
+
+    for(auto [value, counter] : counts){
+        std::cout << "key: " << value << '\t' << "value: " << counter << '\n';
+    }
+
+    // cout << dataSet.size() << endl;
+    //cout << sndFile.frames();
 
     return 0;
 }
