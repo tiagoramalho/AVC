@@ -94,10 +94,7 @@ int main(int argc, char *argv[]) {
             sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
             count++;
         }
-        // sndFileOut.writeSync();
-        // sndFileOut = SndfileHandle(argv[2], SFM_WRITE, format, channels, samplerate);
         cout << "output file has:" << endl;
-        cout << '\t' << sndFileOut.frames() << " frames" << endl;
         cout << '\t' << sndFileOut.samplerate() << " samples per second" << endl;
         cout << '\t' << sndFileOut.channels() << " channels" << endl;
         cout << '\t' << sndFileOut.format() << " format" << endl;
