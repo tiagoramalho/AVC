@@ -335,6 +335,7 @@ int main(int argc, char *argv[]) {
     outFile << endl;
   }
 
+  /*
   ofstream outFileIndexes("output/indexes.txt");
 
   int idx;
@@ -352,4 +353,5 @@ int main(int argc, char *argv[]) {
   }
 
   return 0;
+  */
 }

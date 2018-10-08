@@ -46,6 +46,10 @@ int main(int argc, char *argv[]) {
         cerr << "Error: original audio file is not in PCM_16 format" << endl;
         return 1;
     }
+    
+    /*
+     * Comparison betwen the headers of the two files.
+     */
 
     if(sndFileNew.frames()!=sndFileOriginal.frames() || 
        sndFileNew.samplerate()!=sndFileOriginal.samplerate() || 
@@ -54,8 +58,6 @@ int main(int argc, char *argv[]) {
     
         cerr << "Error: the two files don't have the same header characteristics" << endl;
         return 1;
-    
-    
     }
 
     int frames;
@@ -65,6 +67,11 @@ int main(int argc, char *argv[]) {
     vector<short> samplesOriginal(FRAMES_BUFFER_SIZE * sndFileOriginal.channels());
     long originalChannels[channels] = {};
     long newChannels[channels] = {};
+
+    /*
+     *  SNR calculations based on the formula shown in the report
+     *  Different calculous for each of the channels
+     */
 
     while((frames = sndFileNew.readf(samplesNew.data(), FRAMES_BUFFER_SIZE))){
         samplesNew.resize(frames*channels);
@@ -76,6 +83,7 @@ int main(int argc, char *argv[]) {
             newChannels[i%channels]+= (long)pow(samplesOriginal[i]-samplesNew[i], 2);
         } 
     }
+
     long double SNR;
     for(int i = 0; i < channels; i++){
         SNR = (long double)originalChannels[i]/(long double)  newChannels[i];
