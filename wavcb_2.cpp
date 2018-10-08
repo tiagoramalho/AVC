@@ -75,8 +75,10 @@ vector<short> avg_vec_of_vecs(vector<vector<short>> &cluster){
 vector<short> new_block(vector<short> &block, float move_distance){
 
   vector<short> new_block (block.size(),0);
+  float add;
   for ( unsigned i = 0; i < block.size(); i++){
-    new_block.at(i) = block.at(i) * ( 1 + move_distance);
+    add = block.at(i) * ( 1 + move_distance );
+    new_block.at(i) = (short) add;
   }
 
   return new_block;
@@ -114,20 +116,20 @@ void split_codebook(
   rel_weights.resize(len_codebook, 0.0);
 
   cout << "new size: " << len_codebook << endl;
-  cout << "new codebook: " << len_codebook << endl;
+  // << "new codebook: " << len_codebook << endl;
 
-  for ( int i = 0; i < signed(new_blocks.size()); i++){
+  //for ( int i = 0; i < signed(new_blocks.size()); i++){
 
-    for ( int j = 0; j < signed(new_blocks.at(i).size()); j++){
+  //  for ( int j = 0; j < signed(new_blocks.at(i).size()); j++){
 
-      cout << new_blocks.at(i).at(j) <<" ";
+  //    cout << new_blocks.at(i).at(j) <<" ";
 
-    }
+  //  }
 
-    cout << endl;
+  //  cout << endl;
 
 
-  }
+  //}
 
 
 
@@ -153,10 +155,6 @@ void split_codebook(
 
 
       for( unsigned i_c = 0; i_c<cb.size();i_c++){
-        // cout << "cb size: "<<cb.size()<< endl;
-        // cout << "index_cb: "<<i_c<< endl;
-        // cout << "index_ds: "<<i<< endl;
-        // cout << "cb teste: "<<cb.at(i_c)[0]<< endl;
 
         d = euclid_distance_squared(dataset.at(i), cb.at(i_c));
 
@@ -200,7 +198,7 @@ void split_codebook(
       }
     }
 
-    int prev_avg_dist;
+    double prev_avg_dist;
     if (avg_dist > 0)
       prev_avg_dist = avg_dist;
     else
@@ -213,16 +211,18 @@ void split_codebook(
 
     num_iter += 1;
 
+    cout << "> iteration " << num_iter << endl << "avg_dist " << avg_dist << endl <<  "prev_avg_dist " <<  prev_avg_dist << endl <<  "err " << err<< endl;
+
   }
 }
 
 
-vector<vector<short>> generate_codebook(vector<vector<short>> dataset, int size, float epsilon=0.00001){
-  cout << "1" << endl;
+vector<vector<short>> generate_codebook(vector<vector<short>> dataset, int size, float epsilon=0.0000001){
+  // << "1" << endl;
   vector<vector<short>> codebook;
 
   vector<short> c0 = avg_vec_of_vecs(dataset);
-  cout << "2" << endl;
+  // << "2" << endl;
 
   codebook.push_back(c0);
 
@@ -234,8 +234,8 @@ vector<vector<short>> generate_codebook(vector<vector<short>> dataset, int size,
   double avg_dist;
 
   while(signed(codebook.size()) < size){
-    cout << "while" << endl;
-    cout << "split_codebook" << endl;
+    // << "while" << endl;
+    // << "split_codebook" << endl;
     split_codebook( dataset,
                     codebook,
                     epsilon,
