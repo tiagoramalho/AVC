@@ -15,7 +15,8 @@ class READBits: public ifstream {
         ifstream f;
 
     public:
-        READBits() : f ("codedAudio.bin", ios::binary){} 
+        READBits(const string & file) : f (file.c_str(), ios::binary){} 
+            //f (file.c_str(), ios::binary){};
 
         /*
          * Função que lê de um ficheiro um byte e devolve o seu valor bit a bit 
@@ -81,7 +82,7 @@ class WRITEBits: public ofstream {
          * Função que escreve em um ficheiro um byte contendo apenas bits de informação
          *
          * */
-        WRITEBits (): f("codedAudio.bin", ios::binary){}
+        WRITEBits(const string & file) : f (file.c_str(), ios::binary){} 
         void writeBits(char val){
             buff = buff | (val << shamnt);
             shamnt--;

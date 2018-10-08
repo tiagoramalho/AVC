@@ -1,4 +1,4 @@
-#!/usr/bin/gnuplot -persist
+#!/usr/bin/gnuplot -c 
 
 clear
 reset
@@ -11,12 +11,14 @@ set title "WAVE Audio Histogram"
 set grid
 set xtics rotate
 
-DATAFILE = "hist"
-
 set style data histogram
 set style fill solid border
 
 set style histogram clustered
 
-plot DATAFILE using 2:xtic(int($0)%1000 == 0 ? stringcolumn(1) : '') 
-
+if (ARGC != 1) {
+    set print "-"
+    print "Usage: ./show_plot.plt <path/to/histogram>"
+} else {
+    plot ARG1 using 2:xtic(int($0)%1000 == 0 ? stringcolumn(1) : '') 
+}
