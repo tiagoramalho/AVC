@@ -38,9 +38,12 @@ uint32_t getBestMatchingUnit(vector<vector<short>> &cb, vector<short> &row){
 int main(int argc, char *argv[]) {
 
   if(argc < 3) {
-    cerr << "Usage: wavhist <output file> <input file> <codebook> " << endl;
+    cerr << "Usage: wavhist <output file> <input file> <codebook> <block_size> <channels>" << endl;
     return 1;
   }
+
+  int block_size = stoi(argv[4]);
+  int channels = stoi(argv[5]);
 
   // open file with codebook indexes
   cout << "open file" << endl;
@@ -89,26 +92,19 @@ int main(int argc, char *argv[]) {
 
 
   SndfileHandle sndFileOut;
-  sndFileOut = SndfileHandle(argv[1],SFM_WRITE,65538, 2, 44100);
+  sndFileOut = SndfileHandle(argv[1],SFM_WRITE,65538, channels, 44100);
 
-  short frame [2];
+  short frame [channels];
   cout << sizeof(frame) <<endl;
 
-  for( uint32_t i = 0; i < indexes.size(); i = i+2){
-    frame[0] = codebook[indexes.at(i)][0];
-    frame[1] = codebook[indexes.at(i+1)][0];
-    sndFileOut.writef(frame, 1);
-    frame[0] = codebook[indexes.at(i)][1];
-    frame[1] = codebook[indexes.at(i+1)][1];
-    sndFileOut.writef(frame, 1);
-    frame[0] = codebook[indexes.at(i)][2];
-    frame[1] = codebook[indexes.at(i+1)][2];
-    sndFileOut.writef(frame, 1);
-    frame[0] = codebook[indexes.at(i)][3];
-    frame[1] = codebook[indexes.at(i+1)][3];
-    sndFileOut.writef(frame, 1);
+  for( uint32_t i = 0; i < indexes.size() / 2; i ++ ){
+    for( int j = 0; j < block_size; j++){
+      for( int k = 0; k < channels; k++){
+        frame[k] = codebook[indexes.at(i + (k * indexes.size()/2) )][j];
+      }
+      sndFileOut.writef(frame,1);
+    }
   }
   sndFileOut.writeSync();
-  cout << sndFileOut.frames();
   return 0;
 }

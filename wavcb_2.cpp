@@ -51,7 +51,9 @@ double avg_distortion_c_list( vector<vector<short>> &c_list, vector<vector<short
 vector<short> avg_vec_of_vecs(vector<vector<short>> &cluster){
 
   int size = cluster.size();
+
   vector<long> avg (cluster.at(0).size(), 0);
+
   vector<short> tmp;
 
   for ( unsigned indexD = 0; indexD < cluster.size() ; indexD++){
@@ -66,6 +68,7 @@ vector<short> avg_vec_of_vecs(vector<vector<short>> &cluster){
     avg.at(indexB) =  avg.at(indexB) / size;
     ret.at(indexB) = ( (short) avg.at(indexB) );
   }
+
   return ret;
 }
 
@@ -215,10 +218,11 @@ void split_codebook(
 
 
 vector<vector<short>> generate_codebook(vector<vector<short>> dataset, int size, float epsilon=0.00001){
-  //cout << "generate_codebook" << endl;
+  cout << "1" << endl;
   vector<vector<short>> codebook;
 
   vector<short> c0 = avg_vec_of_vecs(dataset);
+  cout << "2" << endl;
 
   codebook.push_back(c0);
 
@@ -230,6 +234,7 @@ vector<vector<short>> generate_codebook(vector<vector<short>> dataset, int size,
   double avg_dist;
 
   while(signed(codebook.size()) < size){
+    cout << "while" << endl;
     cout << "split_codebook" << endl;
     split_codebook( dataset,
                     codebook,
@@ -282,24 +287,42 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  int block_size = stoi(argv[2]);
+  int overlap_size = stoi(argv[3]);
+  int codebook_size = stoi(argv[4]);
+
+  if( overlap_size >= block_size){
+    cerr << "Error: Overlap Bigger than Block Size" << endl;
+    return 1;
+  }
 
   size_t nFrames;
+  int frames = sndFile.frames();
+  int channels = sndFile.channels();
+
   vector<vector<short>> dataSet;
   vector<vector<short>> codebook;
 
-  vector<short> samples(FRAMES_BUFFER_SIZE * sndFile.channels());
-  while((nFrames = sndFile.readf(samples.data(), 4))) {
-    samples.resize(8);
-    vector<short> A = {samples[0], samples[2], samples[4], samples[6]};
-    vector<short> B = {samples[1], samples[3], samples[5], samples[7]};
+  vector<short> block (block_size);
 
-    dataSet.push_back(A);
-    dataSet.push_back(B);
+  vector<short> samples( frames * channels);
+  sndFile.readf(samples.data(), frames * channels);
+
+
+  for( int c = 0; c < channels; c++){
+    for( uint32_t i = c; i < samples.size(); i += ( block_size - overlap_size )* channels){
+      try{
+        for ( int b = 0; b < block_size; b++){
+          block.at(b) = samples.at((b*channels) + i);
+        }
+        dataSet.push_back(block);
+      }catch(exception e){}
+    }
   }
 
   cout << "create cb" << endl;
 
-  codebook = generate_codebook(dataSet, stoi(argv[4]));
+  codebook = generate_codebook(dataSet, codebook_size);
 
   cout << "write cb" << endl;
 
@@ -312,47 +335,21 @@ int main(int argc, char *argv[]) {
     outFile << endl;
   }
 
-  cout << "get v " <<sndFile.channels()<< endl;
-  cout << "get v " <<sndFile.samplerate()<< endl;
-
-  SndfileHandle sndFileN { argv[1] };
-
-  //SndfileHandle sndFileOut;
-  //sndFileOut = SndfileHandle("sampleOutVector.wav", SFM_WRITE, sndFile.format(), sndFile.channels(), sndFile.samplerate());
-
   ofstream outFileIndexes("output/indexes.txt");
-  short frame [2];
-  int channels = sndFile.channels();
 
-  vector<short> samples2(8);
-  while((nFrames = sndFileN.readf(samples2.data(), 4))) {
-    vector<short> A = {samples2[0], samples2[2], samples2[4], samples2[6]};
-    vector<short> B = {samples2[1], samples2[3], samples2[5], samples2[7]};
-    int idxA = getBestMatchingUnit(codebook, A);
-    int idxB = getBestMatchingUnit(codebook, B);
-    outFileIndexes << idxA << " " << idxB << endl;
+  int idx;
 
-    //frame[0] = codebook[idxA][0];
-    //frame[1] = codebook[idxB][0];
-    //sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
-    //frame[0] = codebook[idxA][1];
-    //frame[1] = codebook[idxB][1];
-    //sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
-    //frame[0] = codebook[idxA][2];
-    //frame[1] = codebook[idxB][2];
-    //sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
-    //frame[0] = codebook[idxA][3];
-    //frame[1] = codebook[idxB][3];
-    //sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
-
+  for( int c = 0; c < channels; c++){
+    for( uint32_t i = c; i < samples.size(); i += ( block_size )* channels){
+      try{
+        for ( int b = 0; b < block_size; b++){
+          block.at(b) = samples.at((b*channels) + i);
+        }
+        idx = getBestMatchingUnit(codebook, block);
+        outFileIndexes << idx << " " << endl;
+      }catch(exception e){}
+    }
   }
-
-
-  cout << dataSet.size() << endl;
-  cout << sndFile.channels() << endl;
-  cout << sndFile.samplerate() << endl;
-  cout << sndFile.format() << endl;
-  cout << sndFile.frames();
 
   return 0;
 }
