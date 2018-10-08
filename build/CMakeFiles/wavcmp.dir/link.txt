@@ -1,1 +1,0 @@
-/usr/bin/c++   -Wall -Wextra -std=c++17 -O3  -rdynamic CMakeFiles/wavcmp.dir/wavcmp.cpp.o  -o /media/ramalho/hddUnix/ECT/CAV/pratica/trabalho1/bin-example/wavcmp -lsndfile 
