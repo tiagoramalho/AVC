@@ -17,7 +17,11 @@ class READBits: public ifstream {
     public:
         READBits() : f ("codedAudio.bin", ios::binary){} 
 
-        uint8_t readBits(){
+        /*
+         * Função que lê de um ficheiro um byte e devolve o seu valor bit a bit 
+         *
+         * */
+        uint8_t readBits(){ 
             if(shamnt == -1){
                 f.read(&buff, 1);
                 shamnt = 7;
@@ -28,6 +32,11 @@ class READBits: public ifstream {
             return val;
         }
 
+        /*
+         * bits: numero de bits que contêm informação, isto é que quero ler do ficheiro
+         * Função que devolve um item (short) que contem informação nos seus bits mais significativos
+         *
+         * */
         short readItem(uint32_t bits){
             short frame = 0;
             uint32_t i = 0; 
@@ -48,6 +57,10 @@ class READBits: public ifstream {
             return frame;
         }
 
+        /*
+         * Função que devolve a primeira linha do ficheiro, no nosso caso contem o header que é preciso
+         *
+         * */
         string readHeader(){
             string header;
             std::getline(f, header);
@@ -62,6 +75,12 @@ class WRITEBits: public ofstream {
         ofstream f;
 
     public:
+
+        /*
+         * val: bit de informação que vai ser usado no byte a ser escrito
+         * Função que escreve em um ficheiro um byte contendo apenas bits de informação
+         *
+         * */
         WRITEBits (): f("codedAudio.bin", ios::binary){}
         void writeBits(char val){
             buff = buff | (val << shamnt);
@@ -73,6 +92,12 @@ class WRITEBits: public ofstream {
             }
         }
 
+        /*
+         * write: item que é preciso escrever para o ficheiro
+         * bits: numero de bits que contêm informação no item "write"
+         * Função que chama a "writeBits" para escrever no ficheiro
+         *
+         * */
         void preWrite(short write, uint32_t bits){
             int count = bits-1;
             while(count != -1){
@@ -82,6 +107,11 @@ class WRITEBits: public ofstream {
             }
 
         }
+
+        /*
+         * Função que escreve o header no ficheiro
+         *
+         * */
         void writeHeader(uint32_t frames, uint32_t channels, uint32_t samplerates, uint32_t format){
             f << frames << ";" << channels << ";" << samplerates << ";" << format << ";\n";
         }
