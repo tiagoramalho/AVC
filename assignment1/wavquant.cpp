@@ -1,4 +1,4 @@
-#include "fstreamBits.h"
+#include "../suppclasses/fstreamBits.h"
 #include <iostream>
 #include <sndfile.hh>
 #include <stdio.h>
