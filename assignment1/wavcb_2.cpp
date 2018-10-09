@@ -4,6 +4,8 @@
 #include <math.h>
 #include <sndfile.hh>
 #include "wavhist.h"
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include <iterator>
 #include <numeric>
@@ -116,22 +118,6 @@ void split_codebook(
   rel_weights.resize(len_codebook, 0.0);
 
   cout << "new size: " << len_codebook << endl;
-  // << "new codebook: " << len_codebook << endl;
-
-  //for ( int i = 0; i < signed(new_blocks.size()); i++){
-
-  //  for ( int j = 0; j < signed(new_blocks.at(i).size()); j++){
-
-  //    cout << new_blocks.at(i).at(j) <<" ";
-
-  //  }
-
-  //  cout << endl;
-
-
-  //}
-
-
 
   avg_dist = 0;
   double err = epsilon + 1;
@@ -326,6 +312,11 @@ int main(int argc, char *argv[]) {
 
   cout << "write cb" << endl;
 
+  struct stat st = {};
+  if (stat("./output", &st) == -1) {
+    mkdir("./output", 0700);
+  }
+
   ofstream outFile("output/cb.txt");
   for( const auto &e : codebook){
     for ( const auto &f : e){
@@ -335,23 +326,4 @@ int main(int argc, char *argv[]) {
     outFile << endl;
   }
 
-  /*
-  ofstream outFileIndexes("output/indexes.txt");
-
-  int idx;
-
-  for( int c = 0; c < channels; c++){
-    for( uint32_t i = c; i < samples.size(); i += ( block_size )* channels){
-      try{
-        for ( int b = 0; b < block_size; b++){
-          block.at(b) = samples.at((b*channels) + i);
-        }
-        idx = getBestMatchingUnit(codebook, block);
-        outFileIndexes << idx << " " << endl;
-      }catch(exception e){}
-    }
-  }
-
-  return 0;
-  */
 }

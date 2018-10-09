@@ -40,7 +40,8 @@ int main(int argc, char *argv[]) {
 
     if(argc != 7) {
         cerr << "Usage: wavvq <input file> <output file> <codebook> <operation (e/d)> <block_size> <channels>" << endl;
-        return 1;
+        cerr << "\t \t Ex: wavvq samples/sample02.wav index.txt output/cb.txt e 3 2" << endl;
+        cerr << "\t \t Ex: wavvq index.txt newfile.wav output/cb.txt d 3 2" << endl;
     }
 
     string in_file = argv[1], out_file = argv[2], codebook_file = argv[3];
