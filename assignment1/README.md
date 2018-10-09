@@ -43,3 +43,25 @@ After this we should decode:
 ./bin/wavquant sample01.bin sample_decompressed.wav d 14
 ```
 
+### Vector quantization
+
+First step is the codebook creation
+```
+./bin/wavcb_2 samples/sample02.wav 3 2 512
+```
+
+The previous command will create a file in `output`  called `cb.txt`.
+After this you can either enconde this file based on the codebook an generate an `index.txt`:
+```
+wavvq samples/sample02.wav index.txt output/cb.txt e 3 2
+```
+
+or decode a file from based on a previously created one:
+```
+wavvq index.txt newfile.wav output/cb.txt d 3 2
+```
+
+Full syntax here:
+```
+wavvq <input file> <output file> <codebook> <operation (e/d)> <block_size> <channels>
+```
