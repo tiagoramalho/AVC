@@ -14,5 +14,10 @@ SET (CMAKE_CXX_FLAGS_DEBUG "-g3 -fsanitize=address")
 SET (BASE_DIR ${CMAKE_SOURCE_DIR} )
 SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BASE_DIR}/bin)
 
-add_executable (wavcp wavcp.cpp)
-target_link_libraries (wavcp sndfile)
+add_executable (golomb Golomb.cpp)
+set_target_properties(golomb PROPERTIES
+  ENABLE_EXPORTS 1
+)
+
+add_executable (main main.cpp)
+target_link_libraries (main golomb)
