@@ -10,8 +10,8 @@ class Golomb {
 
     public:
         Golomb( int m );
-        uint32_t encode( int number);
-        int decode( uint32_t number);
+        std::tuple<int,uint32_t> encode( short number);
+        short decode( uint32_t number);
 
 };
 
