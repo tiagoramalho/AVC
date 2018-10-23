@@ -12,7 +12,7 @@ class Golomb {
         Golomb( int m );
         std::tuple<int,uint32_t> encode( short number);
         short decode( uint32_t number);
-
+        std::tuple<uint32_t,uint32_t> truncatedBinary(uint32_t r);
 };
 
 #endif

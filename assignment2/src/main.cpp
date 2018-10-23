@@ -7,14 +7,15 @@ using namespace std;
 int main()
 
 {
-  Golomb n(35);
+  Golomb n(5);
 
   int a;
   uint32_t b;
 
-  std::tie(a,b) = n.encode(1);
+  std::tie(a,b) = n.encode(-7);
 
-  cout << a << endl;
+  cout << "number of bits to write -> "<< a << endl;
+  cout << "hex return -> "<< hex << b << endl;
   cout << n.decode( 1 ) << endl;
 
   return 0;
