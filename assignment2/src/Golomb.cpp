@@ -1,15 +1,22 @@
 #include "Golomb.hpp"
 #include <math.h>
 #include <tuple>
+#include <bitset>
 
-Golomb::Golomb( int m ): m(m) {}
+using namespace std;
+
+Golomb::Golomb( uint32_t m ): m(m) {
+	b = ceil(log2(m));
+	t = std::pow(2,b) - m;
+}
 
 
-std::tuple<int,uint32_t> Golomb::encode(short number){
+std::tuple<uint32_t,uint32_t> Golomb::encode(short number){
     uint32_t ret = 0;
     uint32_t new_number = 0;
 
     uint32_t shift = log2(this->m);
+
 
     if(number >= 0)
         new_number = number * 2;
@@ -37,23 +44,65 @@ std::tuple<int,uint32_t> Golomb::encode(short number){
 
 std::tuple<uint32_t,uint32_t> Golomb::truncatedBinary(uint32_t r){
 
-    uint32_t b = ceil(log2(this->m));
     uint32_t bin;
     uint32_t shift;
-    uint32_t tpb = std::pow(2,b);
 
-    if( r < tpb - this->m){
+    if( r < t){
         shift = b-1;
         bin = r;
     }else{
         shift = b;
-        bin = r+ tpb - this->m;
+        bin = r + t;
     }
 
     return std::make_tuple(bin, shift);
 }
 
-short Golomb::decode(uint32_t number , int bits_to_read){
+short Golomb::decode(uint32_t number , uint32_t bits_to_read){
+	/*
+	 * Ver:
+	 * https://w3.ual.es/~vruiz/Docencia/Apuntes/Coding/Text/03-symbol_encoding/09-Golomb_coding/index.html
+	 */
 
-    return 0;
+	uint32_t q = 0;
+	uint32_t bits_to_read_cp = bits_to_read - 1;
+
+
+	/*
+	 * Calqulate q
+	 */
+	while((number >> bits_to_read_cp & 1) == 1){
+		q = q + 1;
+		bits_to_read_cp = bits_to_read_cp - 1;
+	}
+
+	/*
+	 * Calculate r
+	 */
+
+
+
+	uint32_t mask = ((1 << bits_to_read_cp) - 1);
+	uint32_t r = (number & mask) >> 1;
+	// Temporary!!!!!! EXPLAIN!!!
+	// Having to do with "x ← the next k − 1 bits in the input"
+	if(bits_to_read_cp < b)
+		r = (number & mask);
+
+	uint32_t result;
+	if(r < t){
+		result = q * m + r;
+	}
+	else {
+		r = r * 2 + (number & 1);
+		result = q * m + r - t;
+	}
+
+	/*
+	 * To short
+	 */
+    if(result % 2 == 0)
+    	return (short) result / 2;
+    else
+    	return (short) (result + 1) / (-2);
 }

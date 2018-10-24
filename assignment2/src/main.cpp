@@ -1,22 +1,33 @@
 #include <iostream>
 #include "Golomb.hpp"
 #include <tuple>
+#include <bitset>
+
 
 using namespace std;
 
 int main()
 
 {
-  Golomb n(5);
+    uint32_t m = 5;
+    Golomb n(m);
 
-  int a;
-  uint32_t b;
+    uint32_t number_of_bits;
+    uint32_t ret;
 
-  std::tie(a,b) = n.encode(-7);
+    int i = -8;
+    while (i <= 7) {
 
-  cout << "number of bits to write -> "<< a << endl;
-  cout << "hex return -> "<< hex << b << endl;
-  cout << n.decode( 1 ) << endl;
+		cout << "n -> "<< i  << endl;
 
-  return 0;
+		std::tie(number_of_bits,ret) = n.encode(i);
+
+		cout << "hex return -> "<< std::bitset<8>(ret)  << endl;
+		cout << "number of bits to write -> "<< number_of_bits << endl;
+
+		cout << "Decoded value -> " <<  n.decode(ret, number_of_bits) << endl << endl << endl;
+		i++;
+
+    }
+    return 0;
 }
