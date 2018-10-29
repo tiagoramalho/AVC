@@ -73,12 +73,26 @@ std::tuple<uint32_t,uint32_t> Golomb::truncatedBinary(uint32_t r){
     return std::make_tuple(bin, shift);
 }
 
-short Golomb::decode(){
+short Golomb::decode(READBits & r){
     /*
      * Ver:
      * https://w3.ual.es/~vruiz/Docencia/Apuntes/Coding/Text/03-symbol_encoding/09-Golomb_coding/index.html
      */
+
+    // Esta condição tem de ser até ao fim do ficheiro ou chegar ao flush
+    
     while(1){
+        uint32_t q = 0;
+        uint8_t bit = 0;
+        do{
+            bit = r.readBits();
+            cout << hex << bit << endl;
+            q++;
+            // a verificação nao esta a dar na primeira iteração acho que q devia ser 3
+        }while(bit != (uint8_t)1);
+        cout << q << endl;
+        return 0;
+        
 
     }
 

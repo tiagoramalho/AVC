@@ -21,7 +21,7 @@ class Golomb {
 
         void encode_and_write( short number, WRITEBits & w);
 
-        short decode();
+        short decode(READBits & r);
         void close(WRITEBits & w);
 };
 
