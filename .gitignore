@@ -1,6 +1,7 @@
 # Created by https://www.gitignore.io/api/c++
 
 
+*.bin
 *.wav
 CMakeCache.txt
 CMakeFiles

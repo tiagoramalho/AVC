@@ -2,20 +2,27 @@
 #define GOLOMB_H
 
 #include <iostream>
+#include <string.h>
+#include "fstreamBits.h"
+
+using namespace std;
 
 class Golomb {
 
     private:
-        /*
-         * t = 2^b − m
-         */
         uint32_t m, b, t;
+        string path;
+        std::tuple<uint32_t,uint32_t> truncatedBinary(uint32_t r);
 
     public:
-        Golomb( uint32_t m );
-        std::tuple<uint32_t,uint32_t> encode( short number);
-        std::tuple<uint32_t,uint32_t> truncatedBinary(uint32_t r);
-        short decode(uint32_t number , uint32_t bits_to_read);
+        Golomb( uint32_t m, string path );
+        READBits open_to_read();
+        WRITEBits open_to_write();
+
+        void encode_and_write( short number, WRITEBits & w);
+
+        short decode();
+        void close(WRITEBits & w);
 };
 
 #endif
