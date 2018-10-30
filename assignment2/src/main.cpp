@@ -33,7 +33,9 @@ int main()
 
     }
     n.close(w);
+
     READBits r = n.open_to_read();
     n.decode(r);
+
     return 0;
 }

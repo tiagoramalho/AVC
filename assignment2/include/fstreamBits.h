@@ -26,7 +26,6 @@ class READBits: public ifstream {
             if(shamnt == -1){
                 f.read(&buff, 1);
                 shamnt = 7;
-
             }
             uint8_t val = buff >> shamnt & 1U;
             shamnt--;

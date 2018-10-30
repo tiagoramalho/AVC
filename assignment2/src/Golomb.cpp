@@ -80,19 +80,18 @@ short Golomb::decode(READBits & r){
      */
 
     // Esta condição tem de ser até ao fim do ficheiro ou chegar ao flush
-    
     while(1){
         uint32_t q = 0;
-        uint8_t bit = 0;
+        uint32_t bit = 0;
         do{
             bit = r.readBits();
-            cout << hex << bit << endl;
+            //cout << bit << endl;
             q++;
             // a verificação nao esta a dar na primeira iteração acho que q devia ser 3
-        }while(bit != (uint8_t)1);
+        }while(bit ==  1);
+
         cout << q << endl;
         return 0;
-        
 
     }
 
