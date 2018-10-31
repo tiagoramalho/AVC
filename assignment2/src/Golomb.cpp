@@ -79,62 +79,33 @@ short Golomb::decode(READBits & r){
      * https://w3.ual.es/~vruiz/Docencia/Apuntes/Coding/Text/03-symbol_encoding/09-Golomb_coding/index.html
      */
 
-    // Esta condição tem de ser até ao fim do ficheiro ou chegar ao flush
-    while(1){
-        uint32_t q = 0;
-        uint32_t bit = 0;
-        do{
-            bit = r.readBits();
-            //cout << bit << endl;
-            q++;
-            // a verificação nao esta a dar na primeira iteração acho que q devia ser 3
-        }while(bit ==  1);
-
-        cout << q << endl;
-        return 0;
-
+    uint32_t q = 0;
+    uint32_t result  = 0;
+    uint32_t bit = r.readBits();
+    while(bit ==  1){
+        bit = r.readBits();
+        q++;
     }
 
-    //uint32_t q = 0;
-    //uint32_t bits_to_read_cp = bits_to_read - 1;
+    /*
+     * Calculate r
+     */
+    uint32_t resto = 0;
+    for(uint32_t i = 0; i<b -1; i++){
+        resto = resto << 1 | r.readBits();
 
+    }
+    if(resto < t){
+        result = q * m + resto;
 
-    ///*
-    // * Calqulate q
-    // */
-    //while((number >> bits_to_read_cp & 1) == 1){
-    //    q = q + 1;
-    //    bits_to_read_cp = bits_to_read_cp - 1;
-    //}
+    }
+    else {
+        resto = resto << 1 | r.readBits();
+        result = q * m + resto - t;
+    }
 
-    ///*
-    // * Calculate r
-    // */
-
-
-
-    //uint32_t mask = ((1 << bits_to_read_cp) - 1);
-    //uint32_t r = (number & mask) >> 1;
-    //// Temporary!!!!!! EXPLAIN!!!
-    //// Having to do with "x ← the next k − 1 bits in the input"
-    //if(bits_to_read_cp < b)
-    //    r = (number & mask);
-
-    //uint32_t result;
-    //if(r < t){
-    //    result = q * m + r;
-    //}
-    //else {
-    //    r = r * 2 + (number & 1);
-    //    result = q * m + r - t;
-    //}
-
-    ///*
-    // * To short
-    // */
-    //if(result % 2 == 0)
-    //    return (short) result / 2;
-    //else
-    //    return (short) (result + 1) / (-2);
-    return (short) 1;
+    if(result % 2 == 0)
+        return (short) result / 2;
+    else
+        return (short) (result + 1) / (-2);
 }
