@@ -1,7 +1,9 @@
 #include <iostream>
 #include "Golomb.hpp"
+#include "Predictor.hpp"
 #include <tuple>
 #include <bitset>
+#include <vector>
 
 
 using namespace std;
@@ -9,6 +11,16 @@ using namespace std;
 int main()
 
 {
+
+    vector<short> v = {1, 2, 3, 4, 5};
+
+    Predictor pr(4, 5);
+
+    cout << v.at(1) << endl;
+
+    pr.populate_v(v);
+
+    /*
     uint32_t m = 5;
     Golomb n(m, "pila.bin");
 
@@ -55,5 +67,7 @@ int main()
     cout <<    n.decode(r) << endl;
     cout <<    n.decode(r) << endl;
     cout <<    n.decode(r) << endl;
+
+    */
     return 0;
 }
