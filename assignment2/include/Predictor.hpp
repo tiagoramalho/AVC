@@ -11,29 +11,33 @@ using namespace std;
 class Predictor {
 
     private:
-		uint32_t max_order, sample_size;
-		vector<vector<short>> v;
-    	/*
-        samples vector<short> samplesNew(FRAMES_BUFFER_SIZE * sndFileNew.channels());
-        vector<short> order_one();
-        vector<short> order_two();
-        vector<short> order_three();
-        vector<short> order_four();
-        */
+        uint32_t max_order, block_size;
+        vector<vector<short>> block_all_residuals ;
 
     public:
 
-        Predictor(uint32_t max_order, uint32_t sample_size);
-        short gen_residuals(vector<short> & samples, uint32_t index, uint32_t order);
+        // Constructor
+        Predictor(uint32_t max_order, uint32_t block_size);
+
+        // Function that will build de matrix with all the residuals
         void populate_v(vector<short> & samples);
 
-    	/*
-        short r_order_zero(short xn);
-        short r_order_one(short xn, short xn_minus_one);
-        short r_order_two(short xn, short xn_minus_one);
-        short r_order_three(short xn, short xn_minus_one);
-        short r_order_four(short xn, short xn_minus_one);
-        */
+        // Recursive function that generates the residual values
+        // up to max_order
+        short gen_residuals(vector<short> & samples, uint32_t index, uint32_t order);
+
+
+        // Helper Functions
+
+        // Print a matrix
+        void print_matrix( vector<vector<short>> & matrix );
+
+        // Entropy Calculation
+        // It will also be able to output histogram data
+        // because the histogram calculations are the same
+        // we must calculate the frequency of each residual
+        vector<float> calculate_entropies(bool save_freqs);
+
 };
 
 #endif

@@ -20,6 +20,12 @@ int main()
 
     pr.populate_v(v);
 
+    vector<float> entropies = pr.calculate_entropies(false);
+
+    for( int i = 0; i < entropies.size(); i++){
+      cout << entropies.at(i) << endl;
+    }
+
     /*
     uint32_t m = 5;
     Golomb n(m, "pila.bin");
