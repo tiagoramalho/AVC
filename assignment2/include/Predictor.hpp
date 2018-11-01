@@ -44,6 +44,7 @@ class Predictor {
         // Print a matrix
         void print_matrix( vector<vector<short>> & matrix );
 
+        float calculate_entropy( vector<short> & matrix);
 };
 
 #endif

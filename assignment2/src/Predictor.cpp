@@ -98,6 +98,10 @@ vector<float> Predictor::calculate_entropies(bool save_freqs){
       counts.clear();
     }
 
+    for( uint32_t i = 0; i < entropies.size(); i++){
+        cout << "Order " << i << " entropy :" << entropies.at(i) << endl;
+    }
+
     return entropies;
 
 };
@@ -111,4 +115,25 @@ uint32_t Predictor::get_best_predictor(){
 
 vector<short> Predictor::get_residuals(uint32_t predictor_index){
     return this->block_all_residuals.at(predictor_index);
+}
+
+float Predictor::calculate_entropy( vector<short> & matrix){
+
+    float entropy = 0;
+
+    map<short,long> counts;
+    map<short,long>::iterator it;
+
+    for (uint32_t residual_index = 0; residual_index < matrix.size(); residual_index++) {
+      counts[matrix[residual_index]]++;
+    }
+
+    it = counts.begin();
+    while(it != counts.end()){
+      float p_x = (float)it->second/matrix.size();
+      if (p_x>0) entropy-=p_x*log(p_x)/log(2);
+        it++;
+    }
+
+    return entropy;
 }
