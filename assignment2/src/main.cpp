@@ -4,25 +4,67 @@
 #include <tuple>
 #include <bitset>
 #include <vector>
+#include <sndfile.hh>
 
 
 using namespace std;
 
-int main()
+int main(int argc, char *argv[]) {
 
-{
+    if(argc < 3) {
+        cerr << "Usage: wavcp <wav input file> <number of samples per block>" << endl;
+        return 1;
+    }
 
-    vector<short> v = {1, 2, 3, 4, 5};
+    uint32_t block_size = atoi(argv[2]);
+    if(block_size == 0) {
+        cerr << "Error: Invalid number of samples per block" << endl;
+        return 1;
+    }
 
-    Predictor pr(4, 5);
+    SndfileHandle sndFileIn { argv[1] };
+    if(sndFileIn.error()) {
+        cerr << "Error: invalid input file" << endl;
+        return 1;
+    }
 
-    cout << v.at(1) << endl;
+    if((sndFileIn.format() & SF_FORMAT_TYPEMASK) != SF_FORMAT_WAV) {
+        cerr << "Error: file is not in WAV format" << endl;
+        return 1;
+    }
 
-    pr.populate_v(v);
+    if((sndFileIn.format() & SF_FORMAT_SUBMASK) != SF_FORMAT_PCM_16) {
+        cerr << "Error: file is not in PCM_16 format" << endl;
+        return 1;
+    }
+
+    vector<short> left_channel(block_size);
+    vector<short> differences(block_size);
+
+    size_t nFrames;
+    vector<short> samples(block_size * 2);
+
+    while((nFrames = sndFileIn.readf(samples.data(), block_size))) {
+        samples.resize(nFrames * 2);
+        uint32_t index = 0, n = 0;
+        for(auto s : samples) {
+            index = n % sndFileIn.channels();
+            if(index == 0) left_channel.at(n/2) = s;
+            else differences.at((n-1)/2) = left_channel.at((n-1)/2) - s;
+            n++;
+        }
+    }
+
+
+    Predictor pr(4, left_channel.size());
+
+    cout << left_channel.at(1) << endl;
+
+    pr.populate_v(left_channel);
 
     vector<float> entropies = pr.calculate_entropies(false);
 
-    for( int i = 0; i < entropies.size(); i++){
+    for( uint32_t i = 0; i < entropies.size(); i++){
       cout << entropies.at(i) << endl;
     }
 
