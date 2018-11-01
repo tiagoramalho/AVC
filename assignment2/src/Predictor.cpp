@@ -1,7 +1,9 @@
 #include "Predictor.hpp"
-#include <vector>
+
+#include <algorithm>
 #include <map>
 #include <math.h>
+#include <vector>
 
 
 using namespace std;
@@ -99,3 +101,14 @@ vector<float> Predictor::calculate_entropies(bool save_freqs){
     return entropies;
 
 };
+
+
+uint32_t Predictor::get_best_predictor(){
+    vector<float> entropies = calculate_entropies(false);
+    vector<float>::iterator result = min_element(begin(entropies), end(entropies));
+    return distance(std::begin(entropies), result);
+}
+
+vector<short> Predictor::get_residuals(uint32_t predictor_index){
+    return this->block_all_residuals.at(predictor_index);
+}

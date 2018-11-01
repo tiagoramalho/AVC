@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -114,6 +115,14 @@ class WRITEBits: public ofstream {
          * */
         void writeHeader(uint32_t frames, uint32_t channels, uint32_t samplerates, uint32_t format){
             f << frames << ";" << channels << ";" << samplerates << ";" << format << ";\n";
+        }
+
+        void writeBlockHeader(uint8_t predictor_index, uint32_t block_size, vector<short> seeds){
+            f << predictor_index << ";"<< block_size << ";";
+            for( uint32_t i = 0; i< seeds.size(); i++){
+                f << seeds.at(i) << ";";
+            }
+            f << "\n";
         }
 
         void flush(){
