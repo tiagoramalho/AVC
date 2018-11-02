@@ -115,23 +115,15 @@ void Predictor::clean_averages(){
     this->averages = vector<double> (this->max_order, 0);
 };
 
-vector<short> Predictor::get_best_predictor_settings(uint32_t mode){
+vector<short> Predictor::get_best_predictor_settings(){
     vector<short> settings( 3, 0);
 
-    if(mode){
-        vector<float> entropies = calculate_entropies();
-        vector<float>::iterator result = min_element(begin(entropies), end(entropies));
-    }else{
-
-        vector<double> averages = get_averages();
-        vector<double>::iterator result = min_element(begin(averages), end(averages));
-        short minimum_median_index = distance(begin(averages), result);
-        settings.at(0)= minimum_median_index;
-        settings.at(1)= ceil(log2(*result));
-        settings.at(2)= averages.at(1) == 0 ? 1 : 0 ;
-
-    }
-
+    vector<double> averages = get_averages();
+    vector<double>::iterator result = min_element(begin(averages), end(averages));
+    short minimum_median_index = distance(begin(averages), result);
+    settings.at(0)= minimum_median_index;
+    settings.at(1)= ceil(log2(*result));
+    settings.at(2)= averages.at(1) == 0 ? 1 : 0 ;
 
     return settings;
 }

@@ -87,26 +87,21 @@ int main(int argc, char *argv[]) {
 int decodeMode(string file){
     cout << "decode" << endl;
 
-    // open a golombBits for Reading
-
-    // This m is useless because is never used
-    // TODO: remove m from Golomb Constructor
     // TODO: verify if the file is a Cavlac one
-    uint32_t m = 5;
-    Golomb n(m, file);
+    Golomb n();
 
-    READBits w = n.open_to_read();
+    READBits w (file);
 
     // read header of file
     vector<uint32_t> properties = w.read_header_cavlac();
 
-    for( uint32_t a: properties)
+    for( int a: properties)
         cout << a << ";";
 
     // open an sndfile for writing
     // after having parameters from header of cavlac file
-    SndfileHandle sndFileOut { file, SFM_WRITE, properties.at(3),
-        properties.at(2), properties.at(1) };
+    SndfileHandle sndFileOut { file, SFM_WRITE, (int) properties.at(3),
+        (int) properties.at(2), (int) properties.at(1) };
 
     // start reading frames
 
@@ -140,10 +135,9 @@ int encodeMode(string file, int block_size){
     size_t nFrames;
     vector<short> samples(block_size * 2);
 
-    uint32_t m = 5;
-    Golomb golombBits(m, file+".cavlac");
+    Golomb golo;
 
-    WRITEBits w = golombBits.open_to_write();
+    WRITEBits w (file+".cavlac");
     // frames -> 32 bits -> 4 bytes
     // samplerate -> 32 bits -> 4 bytes
     // channels- > 16 bits -> 2 bytes
@@ -187,7 +181,7 @@ int encodeMode(string file, int block_size){
         char op;
         cin >> op;
         */
-        vector<short> predictor_settings = pr.get_best_predictor_settings(0);
+        vector<short> predictor_settings = pr.get_best_predictor_settings();
 
         //IF U WANT TO PRINT
         //cout << "Constant Or Not: " << predictor_settings.at(2)<<endl;
@@ -208,14 +202,14 @@ int encodeMode(string file, int block_size){
         uint32_t m = pow(2,best_k);
 
         //cout << "m: " << m << endl;
-        golombBits.set_m( m );
+        golo.set_m( m );
 
-        golombBits.write_frame_header( write_header, 8 , w);
+        w.preWrite(write_header, 8);
 
         vector<short> residuals = pr.get_residuals(predictor_used);
 
         for(short const& value: residuals) {
-            golombBits.encode_and_write(value, w);
+            golo.encode_and_write(value, w);
         }
 
         // Write Frame Header
@@ -238,20 +232,19 @@ int encodeMode(string file, int block_size){
         m = pow(2,best_k);
 
         //cout << "m: " << m << endl;
-        golombBits.set_m( m );
+        golo.set_m( m );
 
-        golombBits.write_frame_header( write_header, 8 , w);
+        w.preWrite(write_header, 8);
 
         residuals = pr.get_residuals(predictor_used);
 
         for(short const& value: residuals) {
-          golombBits.encode_and_write(value, w);
+          golo.encode_and_write(value, w);
         }
-
-        
 
 
     }
-    golombBits.close(w);
+
+    w.flush();
     return 0;
 }

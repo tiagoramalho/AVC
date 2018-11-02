@@ -6,18 +6,18 @@
 
 using namespace std;
 
-Golomb::Golomb( uint32_t m , string path): m(m), path(path) {
+Golomb::Golomb(): m(1){
     b = ceil(log2(m));
     t = std::pow(2,b) - m;
 }
 
-READBits Golomb::open_to_read(){
-  return READBits(path);
-}
-
-WRITEBits Golomb::open_to_write(){
-  return WRITEBits(path);
-}
+// READBits Golomb::open_to_read(){
+//   return READBits(path);
+// }
+//
+// WRITEBits Golomb::open_to_write(){
+//   return WRITEBits(path);
+// }
 
 void Golomb::set_m(uint32_t m){
   this->m = m;
@@ -56,14 +56,6 @@ void Golomb::encode_and_write(short number, WRITEBits & w){
     w.preWrite(ret, number_of_bits);
 
     //return std::make_tuple(number_of_bits, ret);
-}
-
-void Golomb::close(WRITEBits & w){
-    w.flush();
-}
-
-void Golomb::write_frame_header(uint32_t write, uint32_t bits, WRITEBits & w){
-    w.preWrite(write, bits);
 }
 
 std::tuple<uint32_t,uint32_t> Golomb::truncatedBinary(uint32_t r){

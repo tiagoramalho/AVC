@@ -11,13 +11,12 @@ class Golomb {
 
     private:
         uint32_t m, b, t;
-        string path;
-        std::tuple<uint32_t,uint32_t> truncatedBinary(uint32_t r);
+        tuple<uint32_t,uint32_t> truncatedBinary(uint32_t r);
 
     public:
-        Golomb( uint32_t m, string path );
-        READBits open_to_read();
-        WRITEBits open_to_write();
+        Golomb();
+        //READBits open_to_read();
+        //WRITEBits open_to_write();
 
         void set_m( uint32_t m);
 
@@ -25,7 +24,6 @@ class Golomb {
 
         short decode(READBits & r);
         void close(WRITEBits & w);
-        void write_frame_header(uint32_t write, uint32_t bits, WRITEBits & w);
 };
 
 #endif
