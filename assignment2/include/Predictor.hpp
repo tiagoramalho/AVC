@@ -12,6 +12,8 @@ class Predictor {
 
     private:
         uint32_t max_order, block_size;
+        vector<double> averages_g;
+
         vector<vector<short>> block_all_residuals ;
 
         // Entropy Calculation

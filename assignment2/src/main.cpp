@@ -52,12 +52,12 @@ int main(int argc, char *argv[]) {
 
     WRITEBits w = golombBits.open_to_write();
     // frames -> 32 bits -> 4 bytes
-    // sampleRate -> 32 bits -> 4 bytes
+    // samplerate -> 32 bits -> 4 bytes
     // channels- > 16 bits -> 2 bytes
     // format -> 16 bits -> 2 bytes
 
+    //TODO ver frames
     w.preWrite(sndFileIn.frames(), 32);
-    //cout << hex << sndFileIn.frames() << endl;
     w.preWrite(sndFileIn.samplerate(), 32);
     w.preWrite(sndFileIn.channels(), 16);
     w.preWrite(sndFileIn.format(), 16);
@@ -102,11 +102,11 @@ int main(int argc, char *argv[]) {
         write_header = write_header << 4;
         write_header = write_header | best_k;
 
-        cout << "Header: " << hex << write_header << endl;
+        //cout << "Header: " << hex << write_header << endl;
 
         uint32_t m = pow(2,best_k);
 
-        cout << "m: " << m << endl;
+        //cout << "m: " << m << endl;
         golombBits.set_m( m );
 
         golombBits.write_frame_header( write_header, 8 , w);
@@ -130,11 +130,11 @@ int main(int argc, char *argv[]) {
         write_header = write_header << 4;
         write_header = write_header | best_k;
 
-        cout << "Header: " << hex << write_header << endl;
+        //cout << "Header: " << hex << write_header << endl;
 
         m = pow(2,best_k);
 
-        cout << "m: " << m << endl;
+        //cout << "m: " << m << endl;
         golombBits.set_m( m );
 
         golombBits.write_frame_header( write_header, 8 , w);
@@ -144,8 +144,7 @@ int main(int argc, char *argv[]) {
         for(short const& value: residuals) {
           golombBits.encode_and_write(value, w);
         }
-        break;
-
     }
+    golombBits.close(w);
     return 0;
 }
