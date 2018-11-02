@@ -61,7 +61,7 @@ void Golomb::close(WRITEBits & w){
     w.flush();
 }
 void Golomb::write_frame_header(uint32_t write, uint32_t bits, WRITEBits & w){
-    w.preWrite(uint32_t write, uint32_t bits);
+    w.preWrite(write, bits);
 }
 
 std::tuple<uint32_t,uint32_t> Golomb::truncatedBinary(uint32_t r){
