@@ -44,13 +44,17 @@ void Golomb::encode_and_write(short number, WRITEBits & w){
 
     uint32_t r = new_number - q*this->m;
 
-    std::tie(r,shift) = truncatedBinary(r);
+    // TODO
+    //if( (this->m & -(this->m)) == this->m)
+    //  std::tie(r,shift) = truncatedBinary(r);
 
     ret = ret << shift;
     ret = ret | r;
 
     uint32_t number_of_bits = q + 1 + shift;
 
+    cout << "number_of_bits " << number_of_bits;
+    cout << " ret " << hex << ret << endl;
 
     w.preWrite(ret, number_of_bits);
 

@@ -42,6 +42,7 @@ class Predictor {
         // Get Id of the best predictor setting
         // 0 - id of the best predictor
         // 1 - value for m in GOlomb encoding
+        // 2 - is frame constant
         vector<short> get_best_predictor_settings(uint32_t mode);
 
         // Get residual values of the best predictor

@@ -139,7 +139,7 @@ vector<double> Predictor::calculate_averages(bool save_freqs){
 };
 
 vector<short> Predictor::get_best_predictor_settings(uint32_t mode){
-    vector<short> settings( 2, 0);
+    vector<short> settings( 3, 0);
 
     if(mode){
         vector<float> entropies = calculate_entropies(false);
@@ -147,9 +147,10 @@ vector<short> Predictor::get_best_predictor_settings(uint32_t mode){
     }else{
         vector<double> averages = calculate_averages(false);
         vector<double>::iterator result = min_element(begin(averages), end(averages));
-        short minimum_median = distance(std::begin(averages), result);
-        settings.at(0)=minimum_median;
-        settings.at(1)= abs(minimum_median);
+        short minimum_median_index = distance(begin(averages), result);
+        settings.at(0)= minimum_median_index;
+        settings.at(1)= ceil(log2(*result));
+        settings.at(2)= averages.at(1) == 0 ? 1 : 0 ;
     }
 
 
