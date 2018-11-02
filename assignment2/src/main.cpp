@@ -12,7 +12,7 @@
 
 using namespace std;
 
-void decodeMode();
+int decodeMode(string file);
 int encodeMode(string file, int block_size);
 
 int main(int argc, char *argv[]) {
@@ -67,8 +67,7 @@ int main(int argc, char *argv[]) {
                 exit(encodeMode(file, block_size));
             }else{
                 // Decoding Mode
-                decodeMode();
-                exit(0);
+                exit(decodeMode(file));
             }
         }else{
             cout << options.help() << endl;
@@ -85,9 +84,36 @@ int main(int argc, char *argv[]) {
 }
 
 
-void decodeMode(){
+int decodeMode(string file){
     cout << "decode" << endl;
 
+    // open a golombBits for Reading
+
+    // This m is useless because is never used
+    // TODO: remove m from Golomb Constructor
+    // TODO: verify if the file is a Cavlac one
+    uint32_t m = 5;
+    Golomb n(m, file);
+
+    READBits w = n.open_to_read();
+
+    vector<uint32_t> properties = w.read_header_cavlac();
+
+    cout << "Properties: ";
+    for(uint32_t s : properties) {
+        cout << s << ",";
+    }
+    cout << endl;
+    // read header of file
+
+    // open an sndfile for writing
+    // after having parameters from header of cavlac file
+
+    // start reading frames
+
+
+
+    return 0;
 }
 
 int encodeMode(string file, int block_size){
@@ -109,7 +135,6 @@ int encodeMode(string file, int block_size){
         return 1;
     }
 
-
     vector<short> left_channel(block_size);
     vector<short> differences(block_size);
 
@@ -117,7 +142,7 @@ int encodeMode(string file, int block_size){
     vector<short> samples(block_size * 2);
 
     uint32_t m = 5;
-    Golomb golombBits(m, "pila.bin");
+    Golomb golombBits(m, file+".cavlac");
 
     WRITEBits w = golombBits.open_to_write();
     // frames -> 32 bits -> 4 bytes
@@ -129,10 +154,14 @@ int encodeMode(string file, int block_size){
     w.preWrite(sndFileIn.frames(), 32);
     w.preWrite(sndFileIn.samplerate(), 32);
     w.preWrite(sndFileIn.channels(), 16);
-    w.preWrite(sndFileIn.format(), 16);
+    w.preWrite(sndFileIn.format(), 32);
+    printf("%04x\n", sndFileIn.format());
     w.preWrite(block_size, 16);
+    cout << "Properties: " << sndFileIn.frames() << "," << sndFileIn.samplerate()
+        << "," << sndFileIn.channels() << "," << sndFileIn.format() << "," << block_size << endl;
 
     // Codificar
+    //
     while((nFrames = sndFileIn.readf(samples.data(), block_size))) {
         // Because of the last block
         // total size may not be multiple of block_size

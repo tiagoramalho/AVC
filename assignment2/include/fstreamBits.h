@@ -38,8 +38,8 @@ class READBits: public ifstream {
          * Função que devolve um item (short) que contem informação nos seus bits mais significativos
          *
          * */
-        short readItem(uint32_t bits){
-            short frame = 0;
+        unsigned short readItem(uint32_t bits){
+            unsigned short frame = 0;
             uint32_t i = 0; 
             while(i < bits){
                 frame = frame <<1;
@@ -66,6 +66,35 @@ class READBits: public ifstream {
             string header;
             std::getline(f, header);
             return header;
+        }
+
+        vector<uint32_t> read_header_cavlac(){
+            vector<uint32_t> header_properties ( 5,0);
+
+            uint32_t frames = readItem(16);
+            frames = frames << 16 ;
+            frames = frames | (readItem(16) & 0x0000FFFF);
+            header_properties.at(0) = frames;
+
+            uint32_t sample_rate = readItem(16);
+            sample_rate = sample_rate << 16;
+            sample_rate = sample_rate | (readItem(16) & 0x0000FFFF);
+            header_properties.at(1) = sample_rate;
+
+            uint32_t channels= readItem(16);
+            header_properties.at(2) = channels;
+
+
+            uint32_t format = readItem(16);
+            format = format << 16;
+            format = format | (readItem(16) & 0x0000FFFF);
+            header_properties.at(3) = format;
+
+
+            uint32_t block_size= readItem(16);
+            header_properties.at(4) = block_size;
+
+            return header_properties;
         }
 };
 

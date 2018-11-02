@@ -61,6 +61,7 @@ void Golomb::encode_and_write(short number, WRITEBits & w){
 void Golomb::close(WRITEBits & w){
     w.flush();
 }
+
 void Golomb::write_frame_header(uint32_t write, uint32_t bits, WRITEBits & w){
     w.preWrite(write, bits);
 }
