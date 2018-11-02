@@ -25,6 +25,7 @@ class Golomb {
 
         short decode(READBits & r);
         void close(WRITEBits & w);
+        void write_frame_header(uint32_t write, uint32_t bits, WRITEBits & w);
 };
 
 #endif
