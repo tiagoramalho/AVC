@@ -40,6 +40,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+
     vector<short> left_channel(block_size);
     vector<short> differences(block_size);
 
@@ -50,6 +51,17 @@ int main(int argc, char *argv[]) {
     Golomb golombBits(m, "pila.bin");
 
     WRITEBits w = golombBits.open_to_write();
+    // frames -> 32 bits -> 4 bytes
+    // sampleRate -> 32 bits -> 4 bytes
+    // channels- > 16 bits -> 2 bytes
+    // format -> 16 bits -> 2 bytes
+
+    w.preWrite(sndFileIn.frames(), 32);
+    //cout << hex << sndFileIn.frames() << endl;
+    w.preWrite(sndFileIn.samplerate(), 32);
+    w.preWrite(sndFileIn.channels(), 16);
+    w.preWrite(sndFileIn.format(), 16);
+    w.preWrite(block_size, 16);
 
     // Codificar
     while((nFrames = sndFileIn.readf(samples.data(), block_size))) {
@@ -74,63 +86,64 @@ int main(int argc, char *argv[]) {
 
         // Generate The residuals
         pr.populate_v(left_channel);
-        // Get best predictor settings
-        //
-        // TODO: Make this all variables
         vector<short> predictor_settings = pr.get_best_predictor_settings(0);
-        cout << "Constant Or Not: " << predictor_settings.at(2)<<endl;
-        cout << "best k: " << predictor_settings.at(1)<<endl;
-        cout << "Predictor Used: " << predictor_settings.at(0) <<endl;
+        
+        //IF U WANT TO PRINT
+        //cout << "Constant Or Not: " << predictor_settings.at(2)<<endl;
+        //cout << "best k: " << predictor_settings.at(1)<<endl;
+        //cout << "Predictor Used: " << predictor_settings.at(0) <<endl;
+        uint8_t constant = predictor_settings.at(2);
+        uint8_t best_k = predictor_settings.at(1);
+        uint8_t predictor_used = predictor_settings.at(0);
 
-        uint32_t write_header = predictor_settings.at(2);
+        uint32_t write_header = constant;
         write_header = write_header << 2;
-        write_header = write_header | predictor_settings.at(0);
+        write_header = write_header | predictor_used;
         write_header = write_header << 4;
-        write_header = write_header | predictor_settings.at(1);
+        write_header = write_header | best_k;
 
         cout << "Header: " << hex << write_header << endl;
 
-        uint32_t m = pow(2,predictor_settings.at(1));
+        uint32_t m = pow(2,best_k);
 
         cout << "m: " << m << endl;
         golombBits.set_m( m );
 
         golombBits.write_frame_header( write_header, 8 , w);
 
-        vector<short> residuals = pr.get_residuals(predictor_settings.at(0));
+        vector<short> residuals = pr.get_residuals(predictor_used);
 
         for(short const& value: residuals) {
           golombBits.encode_and_write(value, w);
         }
 
         // Write Frame Header
+        pr.populate_v(differences);
 
-        // Write Residuals
+        constant = predictor_settings.at(2);
+        best_k = predictor_settings.at(1);
+        predictor_used = predictor_settings.at(0);
 
-        // Generate The residuals
-        // pr.populate_v(differences);
+        write_header = constant;
+        write_header = write_header << 2;
+        write_header = write_header | predictor_used;
+        write_header = write_header << 4;
+        write_header = write_header | best_k;
 
-        // // Get best predictor settings
-        // vector<short> predictor_settings_b = pr.get_best_predictor_settings(0);
+        cout << "Header: " << hex << write_header << endl;
 
-        // cout << "Id Best Predictor Differences: " << predictor_settings_b[0] <<endl;
+        m = pow(2,best_k);
 
-        // // Write Frame Header
-        // // Write Residuals
-        // golombBits.set_m(predictor_settings.at(1));
+        cout << "m: " << m << endl;
+        golombBits.set_m( m );
 
+        golombBits.write_frame_header( write_header, 8 , w);
 
-        // // Get the best ones
-        // vector<short> residuals = pr.get_residuals(predictor_settings.at(0));
+        residuals = pr.get_residuals(predictor_used);
 
-        // double sum = 0.0;
-        // for(uint32_t i = 0; i < differences.size(); i++){
-        //     sum = sum + (abs(differences.at(i))/differences.size());
-        // }
-
-        // cout << "Median of differences " << sum;
-
-        // Write only one block  | Debug purposes
+        for(short const& value: residuals) {
+          golombBits.encode_and_write(value, w);
+        }
         break;
 
     }
