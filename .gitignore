@@ -1,5 +1,7 @@
 # Created by https://www.gitignore.io/api/c++
 
+*.swp
+*.cavlac
 
 *.bin
 *.wav
