@@ -90,7 +90,6 @@ class READBits: public ifstream {
             format = format | (readItem(16) & 0x0000FFFF);
             header_properties.at(3) = format;
 
-
             uint32_t block_size= readItem(16);
             header_properties.at(4) = block_size;
 

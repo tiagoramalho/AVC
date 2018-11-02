@@ -97,17 +97,13 @@ int decodeMode(string file){
 
     READBits w = n.open_to_read();
 
-    vector<uint32_t> properties = w.read_header_cavlac();
-
-    cout << "Properties: ";
-    for(uint32_t s : properties) {
-        cout << s << ",";
-    }
-    cout << endl;
     // read header of file
+    vector<uint32_t> properties = w.read_header_cavlac();
 
     // open an sndfile for writing
     // after having parameters from header of cavlac file
+    SndfileHandle sndFileOut { file, SFM_WRITE, properties.at(3),
+        properties.at(2), properties.at(1) };
 
     // start reading frames
 
@@ -161,7 +157,6 @@ int encodeMode(string file, int block_size){
         << "," << sndFileIn.channels() << "," << sndFileIn.format() << "," << block_size << endl;
 
     // Codificar
-    //
     while((nFrames = sndFileIn.readf(samples.data(), block_size))) {
         // Because of the last block
         // total size may not be multiple of block_size
