@@ -12,7 +12,8 @@ class Predictor {
 
     private:
         uint32_t max_order, block_size;
-        vector<double> averages_g;
+
+        vector<double> averages;
 
         vector<vector<short>> block_all_residuals ;
 
@@ -21,13 +22,22 @@ class Predictor {
         // because the histogram calculations are the same
         // we must calculate the frequency of each residual
         // TODO: save_freqs
-        vector<float> calculate_entropies(bool save_freqs);
+        vector<float> calculate_entropies();
 
         // Average Calculation
         // Calculates the Average of the saved residuals
         // Average is usefull because the value can be used
         // to set the m on Golomb coding
-        vector<double> calculate_averages(bool save_freqs);
+        vector<double> calculate_averages();
+
+
+        // Average Calculation
+        // Calculates the Average of the saved residuals
+        // Average is usefull because the value can be used
+        // to set the m on Golomb coding
+        vector<double> get_averages();
+
+
 
     public:
 
@@ -54,6 +64,10 @@ class Predictor {
 
         // Print a matrix
         void print_matrix( vector<vector<short>> & matrix );
+
+
+        // Clean Averages
+        void clean_averages();
 };
 
 #endif
