@@ -1,5 +1,6 @@
 #include "Golomb.hpp"
 #include "Predictor.hpp"
+#include "cxxopts.hpp"
 
 #include <iostream>
 #include <tuple>
@@ -11,20 +12,88 @@
 
 using namespace std;
 
+void decodeMode();
+int encodeMode(string file, int block_size);
+
 int main(int argc, char *argv[]) {
+    try {
+        cxxopts::Options options("CAVLAC", "Lossless Audio Codec made for CAV");
 
-    if(argc < 3) {
-        cerr << "Usage: wavcp <wav input file> <number of samples per block>" << endl;
-        return 1;
+        // Mode of operation of the codec
+        // 0 - encode
+        // 1 - decode
+        int mode_operation = 0;
+
+        int block_size = 0;
+
+        string file;
+
+        options.add_options()
+            ("h,help", "Print help")
+            ("f,file", "File (obrigatory)", cxxopts::value<std::string>())
+            ("m,modeopps", "Mode of operation (obrigatory)", cxxopts::value(mode_operation))
+            ("b,blocksize", "Block Size (needed when encoding)", cxxopts::value(block_size));
+
+        auto result = options.parse(argc, argv);
+
+        if (result.count("help")){
+            cout << options.help() << endl;
+            exit(0);
+        }
+
+        // Verify if a file was passed because its needed
+        // in both modes of operation
+        if (result.count("f") != 1){
+            cout << endl << "You always need to specify a file" << endl << endl;
+            cout << options.help() << endl;
+            exit(1);
+        }else{
+            file = result["f"].as<string>();
+        }
+
+        if(result.count("m")){
+            mode_operation = result["m"].as<int>();
+            if (  !mode_operation ){
+
+                // Encoding Mode
+                if(result.count("b") != 1){
+                    cout << endl << "In Encoding Mode you need to specify a block size" << endl << endl;
+                    cout << options.help() << endl;
+                    exit(1);
+                }
+
+                block_size = result["b"].as<int>();
+
+                exit(encodeMode(file, block_size));
+            }else{
+                // Decoding Mode
+                decodeMode();
+                exit(0);
+            }
+        }else{
+            cout << options.help() << endl;
+            exit(1);
+        }
+
+        cout << options.help() << endl;
+        exit(0);
+    }catch(const cxxopts::OptionException& e){
+        std::cout << "error parsing options: " << e.what() << std::endl;
+        exit(1);
     }
+    return 0;
+}
 
-    uint32_t block_size = atoi(argv[2]);
-    if(block_size == 0) {
-        cerr << "Error: Invalid number of samples per block" << endl;
-        return 1;
-    }
 
-    SndfileHandle sndFileIn { argv[1] };
+void decodeMode(){
+    cout << "decode" << endl;
+
+}
+
+int encodeMode(string file, int block_size){
+    cout << "encode" << endl;
+
+    SndfileHandle sndFileIn { file };
     if(sndFileIn.error()) {
         cerr << "Error: invalid input file" << endl;
         return 1;
@@ -100,7 +169,7 @@ int main(int argc, char *argv[]) {
         vector<short> residuals = pr.get_residuals(predictor_settings.at(0));
 
         for(short const& value: residuals) {
-          golombBits.encode_and_write(value, w);
+            golombBits.encode_and_write(value, w);
         }
 
         // Write Frame Header
@@ -132,7 +201,6 @@ int main(int argc, char *argv[]) {
 
         // Write only one block  | Debug purposes
         break;
-
     }
     return 0;
 }
