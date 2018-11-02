@@ -202,14 +202,21 @@ int encodeMode(string file, int block_size){
         uint32_t m = pow(2,best_k);
 
         //cout << "m: " << m << endl;
-        golo.set_m( m );
 
+        golo.set_m( m );
         w.preWrite(write_header, 8);
 
-        vector<short> residuals = pr.get_residuals(predictor_used);
+        vector<short> residuals;
 
-        for(short const& value: residuals) {
-            golo.encode_and_write(value, w);
+        /* If constant samples */
+        if (constant == 1)
+        {
+            cout << "Foi constante no left" << endl;
+            golo.encode_and_write(pr.get_residuals(0).at(0), w);
+        } else {
+            residuals = pr.get_residuals(predictor_used);
+            for(short const& value: residuals) 
+                golo.encode_and_write(value, w);
         }
 
         // Write Frame Header
@@ -236,10 +243,15 @@ int encodeMode(string file, int block_size){
 
         w.preWrite(write_header, 8);
 
-        residuals = pr.get_residuals(predictor_used);
-
-        for(short const& value: residuals) {
-          golo.encode_and_write(value, w);
+        /* If constant samples */
+        if (constant == 1)
+        {
+            cout << "Foi constante nas samples" << endl;
+            golo.encode_and_write(pr.get_residuals(0).at(0), w);
+        } else {
+            residuals = pr.get_residuals(predictor_used);
+            for(short const& value: residuals) 
+                golo.encode_and_write(value, w);
         }
 
 

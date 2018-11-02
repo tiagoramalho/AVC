@@ -15,15 +15,14 @@ Predictor::Predictor(uint32_t max_order, uint32_t block_size) :
     averages (max_order, 0),
     block_all_residuals(max_order, vector<short> (block_size))
 {
-    //cout << "New Predictor" << endl;
 }
 
 void Predictor::populate_v(vector<short> & samples) {
-    for (uint32_t i = this->block_size - 1; i > 1; i--)
+    for (uint32_t i = this->block_size - 1; i > 1; i--){
         gen_residuals( samples, i, max_order-1);
+    }
 
     //print_matrix(this->block_all_residuals);
-
 }
 
 void Predictor::print_matrix( vector<vector<short>> & matrix){
@@ -32,16 +31,11 @@ void Predictor::print_matrix( vector<vector<short>> & matrix){
     uint32_t max_order = matrix.size();
     uint32_t block_size = matrix.at(0).size();
 
-    for (i = 0; i < max_order; i++)
-    {
-        //cout << "Order " << i << " : ";
-
-        for (j = 0; j < block_size; j++)
-        {
+    for (i = 0; i < max_order; i++) {
+        for (j = 0; j < block_size; j++){
             cout << matrix.at(i).at(j) << ", ";
         }
-
-        //cout << endl;
+        cout << endl;
     }
 
 }
@@ -55,7 +49,7 @@ short Predictor::gen_residuals(vector<short> & samples, uint32_t index, uint32_t
     else if (order == 0) rn = samples.at(index);
     else if (index < order) rn = 0; 
     else rn = gen_residuals(samples, index, order-1) - gen_residuals(samples, index - 1, order-1);
-    
+
     this->block_all_residuals.at(order).at(index) = rn;
 
     if ( rn < 0 )
@@ -94,21 +88,16 @@ vector<float> Predictor::calculate_entropies(){
       entropies.at(i) = entropy;
       counts.clear();
     }
-
-    //for( uint32_t i = 0; i < entropies.size(); i++){
-        //cout << "Order " << i << " entropy :" << entropies.at(i) << endl;
-    //}
-
     return entropies;
-
 };
 
 vector<double> Predictor::get_averages(){
 
-    for (uint32_t i = 0; i < this->max_order; ++i)
+    for (uint32_t i = 0; i < this->max_order; ++i){
         averages.at(i) = averages.at(i) / this->block_size;
-    return this->averages;
+    }
 
+    return this->averages;
 };
 
 void Predictor::clean_averages(){
