@@ -19,6 +19,8 @@ class Golomb {
         READBits open_to_read();
         WRITEBits open_to_write();
 
+        void set_m( uint32_t m);
+
         void encode_and_write( short number, WRITEBits & w);
 
         short decode(READBits & r);

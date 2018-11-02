@@ -21,6 +21,12 @@ class Predictor {
         // TODO: save_freqs
         vector<float> calculate_entropies(bool save_freqs);
 
+        // Average Calculation
+        // Calculates the Average of the saved residuals
+        // Average is usefull because the value can be used
+        // to set the m on Golomb coding
+        vector<double> calculate_averages(bool save_freqs);
+
     public:
 
         // Constructor
@@ -33,8 +39,10 @@ class Predictor {
         // up to max_order
         short gen_residuals(vector<short> & samples, uint32_t index, uint32_t order);
 
-        // Get Id of the best predictor
-        uint32_t get_best_predictor();
+        // Get Id of the best predictor setting
+        // 0 - id of the best predictor
+        // 1 - value for m in GOlomb encoding
+        vector<short> get_best_predictor_settings(uint32_t mode);
 
         // Get residual values of the best predictor
         vector<short> get_residuals(uint32_t predictor_index);
@@ -43,8 +51,6 @@ class Predictor {
 
         // Print a matrix
         void print_matrix( vector<vector<short>> & matrix );
-
-        float calculate_entropy( vector<short> & matrix);
 };
 
 #endif

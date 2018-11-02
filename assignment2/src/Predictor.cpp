@@ -4,6 +4,7 @@
 #include <map>
 #include <math.h>
 #include <vector>
+#include <numeric>
 
 
 using namespace std;
@@ -107,33 +108,54 @@ vector<float> Predictor::calculate_entropies(bool save_freqs){
 };
 
 
-uint32_t Predictor::get_best_predictor(){
-    vector<float> entropies = calculate_entropies(false);
-    vector<float>::iterator result = min_element(begin(entropies), end(entropies));
-    return distance(std::begin(entropies), result);
+// TODO: As a performance improvment this average could be
+// computed when the matrix is being computed
+vector<double> Predictor::calculate_averages(bool save_freqs){
+
+    vector<double> averages (this->max_order, 0);
+
+
+    for( uint32_t i = 0; i < this->max_order; i++){
+        uint32_t sum = 0;
+
+        for( uint32_t j = 0; j < this->block_size; j++){
+          short value  = this->block_all_residuals.at(i).at(j);
+          if ( value < 0 )
+              sum = sum + (value * -1);
+          else
+              sum = sum + value;
+        }
+
+      averages.at(i) = sum / this->block_size;
+
+    }
+
+    for( uint32_t i = 0; i < averages.size(); i++){
+        cout << "Order " << i << " Average :" << averages.at(i) << endl;
+    }
+
+    return averages;
+
+};
+
+vector<short> Predictor::get_best_predictor_settings(uint32_t mode){
+    vector<short> settings( 2, 0);
+
+    if(mode){
+        vector<float> entropies = calculate_entropies(false);
+        vector<float>::iterator result = min_element(begin(entropies), end(entropies));
+    }else{
+        vector<double> averages = calculate_averages(false);
+        vector<double>::iterator result = min_element(begin(averages), end(averages));
+        short minimum_median = distance(std::begin(averages), result);
+        settings.at(0)=minimum_median;
+        settings.at(1)= abs(minimum_median);
+    }
+
+
+    return settings;
 }
 
 vector<short> Predictor::get_residuals(uint32_t predictor_index){
     return this->block_all_residuals.at(predictor_index);
-}
-
-float Predictor::calculate_entropy( vector<short> & matrix){
-
-    float entropy = 0;
-
-    map<short,long> counts;
-    map<short,long>::iterator it;
-
-    for (uint32_t residual_index = 0; residual_index < matrix.size(); residual_index++) {
-      counts[matrix[residual_index]]++;
-    }
-
-    it = counts.begin();
-    while(it != counts.end()){
-      float p_x = (float)it->second/matrix.size();
-      if (p_x>0) entropy-=p_x*log(p_x)/log(2);
-        it++;
-    }
-
-    return entropy;
 }

@@ -19,6 +19,10 @@ WRITEBits Golomb::open_to_write(){
   return WRITEBits(path);
 }
 
+void Golomb::set_m(uint32_t m){
+  this->m = m;
+}
+
 void Golomb::encode_and_write(short number, WRITEBits & w){
     uint32_t ret = 0;
     uint32_t new_number = 0;

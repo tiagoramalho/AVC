@@ -45,6 +45,8 @@ int main(int argc, char *argv[]) {
     size_t nFrames;
     vector<short> samples(block_size * 2);
 
+    uint32_t m = 5;
+    Golomb golombBits(m, "pila.bin");
     // Codificar
     while((nFrames = sndFileIn.readf(samples.data(), block_size))) {
         // Because of the last block
@@ -54,7 +56,7 @@ int main(int argc, char *argv[]) {
         differences.resize(nFrames);
 
         // Create Predictor
-        Predictor pr(5, left_channel.size());
+        Predictor pr(4, left_channel.size());
 
         uint32_t index = 0, n = 0;
         for(auto s : samples) {
@@ -67,14 +69,28 @@ int main(int argc, char *argv[]) {
         // Generate The residuals
         pr.populate_v(left_channel);
 
+        // Get best predictor settings
+        vector<short> predictor_settings = pr.get_best_predictor_settings(0);
+
+        golombBits.set_m(predictor_settings.at(1));
+
+
         // Get the best ones
-        vector<short> residuals = pr.get_residuals(pr.get_best_predictor());
+        vector<short> residuals = pr.get_residuals(predictor_settings.at(0));
 
-        float pila = pr.calculate_entropy(left_channel);
-        cout << "Original: " << pila << endl;
+        double sum = 0.0;
+        for(uint32_t i = 0; i < differences.size(); i++){
+            sum = sum + (abs(differences.at(i))/differences.size());
+        }
 
-        short o;
+        cout << "Median of differences " << sum;
+
+        char o;
         cin >> o;
+
+
+        // Write only one block  | Debug purposes
+        // break;
 
     }
     return 0;
