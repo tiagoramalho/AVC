@@ -178,7 +178,12 @@ int encodeMode(string file, int block_size){
         }
 
         // Generate The residuals
+        pr.clean_averages();
         pr.populate_v(left_channel);
+        /*
+        char op;
+        cin >> op;
+        */
         vector<short> predictor_settings = pr.get_best_predictor_settings(0);
 
         //IF U WANT TO PRINT
@@ -211,7 +216,9 @@ int encodeMode(string file, int block_size){
         }
 
         // Write Frame Header
+        pr.clean_averages();
         pr.populate_v(differences);
+
 
         constant = predictor_settings.at(2);
         best_k = predictor_settings.at(1);
@@ -237,6 +244,10 @@ int encodeMode(string file, int block_size){
         for(short const& value: residuals) {
           golombBits.encode_and_write(value, w);
         }
+
+        
+
+
     }
     golombBits.close(w);
     return 0;
