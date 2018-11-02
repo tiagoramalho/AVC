@@ -209,13 +209,19 @@ int encodeMode(string file, int block_size){
 
         //cout << "m: " << m << endl;
         golombBits.set_m( m );
-
         golombBits.write_frame_header( write_header, 8 , w);
 
-        vector<short> residuals = pr.get_residuals(predictor_used);
+        vector<short> residuals;
 
-        for(short const& value: residuals) {
-            golombBits.encode_and_write(value, w);
+        /* If constant samples */
+        if (constant == 1)
+        {
+            cout << "Foi constante no left" << endl;
+            golombBits.encode_and_write(pr.get_residuals(0).at(0), w);
+        } else {
+            residuals = pr.get_residuals(predictor_used);
+            for(short const& value: residuals) 
+                golombBits.encode_and_write(value, w);
         }
 
         // Write Frame Header
@@ -242,13 +248,16 @@ int encodeMode(string file, int block_size){
 
         golombBits.write_frame_header( write_header, 8 , w);
 
-        residuals = pr.get_residuals(predictor_used);
-
-        for(short const& value: residuals) {
-          golombBits.encode_and_write(value, w);
+        /* If constant samples */
+        if (constant == 1)
+        {   
+            cout << "Foi constante nas samples" << endl;
+            golombBits.encode_and_write(pr.get_residuals(0).at(0), w);
+        } else {
+            residuals = pr.get_residuals(predictor_used);
+            for(short const& value: residuals) 
+                golombBits.encode_and_write(value, w);
         }
-
-        
 
 
     }

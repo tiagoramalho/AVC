@@ -15,15 +15,12 @@ Predictor::Predictor(uint32_t max_order, uint32_t block_size) :
     averages (max_order, 0),
     block_all_residuals(max_order, vector<short> (block_size))
 {
-    //cout << "New Predictor" << endl;
 }
 
 void Predictor::populate_v(vector<short> & samples) {
     for (uint32_t i = this->block_size - 1; i > 1; i--)
         gen_residuals( samples, i, max_order-1);
-
     //print_matrix(this->block_all_residuals);
-
 }
 
 void Predictor::print_matrix( vector<vector<short>> & matrix){
@@ -32,16 +29,10 @@ void Predictor::print_matrix( vector<vector<short>> & matrix){
     uint32_t max_order = matrix.size();
     uint32_t block_size = matrix.at(0).size();
 
-    for (i = 0; i < max_order; i++)
-    {
-        //cout << "Order " << i << " : ";
-
+    for (i = 0; i < max_order; i++) {
         for (j = 0; j < block_size; j++)
-        {
             cout << matrix.at(i).at(j) << ", ";
-        }
-
-        //cout << endl;
+        cout << endl;
     }
 
 }
