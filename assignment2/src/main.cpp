@@ -100,6 +100,9 @@ int decodeMode(string file){
     // read header of file
     vector<uint32_t> properties = w.read_header_cavlac();
 
+    for( uint32_t a: properties)
+        cout << a << ";";
+
     // open an sndfile for writing
     // after having parameters from header of cavlac file
     SndfileHandle sndFileOut { file, SFM_WRITE, properties.at(3),
