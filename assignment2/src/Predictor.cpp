@@ -11,10 +11,11 @@ using namespace std;
 
 Predictor::Predictor(uint32_t max_order, uint32_t block_size) :
     max_order(max_order),
+    averages_g (this->max_order, 0),
     block_size(block_size),
     block_all_residuals(max_order, vector<short> (block_size))
 {
-    cout << "New Predictor" << endl;
+    //cout << "New Predictor" << endl;
 }
 
 void Predictor::populate_v(vector<short> & samples) {
@@ -25,7 +26,7 @@ void Predictor::populate_v(vector<short> & samples) {
         gen_residuals( samples, i, max_order-1);
     }
 
-    print_matrix(this->block_all_residuals);
+    //print_matrix(this->block_all_residuals);
 
 }
 
@@ -37,14 +38,14 @@ void Predictor::print_matrix( vector<vector<short>> & matrix){
 
     for (i = 0; i < max_order; i++)
     {
-        cout << "Order " << i << " : ";
+        //cout << "Order " << i << " : ";
 
         for (j = 0; j < block_size; j++)
         {
             cout << matrix.at(i).at(j) << ", ";
         }
 
-        cout << endl;
+        //cout << endl;
     }
 
 }
@@ -67,6 +68,12 @@ short Predictor::gen_residuals(vector<short> & samples, uint32_t index, uint32_t
     }
 
     this->block_all_residuals.at(order).at(index) = rn;
+
+    if ( rn < 0 )
+        averages_g.at(order) += (rn * -1);
+    else
+        averages_g.at(order) += rn ;
+
     return rn;
 }
 
@@ -99,9 +106,9 @@ vector<float> Predictor::calculate_entropies(bool save_freqs){
       counts.clear();
     }
 
-    for( uint32_t i = 0; i < entropies.size(); i++){
-        cout << "Order " << i << " entropy :" << entropies.at(i) << endl;
-    }
+    //for( uint32_t i = 0; i < entropies.size(); i++){
+        //cout << "Order " << i << " entropy :" << entropies.at(i) << endl;
+    //}
 
     return entropies;
 
@@ -130,9 +137,10 @@ vector<double> Predictor::calculate_averages(bool save_freqs){
 
     }
 
-    for( uint32_t i = 0; i < averages.size(); i++){
-        cout << "Order " << i << " Average :" << averages.at(i) << endl;
-    }
+    //for( uint32_t i = 0; i < averages.size(); i++){
+        //cout << "Order " << i << " Average :" << averages.at(i) << endl;
+    //}
+
 
     return averages;
 
