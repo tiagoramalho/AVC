@@ -211,8 +211,8 @@ int encodeMode(string file, int block_size){
         /* If constant samples */
         if (constant == 1)
         {
-            cout << "Foi constante no left" << endl;
-            golo.encode_and_write(pr.get_residuals(0).at(0), w);
+            // cout << "Foi constante no left" << endl;
+            w.preWrite(left_channel.at(0), 16);
         } else {
             residuals = pr.get_residuals(predictor_used);
             for(short const& value: residuals) 
@@ -246,8 +246,8 @@ int encodeMode(string file, int block_size){
         /* If constant samples */
         if (constant == 1)
         {
-            cout << "Foi constante nas samples" << endl;
-            golo.encode_and_write(pr.get_residuals(0).at(0), w);
+            // cout << "Foi constante nas samples" << endl;
+            w.preWrite(differences.at(0), 16);
         } else {
             residuals = pr.get_residuals(predictor_used);
             for(short const& value: residuals) 
