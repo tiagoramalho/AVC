@@ -1,6 +1,7 @@
 #include "Golomb.hpp"
 #include "Predictor.hpp"
 #include "cxxopts.hpp"
+#include "wavhist.h"
 
 #include <iostream>
 #include <tuple>
@@ -10,10 +11,11 @@
 #include <sndfile.hh>
 
 
+
 using namespace std;
 
 int decodeMode(string file);
-int encodeMode(string file, int block_size);
+int encodeMode(string file, int block_size, bool histogram);
 
 int main(int argc, char *argv[]) {
     try {
@@ -23,16 +25,18 @@ int main(int argc, char *argv[]) {
         // 0 - encode
         // 1 - decode
         int mode_operation = 0;
-
         int block_size = 0;
-
         string file;
+
+        bool histogram;
+
 
         options.add_options()
             ("h,help", "Print help")
             ("f,file", "File (obrigatory)", cxxopts::value<std::string>())
             ("m,modeopps", "Mode of operation (obrigatory)", cxxopts::value(mode_operation))
-            ("b,blocksize", "Block Size (needed when encoding)", cxxopts::value(block_size));
+            ("b,blocksize", "Block Size (needed when encoding)", cxxopts::value(block_size))
+            ("H,histogram", "If present when executed the program will write the histograms of the residuals", cxxopts::value(histogram));
 
         auto result = options.parse(argc, argv);
 
@@ -63,8 +67,9 @@ int main(int argc, char *argv[]) {
                 }
 
                 block_size = result["b"].as<int>();
+                histogram = result["H"].as<bool>();
 
-                exit(encodeMode(file, block_size));
+                exit(encodeMode(file, block_size, histogram));
             }else{
                 // Decoding Mode
                 exit(decodeMode(file));
@@ -110,7 +115,7 @@ int decodeMode(string file){
     return 0;
 }
 
-int encodeMode(string file, int block_size){
+int encodeMode(string file, int block_size, bool histogram){
     cout << "encode" << endl;
 
     SndfileHandle sndFileIn { file };
@@ -128,6 +133,8 @@ int encodeMode(string file, int block_size){
         cerr << "Error: file is not in PCM_16 format" << endl;
         return 1;
     }
+
+    WAVHist hist { sndFileIn, file };
 
     vector<short> left_channel(block_size);
     vector<short> differences(block_size);
@@ -175,7 +182,6 @@ int encodeMode(string file, int block_size){
         }
 
         // Generate The residuals
-        pr.clean_averages();
         pr.populate_v(left_channel);
         /*
         char op;
@@ -219,6 +225,11 @@ int encodeMode(string file, int block_size){
                 golo.encode_and_write(value, w);
         }
 
+        if(histogram){
+            hist.simple_update_index(0, pr.get_residuals(predictor_used));
+        }
+
+
         // Write Frame Header
         pr.clean_averages();
         pr.populate_v(differences);
@@ -253,10 +264,14 @@ int encodeMode(string file, int block_size){
             for(short const& value: residuals) 
                 golo.encode_and_write(value, w);
         }
+        if(histogram){
+            hist.simple_update_index(1, pr.get_residuals(predictor_used));
+        }
 
 
     }
-
     w.flush();
+    if(histogram)
+        hist.full_dump();
     return 0;
 }
