@@ -169,6 +169,7 @@ int decodeMode(string file)
         for (uint32_t j = 0; j < header_frame.at(1); j++)
         {
             last[j] = r.readItem(16);
+            frames[j] = last[j];
         }
         printf("pup\n");
 
@@ -186,21 +187,21 @@ int decodeMode(string file)
 
             case 1:
                 printf("Best predictor 1");
-                for(int j = 0; j < block_size; j++){
+                for(int j = 1; j < block_size; j++){
                     frames[j*2] = predict1(n.decode(r),last);
                 }
                 break;
 
             case 2:
                 printf("Best predictor 2");
-                for(int j = 0; j < block_size; j++){
+                for(int j = 2; j < block_size; j++){
                     frames[j*2] = predict2(n.decode(r),last);
                 }
                 break;
 
             case 3:
                 printf("Best predictor 3");
-                for(int j = 0; j < block_size; j++){
+                for(int j = 3; j < block_size; j++){
                     frames[j*2] = predict3(n.decode(r),last);
                 }
                 break;
@@ -212,6 +213,7 @@ int decodeMode(string file)
         for (uint32_t j = 0; j < header_frame.at(1); j++)
         {
             last[j] = r.readItem(16);
+            frames[j+1] = last[j];
         }
 
         m = pow(2,header_frame.at(2));
@@ -226,23 +228,27 @@ int decodeMode(string file)
                 break;
 
             case 1:
-                for(int j = 0; j < block_size; j++){
+                for(int j = 1; j < block_size; j++){
                     frames[j*2+1] = predict1(n.decode(r),last);
                 }
                 break;
 
             case 2:
-                for(int j = 0; j < block_size; j++){
+                for(int j = 2; j < block_size; j++){
                     frames[j*2+1] = predict2(n.decode(r),last);
                 }
                 break;
 
             case 3:
-                for(int j = 0; j < block_size; j++){
+                for(int j = 3; j < block_size; j++){
                     frames[j*2+1] = predict3(n.decode(r),last);
                 }
                 break;
         }
+
+        //for( int l = 0; l < block_size; l++){
+        //    printf("%8x\n", frames[l*2]);
+        //}
 
         int count=0;
         short frame [2];
@@ -444,6 +450,11 @@ int encodeMode(string file, int block_size, bool histogram)
             residuals_hist.simple_update_index(5, pr.get_residuals(2));
             residuals_hist.simple_update_index(7, pr.get_residuals(3));
         }
+
+        // Debug Prints
+        //for( int l = 0; l < block_size; l++){
+        //    printf("%8x\n", left_channel.at(l));
+        //}
 
     }
     w.flush();

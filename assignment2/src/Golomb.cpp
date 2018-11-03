@@ -81,7 +81,7 @@ short Golomb::decode(READBits & r){
      * Ver:
      * https://w3.ual.es/~vruiz/Docencia/Apuntes/Coding/Text/03-symbol_encoding/09-Golomb_coding/index.html
      */
-    printf("Entrou no Golomb\n");
+    //printf("Entrou no Golomb\n");
 
     uint32_t q = 0;
     uint32_t result  = 0;
@@ -91,7 +91,7 @@ short Golomb::decode(READBits & r){
         q++;
     }
 
-    printf("MEIO 1\n");
+    //printf("MEIO 1\n");
 
     /*
      * Calculate r
@@ -124,7 +124,7 @@ short Golomb::decode(READBits & r){
     result = q * m + resto;
     
 
-    printf("Saiu no Golomb\n");
+    //printf("Saiu no Golomb\n");
     if(result % 2 == 0)
         return (short) result / 2;
     else
