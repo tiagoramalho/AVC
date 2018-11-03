@@ -7,6 +7,7 @@
 #include <math.h>
 #include <bitset>
 #include <vector>
+#include <queue>
 #include <sndfile.hh>
 
 
@@ -15,7 +16,36 @@ using namespace std;
 int decodeMode(string file);
 int encodeMode(string file, int block_size);
 
-int main(int argc, char *argv[]) {
+short predict0( short residual)
+{
+    return residual;
+}
+
+short predict1( short residual, short last[] )
+{
+    short prediction = residual + last[0];
+    return prediction;
+}
+
+short predict2( short residual, short last[] )
+{
+    short prediction = residual + ( 2 * last[0] - last[1]);
+    last[1] = last[0];
+    last[0] = prediction;
+    return prediction;
+}
+
+short predict3( short residual, short last[] )
+{
+    short prediction = residual + ( 3 * last[0] - 3 * last[1] + last[2]);
+    last[2] = last[1];
+    last[1] = last[0];
+    last[0] = prediction;
+    return prediction;
+}
+
+int main(int argc, char *argv[]) 
+{
     try {
         cxxopts::Options options("CAVLAC", "Lossless Audio Codec made for CAV");
 
@@ -84,11 +114,13 @@ int main(int argc, char *argv[]) {
 }
 
 
-int decodeMode(string file){
-    cout << "decode" << endl;
+int decodeMode(string file)
+{
+    printf("\n========\n Decode \n========\n");
+    short last[3];
 
     // TODO: verify if the file is a Cavlac one
-    Golomb n();
+    Golomb n;
 
     READBits r (file);
 
@@ -101,35 +133,73 @@ int decodeMode(string file){
     int format = (int) properties.at(3);
     int block_size = (int) properties.at(4);
 
-    cout << "Properties: " << number_of_frames << "," << sample_rate << "," << channels << ","<< format << "," << block_size << endl;
+    printf("PROPERTIES of the file:\n \
+            number of frames: %d\n    \
+            sample rate:      %d\n    \
+            channels:         %d\n    \
+            format:           %d\n    \
+            block size:       %d\n", number_of_frames, sample_rate, channels, format, block_size);
 
-    // open an sndfile for writing
+
+    int full_cavlac_frames = number_of_frames/block_size;
+
+    // Open an sndfile for writing
     // after having parameters from header of cavlac file
     string new_file = file.substr(0, file.size()-11);
     SndfileHandle sndFileOut { new_file+"_new.wav", SFM_WRITE,format,channels,sample_rate };
 
     // start reading frames
-    vector<uint32_t> header_frame = r.reade_header_frame();
+    //
+    for( int i = 0; i < full_cavlac_frames; i++){
 
+        // Decode Left Channel
+        vector<uint32_t> header_frame = r.reade_header_frame();
+        uint32_t m = pow(2,header_frame.at(2));
+        n.set_m( m );
+        short frames[block_size * channels];
 
+        switch( header_frame.at(1)){
+            case 0:
+                printf("Best predictor 0");
+                for( int i=0; i < block_size; i = i + 2){
+                    frames[i] = n.decode(r);
+                }
+                break;
 
-    //short frames[block_size * channels];
+            case 1:
+                printf("Best predictor 1");
+                for( int i=0; i < block_size; i = i + 2){
+                    frames[i] = predict1(n.decode(r),last);
+                }
+                break;
 
-    //for( int i=0; i < block_size; i = i + 2){
-    //  frames[i] = n.decode(r);
-    //}
+            case 2:
+                printf("Best predictor 2");
+                for( int i=0; i < block_size; i = i + 2){
+                    frames[i] = predict2(n.decode(r),last);
+                }
+                break;
 
-    //header_frame = r.reade_header_frame();
+            case 3:
+                printf("Best predictor 3");
+                for( int i=0; i < block_size; i = i + 2){
+                    frames[i] = predict3(n.decode(r),last);
+                }
+                break;
+        }
 
-    //for( int i=1; i < block_size; i = i + 2){
-    //  frames[i] = n.decode(r);
-    //}
+        // Decode Differences Channel
+        // TODO
+    }
+
+    // TODO handle the not complete blocks
 
     return 0;
 }
 
-int encodeMode(string file, int block_size){
-    cout << "encode" << endl;
+int encodeMode(string file, int block_size)
+{
+    printf("\n========\n Encode \n========\n");
 
     SndfileHandle sndFileIn { file };
     if(sndFileIn.error()) {
@@ -202,9 +272,9 @@ int encodeMode(string file, int block_size){
         vector<short> predictor_settings = pr.get_best_predictor_settings();
 
         //IF U WANT TO PRINT
-        //cout << "Constant Or Not: " << predictor_settings.at(2)<<endl;
-        //cout << "best k: " << predictor_settings.at(1)<<endl;
-        //cout << "Predictor Used: " << predictor_settings.at(0) <<endl;
+        cout << "Constant Or Not: " << predictor_settings.at(2)<<endl;
+        cout << "best k: " << predictor_settings.at(1)<<endl;
+        cout << "Predictor Used: " << predictor_settings.at(0) <<endl;
         uint8_t constant = predictor_settings.at(2);
         uint8_t best_k = predictor_settings.at(1);
         uint8_t predictor_used = predictor_settings.at(0);

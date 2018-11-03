@@ -112,7 +112,11 @@ class READBits: public ifstream {
             uint32_t predictor = (frame_header >> 4) & 0x3;
             uint32_t best_k = frame_header & 0x0F;
 
-            //printf(" Header read: %u, %u, %u", constant, predictor, best_k);
+            printf(" Header read: %u, %u, %u", constant, predictor, best_k);
+
+            header_properties.at(0) = constant;
+            header_properties.at(1) = predictor;
+            header_properties.at(2) = best_k;
 
             return header_properties;
         }
