@@ -66,7 +66,6 @@ class Predictor {
         // Also cleans
         void set_block_size_and_clean(uint32_t size);
 
-
         // Print a matrix
         void print_matrix( vector<vector<short>> & matrix );
 
