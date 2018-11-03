@@ -228,10 +228,16 @@ int encodeMode(string file, int block_size, bool histogram){
             w.preWrite(left_channel.at(0), 16);
         } else {
             residuals = pr.get_residuals(predictor_used);
-            for(short const& value: residuals) 
-                golo.encode_and_write(value, w);
+            uint32_t i = 0;
+            for (i = 0; i < predictor_used; ++i)
+            {
+                w.preWrite(left_channel.at(i), 16);
+            }
+            for (i = predictor_used; i < residuals.size(); ++i)
+            {
+                golo.encode_and_write(residuals.at(i), w);
+            }
         }
-
         if(histogram){
             hist.simple_update_index(0, pr.get_residuals(predictor_used));
             residuals_hist.simple_update_index(0, pr.get_residuals(0));
@@ -277,10 +283,17 @@ int encodeMode(string file, int block_size, bool histogram){
         {
             // cout << "Foi constante nas samples" << endl;
             w.preWrite(differences.at(0), 16);
-        } else {
+        } else {            
             residuals = pr.get_residuals(predictor_used);
-            for(short const& value: residuals) 
-                golo.encode_and_write(value, w);
+            uint32_t i = 0;
+            for (i = 0; i < predictor_used; ++i)
+            {
+                w.preWrite(differences.at(i), 16);
+            }
+            for (i = predictor_used; i < residuals.size(); ++i)
+            {
+                golo.encode_and_write(residuals.at(i), w);
+            }
         }
         if(histogram){
             hist.simple_update_index(1, pr.get_residuals(predictor_used));
