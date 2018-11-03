@@ -23,26 +23,28 @@ short predict0( short residual)
     return residual;
 }
 
-short predict1( short residual, short last[] )
+short predict1( short residual, vector<short> & last )
 {
     short prediction = residual + last[0];
     return prediction;
 }
 
-short predict2( short residual, short last[] )
+short predict2( short residual, vector<short> & last )
 {
-    short prediction = residual + ( 2 * last[0] - last[1]);
-    last[1] = last[0];
-    last[0] = prediction;
+    short prediction = residual + ( 2 * last[1] - last[0]);
+    last[0] = last[1];
+    last[1] = prediction;
     return prediction;
 }
 
-short predict3( short residual, short last[] )
+short predict3( short residual, vector<short> & last)
 {
-    short prediction = residual + ( 3 * last[0] - 3 * last[1] + last[2]);
-    last[2] = last[1];
-    last[1] = last[0];
-    last[0] = prediction;
+    printf("Predict3\n");
+    short prediction = residual + ( 3 * last[2] - 3 * last[1] + last[0]);
+    last[0] = last[1];
+    last[1] = last[2];
+    last[2] = prediction;
+    printf("Predict3\n");
     return prediction;
 }
 
@@ -122,7 +124,7 @@ int main(int argc, char *argv[])
 int decodeMode(string file)
 {
     printf("\n========\n Decode \n========\n");
-    short last[3];
+    vector<short> last(3,0);
 
     // TODO: verify if the file is a Cavlac one
     Golomb n;
@@ -138,12 +140,12 @@ int decodeMode(string file)
     int format = (int) properties.at(3);
     int block_size = (int) properties.at(4);
 
-    printf("PROPERTIES of the file:\n \
-            number of frames: %d\n    \
-            sample rate:      %d\n    \
-            channels:         %d\n    \
-            format:           %d\n    \
-            block size:       %d\n", number_of_frames, sample_rate, channels, format, block_size);
+    printf("PROPERTIES of the file:\n"
+           "number of frames: %d\n"
+           "sample rate:      %d\n"
+           "channels:         %d\n"
+           "format:           %d\n"
+           "block size:       %d\n", number_of_frames, sample_rate, channels, format, block_size);
 
 
     int full_cavlac_frames = number_of_frames/block_size;
@@ -153,20 +155,32 @@ int decodeMode(string file)
     string new_file = file.substr(0, file.size()-11);
     SndfileHandle sndFileOut { new_file+"_new.wav", SFM_WRITE,format,channels,sample_rate };
 
+    short frames[block_size * channels];
     // start reading frames
     //
     for( int i = 0; i < full_cavlac_frames; i++){
+        printf("pup\n");
 
         // Decode Left Channel
         vector<uint32_t> header_frame = r.reade_header_frame();
+        printf("pup\n");
+
+        for (uint32_t j = 0; j < header_frame.at(1); j++)
+        {
+            printf("pup\n");
+            last[i] = r.readItem(16);
+        }
+        printf("pup\n");
+
         uint32_t m = pow(2,header_frame.at(2));
         n.set_m( m );
-        short frames[block_size * channels];
 
+        printf("pup\n");
         switch( header_frame.at(1)){
             case 0:
                 printf("Best predictor 0");
                 for( int i=0; i < block_size; i = i + 2){
+                    printf("pup\n");
                     frames[i] = n.decode(r);
                 }
                 break;
@@ -174,6 +188,7 @@ int decodeMode(string file)
             case 1:
                 printf("Best predictor 1");
                 for( int i=0; i < block_size; i = i + 2){
+                    printf("pup\n");
                     frames[i] = predict1(n.decode(r),last);
                 }
                 break;
@@ -181,6 +196,7 @@ int decodeMode(string file)
             case 2:
                 printf("Best predictor 2");
                 for( int i=0; i < block_size; i = i + 2){
+                    printf("pup\n");
                     frames[i] = predict2(n.decode(r),last);
                 }
                 break;
@@ -188,6 +204,7 @@ int decodeMode(string file)
             case 3:
                 printf("Best predictor 3");
                 for( int i=0; i < block_size; i = i + 2){
+                    printf("pup\n");
                     frames[i] = predict3(n.decode(r),last);
                 }
                 break;
@@ -195,6 +212,7 @@ int decodeMode(string file)
 
         // Decode Differences Channel
         // TODO
+        break;
     }
 
     // TODO handle the not complete blocks
