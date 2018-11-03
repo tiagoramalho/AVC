@@ -37,6 +37,8 @@ class READBits: public ifstream {
          * bits: numero de bits que contêm informação, isto é que quero ler do ficheiro
          * Função que devolve um item (short) que contem informação nos seus bits mais significativos
          *
+         * TODO:  maybe refactor these functions, they are very difficult to use
+         *        ATTENTION that a refactor here may break code everywhere eles
          * */
         unsigned short readItem(uint32_t bits){
             unsigned short frame = 0;
@@ -71,27 +73,46 @@ class READBits: public ifstream {
         vector<uint32_t> read_header_cavlac(){
             vector<uint32_t> header_properties ( 5,0);
 
+            // Read 32 bits
             uint32_t frames = readItem(16);
             frames = frames << 16 ;
             frames = frames | (readItem(16) & 0x0000FFFF);
             header_properties.at(0) = frames;
 
+            // Read 32 bits
             uint32_t sample_rate = readItem(16);
             sample_rate = sample_rate << 16;
             sample_rate = sample_rate | (readItem(16) & 0x0000FFFF);
             header_properties.at(1) = sample_rate;
 
+            // Read 16
             uint32_t channels= readItem(16);
             header_properties.at(2) = channels;
 
 
+            // Read 32
             uint32_t format = readItem(16);
             format = format << 16;
             format = format | (readItem(16) & 0x0000FFFF);
             header_properties.at(3) = format;
 
+            // read 16
             uint32_t block_size= readItem(16);
             header_properties.at(4) = block_size;
+
+            return header_properties;
+        }
+
+        vector<uint32_t> reade_header_frame(){
+            vector<uint32_t> header_properties ( 3 ,0);
+
+            unsigned short  frame_header = readItem(8) >> 8;
+
+            uint32_t constant = frame_header >> 6;
+            uint32_t predictor = (frame_header >> 4) & 0x3;
+            uint32_t best_k = frame_header & 0x0F;
+
+            //printf(" Header read: %u, %u, %u", constant, predictor, best_k);
 
             return header_properties;
         }

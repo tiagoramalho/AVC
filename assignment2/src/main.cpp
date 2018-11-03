@@ -90,22 +90,40 @@ int decodeMode(string file){
     // TODO: verify if the file is a Cavlac one
     Golomb n();
 
-    READBits w (file);
+    READBits r (file);
 
     // read header of file
-    vector<uint32_t> properties = w.read_header_cavlac();
+    vector<uint32_t> properties = r.read_header_cavlac();
 
-    for( int a: properties)
-        cout << a << ";";
+    int number_of_frames = (int) properties.at(0);
+    int sample_rate = (int) properties.at(1);
+    int channels = (int) properties.at(2);
+    int format = (int) properties.at(3);
+    int block_size = (int) properties.at(4);
+
+    cout << "Properties: " << number_of_frames << "," << sample_rate << "," << channels << ","<< format << "," << block_size << endl;
 
     // open an sndfile for writing
     // after having parameters from header of cavlac file
-    SndfileHandle sndFileOut { file, SFM_WRITE, (int) properties.at(3),
-        (int) properties.at(2), (int) properties.at(1) };
+    string new_file = file.substr(0, file.size()-11);
+    SndfileHandle sndFileOut { new_file+"_new.wav", SFM_WRITE,format,channels,sample_rate };
 
     // start reading frames
+    vector<uint32_t> header_frame = r.reade_header_frame();
 
 
+
+    //short frames[block_size * channels];
+
+    //for( int i=0; i < block_size; i = i + 2){
+    //  frames[i] = n.decode(r);
+    //}
+
+    //header_frame = r.reade_header_frame();
+
+    //for( int i=1; i < block_size; i = i + 2){
+    //  frames[i] = n.decode(r);
+    //}
 
     return 0;
 }
@@ -148,7 +166,7 @@ int encodeMode(string file, int block_size){
     w.preWrite(sndFileIn.samplerate(), 32);
     w.preWrite(sndFileIn.channels(), 16);
     w.preWrite(sndFileIn.format(), 32);
-    printf("%04x\n", sndFileIn.format());
+    //printf("%04x\n", sndFileIn.frames());
     w.preWrite(block_size, 16);
     cout << "Properties: " << sndFileIn.frames() << "," << sndFileIn.samplerate()
         << "," << sndFileIn.channels() << "," << sndFileIn.format() << "," << block_size << endl;
@@ -197,7 +215,7 @@ int encodeMode(string file, int block_size){
         write_header = write_header << 4;
         write_header = write_header | best_k;
 
-        //cout << "Header: " << hex << write_header << endl;
+        printf("Header: %x\n", write_header);
 
         uint32_t m = pow(2,best_k);
 
@@ -211,7 +229,7 @@ int encodeMode(string file, int block_size){
         /* If constant samples */
         if (constant == 1)
         {
-            // cout << "Foi constante no left" << endl;
+            cout << "Foi constante no left" << endl;
             w.preWrite(left_channel.at(0), 16);
         } else {
             residuals = pr.get_residuals(predictor_used);
@@ -234,6 +252,7 @@ int encodeMode(string file, int block_size){
         write_header = write_header << 4;
         write_header = write_header | best_k;
 
+        printf("Header Differences: %x\n", write_header);
         //cout << "Header: " << hex << write_header << endl;
 
         m = pow(2,best_k);
@@ -246,7 +265,7 @@ int encodeMode(string file, int block_size){
         /* If constant samples */
         if (constant == 1)
         {
-            // cout << "Foi constante nas samples" << endl;
+            cout << "Foi constante nas samples" << endl;
             w.preWrite(differences.at(0), 16);
         } else {
             residuals = pr.get_residuals(predictor_used);
@@ -254,9 +273,11 @@ int encodeMode(string file, int block_size){
                 golo.encode_and_write(value, w);
         }
 
+        break;
 
     }
 
     w.flush();
+
     return 0;
 }
