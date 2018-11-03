@@ -13,11 +13,19 @@ class WAVHist {
         std::vector<std::map<short, size_t>> counts;
         std::map<short, size_t> countmono;
         string file_name;
+        bool residuals;
 
     public:
         WAVHist(const SndfileHandle& sfh, string file_name) {
             counts.resize(sfh.channels());
             this->file_name = file_name.substr(0, file_name.find("."));
+            residuals = false;
+        }
+
+        WAVHist(const SndfileHandle& sfh, string file_name, uint8_t size) {
+            counts.resize(sfh.channels() * size);
+            this->file_name = file_name.substr(0, file_name.find("."));
+            residuals = true;
         }
 
         void update(const std::vector<short>& samples) {
@@ -53,15 +61,28 @@ class WAVHist {
         }
 
         void full_dump() const {
-            for (uint8_t i = 0; i < counts.size(); ++i)
-            {
-                std::ofstream myfile;
-                auto s1 = file_name + "_channel" + std::to_string(i) + "_hist.dat";
-                myfile.open(s1);
-                for(auto [value, counter] : counts[i]){
-                    myfile << value << '\t' << counter << '\n';
+            if(residuals){
+                for (uint8_t i = 0; i < counts.size(); ++i)
+                {
+                    std::ofstream myfile;
+                    auto s1 = file_name + "_channel" + std::to_string(i%2) + "_residual" + std::to_string(i/2) + "_hist.dat";
+                    myfile.open(s1);
+                    for(auto [value, counter] : counts[i]){
+                        myfile << value << '\t' << counter << '\n';
+                    }
+                    myfile.close();
                 }
-                myfile.close();
+            } else {
+                for (uint8_t i = 0; i < counts.size(); ++i)
+                {
+                    std::ofstream myfile;
+                    auto s1 = file_name + "_best_channel" + std::to_string(i) + "_hist.dat";
+                    myfile.open(s1);
+                    for(auto [value, counter] : counts[i]){
+                        myfile << value << '\t' << counter << '\n';
+                    }
+                    myfile.close();
+                }
             }
         }
 

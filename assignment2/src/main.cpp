@@ -134,6 +134,7 @@ int encodeMode(string file, int block_size, bool histogram){
         return 1;
     }
 
+    WAVHist residuals_hist { sndFileIn, file, 4 };
     WAVHist hist { sndFileIn, file };
 
     vector<short> left_channel(block_size);
@@ -227,6 +228,10 @@ int encodeMode(string file, int block_size, bool histogram){
 
         if(histogram){
             hist.simple_update_index(0, pr.get_residuals(predictor_used));
+            residuals_hist.simple_update_index(0, pr.get_residuals(0));
+            residuals_hist.simple_update_index(2, pr.get_residuals(1));
+            residuals_hist.simple_update_index(4, pr.get_residuals(2));
+            residuals_hist.simple_update_index(6, pr.get_residuals(3));
         }
 
 
@@ -266,12 +271,18 @@ int encodeMode(string file, int block_size, bool histogram){
         }
         if(histogram){
             hist.simple_update_index(1, pr.get_residuals(predictor_used));
+            residuals_hist.simple_update_index(1, pr.get_residuals(0));
+            residuals_hist.simple_update_index(3, pr.get_residuals(1));
+            residuals_hist.simple_update_index(5, pr.get_residuals(2));
+            residuals_hist.simple_update_index(7, pr.get_residuals(3));
         }
 
 
     }
     w.flush();
-    if(histogram)
+    if(histogram){
         hist.full_dump();
+        residuals_hist.full_dump();
+    }
     return 0;
 }
