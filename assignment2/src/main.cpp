@@ -204,8 +204,9 @@ int decodeMode(string file)
             case 3:
                 printf("Best predictor 3");
                 for( int i=0; i < block_size; i = i + 2){
-                    printf("pup\n");
+                    printf("Isto Está a Demorar muito\n");
                     frames[i] = predict3(n.decode(r),last);
+                    printf("Mas não é a função predict\n");
                 }
                 break;
         }
