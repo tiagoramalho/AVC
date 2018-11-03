@@ -150,6 +150,7 @@ int decodeMode(string file)
 
     int full_cavlac_frames = number_of_frames/block_size;
 
+
     // Open an sndfile for writing
     // after having parameters from header of cavlac file
     string new_file = file.substr(0, file.size()-11);
@@ -167,8 +168,7 @@ int decodeMode(string file)
 
         for (uint32_t j = 0; j < header_frame.at(1); j++)
         {
-            printf("pup\n");
-            last[i] = r.readItem(16);
+            last[j] = r.readItem(16);
         }
         printf("pup\n");
 
@@ -179,41 +179,80 @@ int decodeMode(string file)
         switch( header_frame.at(1)){
             case 0:
                 printf("Best predictor 0");
-                for( int i=0; i < block_size; i = i + 2){
-                    printf("pup\n");
-                    frames[i] = n.decode(r);
+                for(int j = 0; j < block_size; j++){
+                    frames[j*2] = n.decode(r);
                 }
                 break;
 
             case 1:
                 printf("Best predictor 1");
-                for( int i=0; i < block_size; i = i + 2){
-                    printf("pup\n");
-                    frames[i] = predict1(n.decode(r),last);
+                for(int j = 0; j < block_size; j++){
+                    frames[j*2] = predict1(n.decode(r),last);
                 }
                 break;
 
             case 2:
                 printf("Best predictor 2");
-                for( int i=0; i < block_size; i = i + 2){
-                    printf("pup\n");
-                    frames[i] = predict2(n.decode(r),last);
+                for(int j = 0; j < block_size; j++){
+                    frames[j*2] = predict2(n.decode(r),last);
                 }
                 break;
 
             case 3:
                 printf("Best predictor 3");
-                for( int i=0; i < block_size; i = i + 2){
-                    printf("Isto Está a Demorar muito\n");
-                    frames[i] = predict3(n.decode(r),last);
-                    printf("Mas não é a função predict\n");
+                for(int j = 0; j < block_size; j++){
+                    frames[j*2] = predict3(n.decode(r),last);
                 }
                 break;
         }
 
-        // Decode Differences Channel
-        // TODO
-        break;
+
+        header_frame = r.reade_header_frame();
+
+        for (uint32_t j = 0; j < header_frame.at(1); j++)
+        {
+            last[j] = r.readItem(16);
+        }
+
+        m = pow(2,header_frame.at(2));
+        n.set_m( m );
+
+
+        switch( header_frame.at(1)){
+            case 0:
+                for(int j = 0; j < block_size; j++){
+                    frames[j*2+1] = n.decode(r);
+                }
+                break;
+
+            case 1:
+                for(int j = 0; j < block_size; j++){
+                    frames[j*2+1] = predict1(n.decode(r),last);
+                }
+                break;
+
+            case 2:
+                for(int j = 0; j < block_size; j++){
+                    frames[j*2+1] = predict2(n.decode(r),last);
+                }
+                break;
+
+            case 3:
+                for(int j = 0; j < block_size; j++){
+                    frames[j*2+1] = predict3(n.decode(r),last);
+                }
+                break;
+        }
+
+        int count=0;
+        short frame [2];
+        while(count < block_size){
+            frame[0] = frames[count*2];
+            frame[1] = frames[count*2 + 1] + frames[count*2];
+            sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
+            count++;
+        }
+
     }
 
     // TODO handle the not complete blocks
@@ -295,9 +334,9 @@ int encodeMode(string file, int block_size, bool histogram)
         vector<short> predictor_settings = pr.get_best_predictor_settings();
 
         //IF U WANT TO PRINT
-        cout << "Constant Or Not: " << predictor_settings.at(2)<<endl;
-        cout << "best k: " << predictor_settings.at(1)<<endl;
-        cout << "Predictor Used: " << predictor_settings.at(0) <<endl;
+        //cout << "Constant Or Not: " << predictor_settings.at(2)<<endl;
+        //cout << "best k: " << predictor_settings.at(1)<<endl;
+        //cout << "Predictor Used: " << predictor_settings.at(0) <<endl;
         uint8_t constant = predictor_settings.at(2);
         uint8_t best_k = predictor_settings.at(1);
         uint8_t predictor_used = predictor_settings.at(0);
@@ -311,7 +350,7 @@ int encodeMode(string file, int block_size, bool histogram)
         write_header = write_header << 4;
         write_header = write_header | best_k;
 
-        printf("Header: %x\n", write_header);
+        // printf("Header: %x\n", write_header);
 
         uint32_t m = pow(2,best_k);
 
@@ -350,13 +389,11 @@ int encodeMode(string file, int block_size, bool histogram)
             residuals_hist.simple_update_index(6, pr.get_residuals(3));
         }
 
-
         /*
          * Clean averages vector, residuals vector
          */
         pr.set_block_size_and_clean(differences.size());
         pr.populate_v(differences);
-
 
         /*
         * Write Frame Header of differences
@@ -371,7 +408,7 @@ int encodeMode(string file, int block_size, bool histogram)
         write_header = write_header << 4;
         write_header = write_header | best_k;
 
-        printf("Header Differences: %x\n", write_header);
+        // printf("Header Differences: %x\n", write_header);
         //cout << "Header: " << hex << write_header << endl;
 
         m = pow(2,best_k);
@@ -386,7 +423,7 @@ int encodeMode(string file, int block_size, bool histogram)
          */
         if (constant == 1)
         {
-            cout << "Foi constante nas samples" << endl;
+            cout << "Foi constante no right" << endl;
             w.preWrite(differences.at(0), 16);
         } else {
             residuals = pr.get_residuals(predictor_used);
@@ -407,8 +444,6 @@ int encodeMode(string file, int block_size, bool histogram)
             residuals_hist.simple_update_index(5, pr.get_residuals(2));
             residuals_hist.simple_update_index(7, pr.get_residuals(3));
         }
-
-        break;
 
     }
     w.flush();

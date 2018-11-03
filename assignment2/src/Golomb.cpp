@@ -20,7 +20,9 @@ Golomb::Golomb(): m(1){
 // }
 
 void Golomb::set_m(uint32_t m){
-  this->m = m;
+    this->m = m;
+    b = ceil(log2(m));
+    t = std::pow(2,b) - m;
 }
 
 void Golomb::encode_and_write(short number, WRITEBits & w){
@@ -89,22 +91,38 @@ short Golomb::decode(READBits & r){
         q++;
     }
 
+    printf("MEIO 1\n");
+
     /*
      * Calculate r
      */
+
+    uint32_t resto = 0;
+    for (int i = 0; i < b; ++i)
+    {
+        resto = resto << 1 | r.readBits();
+    }
+
+    /*
     uint32_t resto = 0;
     for(uint32_t i = 0; i<b -1; i++){
         resto = resto << 1 | r.readBits();
+        printf("Preso for %d\n", i);
 
     }
+    printf("MEIO 2\n");
+
     if(resto < t){
         result = q * m + resto;
-
+        printf("MEIO 3\n");
     }
     else {
         resto = resto << 1 | r.readBits();
         result = q * m + resto - t;
     }
+    */
+    result = q * m + resto;
+    
 
     printf("Saiu no Golomb\n");
     if(result % 2 == 0)
