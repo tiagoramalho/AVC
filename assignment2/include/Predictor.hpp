@@ -60,14 +60,15 @@ class Predictor {
         // Get residual values of the best predictor
         vector<short> get_residuals(uint32_t predictor_index);
 
-        // Helper Functions
+        //                  HELPER fUNCTIONS
+
+        //Setter, change block size
+        // Also cleans
+        void set_block_size_and_clean(uint32_t size);
 
         // Print a matrix
         void print_matrix( vector<vector<short>> & matrix );
 
-
-        // Clean Averages
-        void clean_averages();
 };
 
 #endif

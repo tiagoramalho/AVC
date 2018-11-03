@@ -1,6 +1,7 @@
 #include "Golomb.hpp"
 #include "Predictor.hpp"
 #include "cxxopts.hpp"
+#include "wavhist.h"
 
 #include <iostream>
 #include <tuple>
@@ -11,10 +12,11 @@
 #include <sndfile.hh>
 
 
+
 using namespace std;
 
 int decodeMode(string file);
-int encodeMode(string file, int block_size);
+int encodeMode(string file, int block_size, bool histogram);
 
 short predict0( short residual)
 {
@@ -44,7 +46,7 @@ short predict3( short residual, short last[] )
     return prediction;
 }
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
     try {
         cxxopts::Options options("CAVLAC", "Lossless Audio Codec made for CAV");
@@ -53,16 +55,18 @@ int main(int argc, char *argv[])
         // 0 - encode
         // 1 - decode
         int mode_operation = 0;
-
         int block_size = 0;
-
         string file;
+
+        bool histogram;
+
 
         options.add_options()
             ("h,help", "Print help")
             ("f,file", "File (obrigatory)", cxxopts::value<std::string>())
             ("m,modeopps", "Mode of operation (obrigatory)", cxxopts::value(mode_operation))
-            ("b,blocksize", "Block Size (needed when encoding)", cxxopts::value(block_size));
+            ("b,blocksize", "Block Size (needed when encoding)", cxxopts::value(block_size))
+            ("H,histogram", "If present when executed the program will write the histograms of the residuals", cxxopts::value(histogram));
 
         auto result = options.parse(argc, argv);
 
@@ -93,8 +97,9 @@ int main(int argc, char *argv[])
                 }
 
                 block_size = result["b"].as<int>();
+                histogram = result["H"].as<bool>();
 
-                exit(encodeMode(file, block_size));
+                exit(encodeMode(file, block_size, histogram));
             }else{
                 // Decoding Mode
                 exit(decodeMode(file));
@@ -197,10 +202,9 @@ int decodeMode(string file)
     return 0;
 }
 
-int encodeMode(string file, int block_size)
+int encodeMode(string file, int block_size, bool histogram)
 {
     printf("\n========\n Encode \n========\n");
-
     SndfileHandle sndFileIn { file };
     if(sndFileIn.error()) {
         cerr << "Error: invalid input file" << endl;
@@ -216,6 +220,9 @@ int encodeMode(string file, int block_size)
         cerr << "Error: file is not in PCM_16 format" << endl;
         return 1;
     }
+
+    WAVHist residuals_hist { sndFileIn, file, 4 };
+    WAVHist hist { sndFileIn, file };
 
     vector<short> left_channel(block_size);
     vector<short> differences(block_size);
@@ -242,17 +249,19 @@ int encodeMode(string file, int block_size)
         << "," << sndFileIn.channels() << "," << sndFileIn.format() << "," << block_size << endl;
 
     // Codificar
+    Predictor pr(4, block_size);
     while((nFrames = sndFileIn.readf(samples.data(), block_size))) {
-        // Because of the last block
-        // total size may not be multiple of block_size
+        /*
+         * Resize vector, because last block couldn't be multiple of block size
+         */
         samples.resize(nFrames * 2);
         left_channel.resize(nFrames);
         differences.resize(nFrames);
 
-        // Create Predictor
-        // TODO: Maybe put out of the loop
-        // and do a resize of the pr->block_size
-        Predictor pr(4, left_channel.size());
+        /*
+         * Resize block size and vector of residuals on Predictor
+         */
+        pr.set_block_size_and_clean(left_channel.size());
 
         uint32_t index = 0, n = 0;
         for(auto s : samples) {
@@ -263,12 +272,7 @@ int encodeMode(string file, int block_size)
         }
 
         // Generate The residuals
-        pr.clean_averages();
         pr.populate_v(left_channel);
-        /*
-        char op;
-        cin >> op;
-        */
         vector<short> predictor_settings = pr.get_best_predictor_settings();
 
         //IF U WANT TO PRINT
@@ -279,6 +283,9 @@ int encodeMode(string file, int block_size)
         uint8_t best_k = predictor_settings.at(1);
         uint8_t predictor_used = predictor_settings.at(0);
 
+        /*
+        * Write Frame Header of left channel
+        */
         uint32_t write_header = constant;
         write_header = write_header << 2;
         write_header = write_header | predictor_used;
@@ -296,22 +303,45 @@ int encodeMode(string file, int block_size)
 
         vector<short> residuals;
 
-        /* If constant samples */
+
+        /*
+         * If constant samples only need write one frame
+         */
         if (constant == 1)
         {
             cout << "Foi constante no left" << endl;
             w.preWrite(left_channel.at(0), 16);
         } else {
             residuals = pr.get_residuals(predictor_used);
-            for(short const& value: residuals) 
-                golo.encode_and_write(value, w);
+            uint32_t i = 0;
+            for (i = 0; i < predictor_used; ++i)
+            {
+                w.preWrite(left_channel.at(i), 16);
+            }
+            for (i = predictor_used; i < residuals.size(); ++i)
+            {
+                golo.encode_and_write(residuals.at(i), w);
+            }
+        }
+        if(histogram){
+            hist.simple_update_index(0, pr.get_residuals(predictor_used));
+            residuals_hist.simple_update_index(0, pr.get_residuals(0));
+            residuals_hist.simple_update_index(2, pr.get_residuals(1));
+            residuals_hist.simple_update_index(4, pr.get_residuals(2));
+            residuals_hist.simple_update_index(6, pr.get_residuals(3));
         }
 
-        // Write Frame Header
-        pr.clean_averages();
+
+        /*
+         * Clean averages vector, residuals vector
+         */
+        pr.set_block_size_and_clean(differences.size());
         pr.populate_v(differences);
 
 
+        /*
+        * Write Frame Header of differences
+        */
         constant = predictor_settings.at(2);
         best_k = predictor_settings.at(1);
         predictor_used = predictor_settings.at(0);
@@ -332,22 +362,42 @@ int encodeMode(string file, int block_size)
 
         w.preWrite(write_header, 8);
 
-        /* If constant samples */
+        /*
+         * If constant samples only need write one frame
+         */
         if (constant == 1)
         {
             cout << "Foi constante nas samples" << endl;
             w.preWrite(differences.at(0), 16);
         } else {
             residuals = pr.get_residuals(predictor_used);
-            for(short const& value: residuals) 
-                golo.encode_and_write(value, w);
+            uint32_t i = 0;
+            for (i = 0; i < predictor_used; ++i)
+            {
+                w.preWrite(differences.at(i), 16);
+            }
+            for (i = predictor_used; i < residuals.size(); ++i)
+            {
+                golo.encode_and_write(residuals.at(i), w);
+            }
+        }
+        if(histogram){
+            hist.simple_update_index(1, pr.get_residuals(predictor_used));
+            residuals_hist.simple_update_index(1, pr.get_residuals(0));
+            residuals_hist.simple_update_index(3, pr.get_residuals(1));
+            residuals_hist.simple_update_index(5, pr.get_residuals(2));
+            residuals_hist.simple_update_index(7, pr.get_residuals(3));
         }
 
         break;
 
     }
-
     w.flush();
+
+    if(histogram){
+        hist.full_dump();
+        residuals_hist.full_dump();
+    }
 
     return 0;
 }
