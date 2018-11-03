@@ -17,6 +17,13 @@ Predictor::Predictor(uint32_t max_order, uint32_t block_size) :
 {
 }
 
+void Predictor::set_block_size_and_clean(uint32_t size){
+    this->block_size = size;
+    this->block_all_residuals.clear();
+    this->block_all_residuals.resize(this->max_order, vector<short>(size,0));
+    this->averages = vector<double> (this->max_order, 0);
+}
+
 void Predictor::populate_v(vector<short> & samples) {
     for (uint32_t i = this->block_size - 1; i > 1; i--){
         gen_residuals( samples, i, max_order-1);
@@ -98,10 +105,6 @@ vector<double> Predictor::get_averages(){
     }
 
     return this->averages;
-};
-
-void Predictor::clean_averages(){
-    this->averages = vector<double> (this->max_order, 0);
 };
 
 vector<short> Predictor::get_best_predictor_settings(){

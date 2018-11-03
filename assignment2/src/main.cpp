@@ -162,17 +162,19 @@ int encodeMode(string file, int block_size, bool histogram){
         << "," << sndFileIn.channels() << "," << sndFileIn.format() << "," << block_size << endl;
 
     // Codificar
+    Predictor pr(4, block_size);
     while((nFrames = sndFileIn.readf(samples.data(), block_size))) {
-        // Because of the last block
-        // total size may not be multiple of block_size
+        /*
+         * Resize vector, because last block couldn't be multiple of block size
+         */
         samples.resize(nFrames * 2);
         left_channel.resize(nFrames);
         differences.resize(nFrames);
 
-        // Create Predictor
-        // TODO: Maybe put out of the loop
-        // and do a resize of the pr->block_size
-        Predictor pr(4, left_channel.size());
+        /*
+         * Resize block size and vector of residuals on Predictor
+         */
+        pr.set_block_size_and_clean(left_channel.size());
 
         uint32_t index = 0, n = 0;
         for(auto s : samples) {
@@ -184,13 +186,11 @@ int encodeMode(string file, int block_size, bool histogram){
 
         // Generate The residuals
         pr.populate_v(left_channel);
-        /*
-        char op;
-        cin >> op;
-        */
         vector<short> predictor_settings = pr.get_best_predictor_settings();
 
-        //IF U WANT TO PRINT
+        /*  
+         * Debug prints
+         */
         //cout << "Constant Or Not: " << predictor_settings.at(2)<<endl;
         //cout << "best k: " << predictor_settings.at(1)<<endl;
         //cout << "Predictor Used: " << predictor_settings.at(0) <<endl;
@@ -198,6 +198,9 @@ int encodeMode(string file, int block_size, bool histogram){
         uint8_t best_k = predictor_settings.at(1);
         uint8_t predictor_used = predictor_settings.at(0);
 
+        /*
+        * Write Frame Header of left channel 
+        */
         uint32_t write_header = constant;
         write_header = write_header << 2;
         write_header = write_header | predictor_used;
@@ -215,7 +218,10 @@ int encodeMode(string file, int block_size, bool histogram){
 
         vector<short> residuals;
 
-        /* If constant samples */
+
+        /* 
+         * If constant samples only need write one frame
+         */
         if (constant == 1)
         {
             // cout << "Foi constante no left" << endl;
@@ -235,11 +241,16 @@ int encodeMode(string file, int block_size, bool histogram){
         }
 
 
-        // Write Frame Header
-        pr.clean_averages();
+        /*
+         * Clean averages vector, residuals vector
+         */
+        pr.set_block_size_and_clean(differences.size());
         pr.populate_v(differences);
 
 
+        /*
+        * Write Frame Header of differences
+        */
         constant = predictor_settings.at(2);
         best_k = predictor_settings.at(1);
         predictor_used = predictor_settings.at(0);
@@ -259,7 +270,9 @@ int encodeMode(string file, int block_size, bool histogram){
 
         w.preWrite(write_header, 8);
 
-        /* If constant samples */
+        /* 
+         * If constant samples only need write one frame
+         */
         if (constant == 1)
         {
             // cout << "Foi constante nas samples" << endl;
