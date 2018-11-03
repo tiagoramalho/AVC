@@ -18,11 +18,6 @@ using namespace std;
 int decodeMode(string file);
 int encodeMode(string file, int block_size, bool histogram);
 
-short predict0( short residual)
-{
-    return residual;
-}
-
 short predict1( short residual, vector<short> & last )
 {
     short prediction = residual + last[0];
@@ -39,7 +34,7 @@ short predict2( short residual, vector<short> & last )
 
 short predict3( short residual, vector<short> & last)
 {
-    printf("Predict3\n");
+    //printf("Predict3\n");
     short prediction = residual + ( 3 * last[2] - 3 * last[1] + last[0]);
     last[0] = last[1];
     last[1] = last[2];
@@ -123,7 +118,7 @@ int main(int argc, char *argv[])
 
 int decodeMode(string file)
 {
-    printf("\n========\n Decode \n========\n");
+    printf("========\n Decode \n========\n");
     vector<short> last(3,0);
 
     // TODO: verify if the file is a Cavlac one
@@ -160,47 +155,44 @@ int decodeMode(string file)
     // start reading frames
     //
     for( int i = 0; i < full_cavlac_frames; i++){
-        printf("pup\n");
-
         // Decode Left Channel
         vector<uint32_t> header_frame = r.reade_header_frame();
-        printf("pup\n");
+
+        printf("FRAME LEFT%d:\n"
+           "constant:   %d\n"
+           "predictor:  %d\n"
+           "k:          %d\n",i, header_frame.at(0), header_frame.at(1), header_frame.at(2));
+
 
         for (uint32_t j = 0; j < header_frame.at(1); j++)
         {
             last[j] = r.readItem(16);
             frames[j] = last[j];
         }
-        printf("pup\n");
 
         uint32_t m = pow(2,header_frame.at(2));
         n.set_m( m );
 
-        printf("pup\n");
         switch( header_frame.at(1)){
             case 0:
-                printf("Best predictor 0");
                 for(int j = 0; j < block_size; j++){
                     frames[j*2] = n.decode(r);
                 }
                 break;
 
             case 1:
-                printf("Best predictor 1");
                 for(int j = 1; j < block_size; j++){
                     frames[j*2] = predict1(n.decode(r),last);
                 }
                 break;
 
             case 2:
-                printf("Best predictor 2");
                 for(int j = 2; j < block_size; j++){
                     frames[j*2] = predict2(n.decode(r),last);
                 }
                 break;
 
             case 3:
-                printf("Best predictor 3");
                 for(int j = 3; j < block_size; j++){
                     frames[j*2] = predict3(n.decode(r),last);
                 }
@@ -209,6 +201,12 @@ int decodeMode(string file)
 
 
         header_frame = r.reade_header_frame();
+
+        printf("FRAME DIFFS%d:\n"
+           "constant:   %d\n"
+           "predictor:  %d\n"
+           "k:          %d\n",i, header_frame.at(0), header_frame.at(1), header_frame.at(2));
+
 
         for (uint32_t j = 0; j < header_frame.at(1); j++)
         {
@@ -223,41 +221,42 @@ int decodeMode(string file)
         switch( header_frame.at(1)){
             case 0:
                 for(int j = 0; j < block_size; j++){
-                    frames[j*2+1] = n.decode(r);
+                    frames[j*2+1] = frames[j*2] + n.decode(r);
                 }
                 break;
 
             case 1:
                 for(int j = 1; j < block_size; j++){
-                    frames[j*2+1] = predict1(n.decode(r),last);
+                    frames[j*2+1] = frames[j*2] + predict1(n.decode(r),last);
                 }
                 break;
 
             case 2:
                 for(int j = 2; j < block_size; j++){
-                    frames[j*2+1] = predict2(n.decode(r),last);
+                    frames[j*2+1] = frames[j*2] + predict2(n.decode(r),last);
                 }
                 break;
 
             case 3:
                 for(int j = 3; j < block_size; j++){
-                    frames[j*2+1] = predict3(n.decode(r),last);
+                    frames[j*2+1] = frames[j*2] + predict3(n.decode(r),last);
                 }
                 break;
         }
 
-        //for( int l = 0; l < block_size; l++){
-        //    printf("%8x\n", frames[l*2]);
-        //}
-
-        int count=0;
-        short frame [2];
-        while(count < block_size){
-            frame[0] = frames[count*2];
-            frame[1] = frames[count*2 + 1] + frames[count*2];
-            sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
-            count++;
+        for( int l = 0; l < block_size; l++){
+            printf("%3d -> %8x | %8x\n",l,  frames[l*2], frames[l*2 + 1]);
         }
+
+        sndFileOut.writef(frames, block_size);
+        //int count=0;
+        //short frame [2];
+        //while(count < block_size){
+        //    frame[0] = frames[count*2];
+        //    frame[1] = frames[count*2 + 1] + frames[count*2];
+        //    sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
+        //    count++;
+        //}
 
     }
 
@@ -268,7 +267,7 @@ int decodeMode(string file)
 
 int encodeMode(string file, int block_size, bool histogram)
 {
-    printf("\n========\n Encode \n========\n");
+    printf("========\n Encode \n========\n");
     SndfileHandle sndFileIn { file };
     if(sndFileIn.error()) {
         cerr << "Error: invalid input file" << endl;
@@ -307,13 +306,18 @@ int encodeMode(string file, int block_size, bool histogram)
     w.preWrite(sndFileIn.samplerate(), 32);
     w.preWrite(sndFileIn.channels(), 16);
     w.preWrite(sndFileIn.format(), 32);
-    //printf("%04x\n", sndFileIn.frames());
     w.preWrite(block_size, 16);
-    cout << "Properties: " << sndFileIn.frames() << "," << sndFileIn.samplerate()
-        << "," << sndFileIn.channels() << "," << sndFileIn.format() << "," << block_size << endl;
+
+    printf("PROPERTIES of the file:\n"
+           "number of frames: %d\n"
+           "sample rate:      %d\n"
+           "channels:         %d\n"
+           "format:           %d\n"
+           "block size:       %d\n", sndFileIn.frames(), sndFileIn.samplerate(), sndFileIn.channels(), sndFileIn.format(), block_size);
 
     // Codificar
     Predictor pr(4, block_size);
+    int count = 0;
     while((nFrames = sndFileIn.readf(samples.data(), block_size))) {
         /*
          * Resize vector, because last block couldn't be multiple of block size
@@ -355,6 +359,11 @@ int encodeMode(string file, int block_size, bool histogram)
         write_header = write_header | predictor_used;
         write_header = write_header << 4;
         write_header = write_header | best_k;
+        printf("FRAME LEFT%d:\n"
+           "constant:   %d\n"
+           "predictor:  %d\n"
+           "k:          %d\n",count, constant, predictor_used, best_k);
+
 
         // printf("Header: %x\n", write_header);
 
@@ -414,6 +423,12 @@ int encodeMode(string file, int block_size, bool histogram)
         write_header = write_header << 4;
         write_header = write_header | best_k;
 
+        printf("FRAME DIFFS%d:\n"
+           "constant:   %d\n"
+           "predictor:  %d\n"
+           "k:          %d\n",count, constant, predictor_used , best_k);
+
+
         // printf("Header Differences: %x\n", write_header);
         //cout << "Header: " << hex << write_header << endl;
 
@@ -452,9 +467,11 @@ int encodeMode(string file, int block_size, bool histogram)
         }
 
         // Debug Prints
-        //for( int l = 0; l < block_size; l++){
-        //    printf("%8x\n", left_channel.at(l));
-        //}
+        for( int l = 0; l < nFrames; l++){
+            printf("%3d -> %8x | %8x\n",l,  left_channel.at(l), left_channel.at(l) + differences.at(l));
+        }
+
+        count++;
 
     }
     w.flush();
