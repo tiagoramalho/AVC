@@ -26,14 +26,14 @@ short predict1( short residual, vector<short> & frames , int idx)
 
 short predict2( short residual, vector<short> & frames , int idx)
 {
-    short prediction = residual + ( 2 * frames.at(idx-2) - frames.at(idx-1));
+    short prediction = residual + ( 2 * frames.at(idx-1) - frames.at(idx-2));
     return prediction;
 }
 
 short predict3( short residual, vector<short> & frames, int idx)
 {
     //printf("Predict3\n");
-    short prediction = residual + ( 3 * frames.at(idx-3) - 3 * frames.at(idx-2) + frames.at(idx-1));
+    short prediction = residual + ( 3 * frames.at(idx-1) - 3 * frames.at(idx-2) + frames.at(idx-3));
     return prediction;
 }
 
@@ -237,11 +237,11 @@ int decodeMode(string file)
         }
         
         for( int l = 0; l < block_size; l++){
-            printf("%3d -> %8x | %8x\n",l,  frames_left.at(l), frames_right[l]+frames_left.at(l));
+            printf("%3d -> %8x | %8x\n",l,  frames_left.at(l), frames_right.at(l) + frames_left.at(l));
             short frame [2];
             frame[0] = frames_left.at(l);
-            frame[1] = frames_right[l]+frames_left.at(l);
-            sndFileOut.writef(frame, 2);
+            frame[1] = frames_right.at(l) + frames_left.at(l);
+            sndFileOut.writef(frame, 1);
         }
 
         /*
@@ -255,6 +255,8 @@ int decodeMode(string file)
         //    count++;
         //}
         */
+
+
     }
 
     // TODO handle the not complete blocks
@@ -331,8 +333,10 @@ int encodeMode(string file, int block_size, bool histogram)
         uint32_t index = 0, n = 0;
         for(auto s : samples) {
             index = n % sndFileIn.channels();
-            if(index == 0) left_channel.at(n/2) = s;
-            else differences.at((n-1)/2) = left_channel.at((n-1)/2) - s;
+            if(index == 0)
+                left_channel.at(n/2) = s;
+            else 
+                differences.at((n-1)/2) = s - left_channel.at((n-1)/2);
             n++;
         }
 
@@ -469,7 +473,7 @@ int encodeMode(string file, int block_size, bool histogram)
         }
 
         count++;
-        
+
 
     }
     w.flush();
