@@ -33,7 +33,7 @@ short predict2( short residual, vector<short> & frames , int idx)
 short predict3( short residual, vector<short> & frames, int idx)
 {
     //printf("Predict3\n");
-    short prediction = residual + ( 3 * frames.at(idx-1) - 3 * frames.at(idx-2) + frames.at(idx-3));
+    short prediction = residual + ( 3 * frames.at(idx-1) - 3 * frames.at(idx-2) + frames.at(idx-3) );
     return prediction;
 }
 
@@ -240,7 +240,7 @@ int decodeMode(string file)
             printf("%3d -> %8x | %8x\n",l,  frames_left.at(l), frames_right.at(l) + frames_left.at(l));
             short frame [2];
             frame[0] = frames_left.at(l);
-            frame[1] = frames_right.at(l) + frames_left.at(l);
+            frame[1] = frames_right.at(l);
             sndFileOut.writef(frame, 1);
         }
 
@@ -312,7 +312,7 @@ int encodeMode(string file, int block_size, bool histogram)
            "sample rate:      %d\n"
            "channels:         %d\n"
            "format:           %d\n"
-           "block size:       %d\n", sndFileIn.frames(), sndFileIn.samplerate(), sndFileIn.channels(), sndFileIn.format(), block_size);
+           "block size:       %d\n", (int) sndFileIn.frames(), sndFileIn.samplerate(), sndFileIn.channels(), sndFileIn.format(), block_size);
 
     // Codificar
     Predictor pr(4, block_size);
@@ -336,7 +336,7 @@ int encodeMode(string file, int block_size, bool histogram)
             if(index == 0)
                 left_channel.at(n/2) = s;
             else 
-                differences.at((n-1)/2) = s - left_channel.at((n-1)/2);
+                differences.at((n-1)/2) = s;
             n++;
         }
 
@@ -410,6 +410,8 @@ int encodeMode(string file, int block_size, bool histogram)
          */
         pr.set_block_size_and_clean(differences.size());
         pr.populate_v(differences);
+        predictor_settings = pr.get_best_predictor_settings();
+
 
         /*
         * Write Frame Header of differences
@@ -447,6 +449,7 @@ int encodeMode(string file, int block_size, bool histogram)
         {
             cout << "Foi constante no right" << endl;
             w.preWrite(differences.at(0), 16);
+            break;
         } else {
             residuals = pr.get_residuals(predictor_used);
             uint32_t i = 0;
@@ -468,7 +471,7 @@ int encodeMode(string file, int block_size, bool histogram)
         }
 
         // Debug Prints
-        for( int l = 0; l < nFrames; l++){
+        for( uint32_t l = 0; l < nFrames; l++){
             printf("%3d -> %8x | %8x\n",l,  left_channel.at(l), left_channel.at(l) + differences.at(l));
         }
 

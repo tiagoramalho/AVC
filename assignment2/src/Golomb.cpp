@@ -98,7 +98,7 @@ short Golomb::decode(READBits & r){
      */
 
     uint32_t resto = 0;
-    for (int i = 0; i < b; ++i)
+    for (uint32_t i = 0; i < b; ++i)
     {
         resto = resto << 1 | r.readBits();
     }
