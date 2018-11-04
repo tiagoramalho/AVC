@@ -18,28 +18,22 @@ using namespace std;
 int decodeMode(string file);
 int encodeMode(string file, int block_size, bool histogram);
 
-short predict1( short residual, vector<short> & last )
+short predict1( short residual, vector<short> & frames , int idx)
 {
-    short prediction = residual + last[0];
+    short prediction = residual + frames.at(idx-1);
     return prediction;
 }
 
-short predict2( short residual, vector<short> & last )
+short predict2( short residual, vector<short> & frames , int idx)
 {
-    short prediction = residual + ( 2 * last[1] - last[0]);
-    last[0] = last[1];
-    last[1] = prediction;
+    short prediction = residual + ( 2 * frames.at(idx-2) - frames.at(idx-1));
     return prediction;
 }
 
-short predict3( short residual, vector<short> & last)
+short predict3( short residual, vector<short> & frames, int idx)
 {
     //printf("Predict3\n");
-    short prediction = residual + ( 3 * last[2] - 3 * last[1] + last[0]);
-    last[0] = last[1];
-    last[1] = last[2];
-    last[2] = prediction;
-    printf("Predict3\n");
+    short prediction = residual + ( 3 * frames.at(idx-3) - 3 * frames.at(idx-2) + frames.at(idx-1));
     return prediction;
 }
 
@@ -119,7 +113,6 @@ int main(int argc, char *argv[])
 int decodeMode(string file)
 {
     printf("========\n Decode \n========\n");
-    vector<short> last(3,0);
 
     // TODO: verify if the file is a Cavlac one
     Golomb n;
@@ -150,8 +143,10 @@ int decodeMode(string file)
     // after having parameters from header of cavlac file
     string new_file = file.substr(0, file.size()-11);
     SndfileHandle sndFileOut { new_file+"_new.wav", SFM_WRITE,format,channels,sample_rate };
+    
+    vector<short> frames_left(block_size,0);
+    vector<short> frames_right(block_size,0);
 
-    short frames[block_size * channels];
     // start reading frames
     //
     for( int i = 0; i < full_cavlac_frames; i++){
@@ -166,8 +161,7 @@ int decodeMode(string file)
 
         for (uint32_t j = 0; j < header_frame.at(1); j++)
         {
-            last[j] = r.readItem(16);
-            frames[j] = last[j];
+            frames_left[j] = r.readItem(16);
         }
 
         uint32_t m = pow(2,header_frame.at(2));
@@ -176,30 +170,30 @@ int decodeMode(string file)
         switch( header_frame.at(1)){
             case 0:
                 for(int j = 0; j < block_size; j++){
-                    frames[j*2] = n.decode(r);
+                    frames_left.at(j) = n.decode(r);
                 }
                 break;
 
             case 1:
                 for(int j = 1; j < block_size; j++){
-                    frames[j*2] = predict1(n.decode(r),last);
+                    frames_left.at(j) = predict1(n.decode(r),frames_left, j);
                 }
                 break;
 
             case 2:
                 for(int j = 2; j < block_size; j++){
-                    frames[j*2] = predict2(n.decode(r),last);
+                    frames_left.at(j) = predict2(n.decode(r),frames_left, j);
                 }
                 break;
 
             case 3:
                 for(int j = 3; j < block_size; j++){
-                    frames[j*2] = predict3(n.decode(r),last);
+                    frames_left.at(j) = predict3(n.decode(r),frames_left, j);
                 }
                 break;
         }
 
-
+        
         header_frame = r.reade_header_frame();
 
         printf("FRAME DIFFS%d:\n"
@@ -210,44 +204,47 @@ int decodeMode(string file)
 
         for (uint32_t j = 0; j < header_frame.at(1); j++)
         {
-            last[j] = r.readItem(16);
-            frames[j+1] = last[j];
+            frames_right[j] = r.readItem(16);
         }
 
         m = pow(2,header_frame.at(2));
         n.set_m( m );
 
-
         switch( header_frame.at(1)){
             case 0:
                 for(int j = 0; j < block_size; j++){
-                    frames[j*2+1] = frames[j*2] + n.decode(r);
+                    frames_right.at(j) = n.decode(r);
                 }
                 break;
 
             case 1:
                 for(int j = 1; j < block_size; j++){
-                    frames[j*2+1] = frames[j*2] + predict1(n.decode(r),last);
+                    frames_right.at(j) = predict1(n.decode(r),frames_right, j);
                 }
                 break;
 
             case 2:
                 for(int j = 2; j < block_size; j++){
-                    frames[j*2+1] = frames[j*2] + predict2(n.decode(r),last);
+                    frames_right.at(j) = predict2(n.decode(r),frames_right, j);
                 }
                 break;
 
             case 3:
                 for(int j = 3; j < block_size; j++){
-                    frames[j*2+1] = frames[j*2] + predict3(n.decode(r),last);
+                    frames_right.at(j) = predict3(n.decode(r),frames_right, j);
                 }
                 break;
         }
-
+        
         for( int l = 0; l < block_size; l++){
-            printf("%3d -> %8x | %8x\n",l,  frames[l*2], frames[l*2 + 1]);
+            printf("%3d -> %8x | %8x\n",l,  frames_left.at(l), frames_right[l]+frames_left.at(l));
+            short frame [2];
+            frame[0] = frames_left.at(l);
+            frame[1] = frames_right[l]+frames_left.at(l);
+            sndFileOut.writef(frame, 2);
         }
 
+        /*
         sndFileOut.writef(frames, block_size);
         //int count=0;
         //short frame [2];
@@ -257,7 +254,7 @@ int decodeMode(string file)
         //    sndFileOut.writef(frame, (sizeof(frame)*8)/16/channels);
         //    count++;
         //}
-
+        */
     }
 
     // TODO handle the not complete blocks
@@ -472,6 +469,7 @@ int encodeMode(string file, int block_size, bool histogram)
         }
 
         count++;
+        
 
     }
     w.flush();
