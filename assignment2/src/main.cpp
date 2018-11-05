@@ -95,7 +95,7 @@ vector <int> frames_lossy_decode(uint32_t predictor, READBits & r, Golomb & n, i
     vector<int> frames(size,0);
     for (uint32_t j = 0; j < predictor; j++)
     {
-        frames[j] = r.readItem(16 - shamt) << shamt;
+        frames[j] = ((r.readItem(16 - shamt) << 1) | 1U ) << (shamt-1);
     }
 
     uint32_t m = pow(2,k);
