@@ -574,7 +574,6 @@ int encodeMode(string file, int block_size, bool histogram)
         {
             cout << "Foi constante no right" << endl;
             w.preWrite(differences.at(0), 16);
-            break;
         } else {
             residuals = pr.get_residuals(predictor_used);
             uint32_t i = 0;
