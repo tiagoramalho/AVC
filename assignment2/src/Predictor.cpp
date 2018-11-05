@@ -95,6 +95,19 @@ void Predictor::gen_lossy_residuals(vector<int> & samples, int shamnt){
     last.at(2).resize(2,0);
     last.at(3).resize(3,0);
 
+    for (uint32_t i = 0; i < last.at(1).size(); ++i)
+    {
+        last.at(1).at(i) = ((((samples.at(i) >> shamnt) << 1) | 1U) << (shamnt-1)); 
+    }
+    for (uint32_t i = 0; i < last.at(2).size(); ++i)
+    {
+        last.at(2).at(i) = ((((samples.at(i) >> shamnt) << 1) | 1U) << (shamnt-1));
+    }
+    for (uint32_t i = 0; i < last.at(3).size(); ++i)
+    {
+        last.at(3).at(i) = ((((samples.at(i) >> shamnt) << 1) | 1U) << (shamnt-1));
+    }
+
     this->block_all_residuals.resize(this->max_order, vector<int>(samples.size(),0));
     
     //TODO otimizar para 0 
@@ -116,17 +129,13 @@ void Predictor::gen_lossy_residuals(vector<int> & samples, int shamnt){
                     break;
 
                 case 1:
-                    last.at(j).at(0) =  x_tilde.at(j);
+                    if (i > 0)
+                        last.at(j).at(0) =  x_tilde.at(j);
                     break;
 
                 case 2:
-                    if(i == 0){
-                        last.at(j).at(1) = x_tilde.at(j);
-
-                    }else if(i==1){
-                        last.at(j).at(0) = x_tilde.at(j);
-                    }
-                    else{
+                    if (i > 1)
+                    {
                         int tmp = last.at(j).at(0);
                         last.at(j).at(0) = (2 * x_tilde.at(j) ) - last.at(j).at(1) ;
                         last.at(j).at(1) = tmp;
@@ -134,16 +143,8 @@ void Predictor::gen_lossy_residuals(vector<int> & samples, int shamnt){
                     break;
 
                 case 3:
-                    if(i == 0){
-                        last.at(j).at(2) = x_tilde.at(j);
-                    }
-                    else if(i==1){
-                        last.at(j).at(1) = x_tilde.at(j);
-                    }
-                    else if(i==2){
-                        last.at(j).at(0) = x_tilde.at(j);
-                    }
-                    else{
+                    if (i>2)
+                    {
                         int tmp = last.at(j).at(0);
                         int tmp2 = last.at(j).at(1);
                         last.at(j).at(0) = 3 * x_tilde.at(j) - 3*last.at(j).at(1) + last.at(j).at(2);
@@ -203,6 +204,7 @@ vector<short> Predictor::get_best_predictor_settings(){
     vector<double>::iterator result = min_element(begin(averages), end(averages));
     short minimum_median_index = distance(begin(averages), result);
     settings.at(0)= minimum_median_index;
+    cout << minimum_median_index << endl; 
     if(*result < 1){
         settings.at(1)= 1;
     }

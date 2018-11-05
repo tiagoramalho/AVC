@@ -197,12 +197,12 @@ int main(int argc, char *argv[])
                 block_size = result["b"].as<int>();
                 histogram = result["H"].as<bool>();
 
-                exit(encodeLossyMode(file, block_size, histogram, 1));
+                exit(encodeLossyMode(file, block_size, histogram, 8));
             }else{
                 /*
                  * Decoding Mode
                  */
-                exit(decodeLossyMode(file,1));
+                exit(decodeLossyMode(file,8));
             }
         }else{
             cout << options.help() << endl;
