@@ -18,6 +18,10 @@ using namespace std;
 int decodeMode(string file);
 int encodeMode(string file, int block_size, bool histogram);
 
+int encodeLossyMode(string file, int block_size, bool histogram, int shamt);
+int decodeLossyMode(string file, int shamt);
+
+
 int predict1( int residual, vector<int> & frames , int idx)
 {
     int prediction = residual + frames.at(idx-1);
@@ -85,6 +89,46 @@ vector <int> frames_decode(uint32_t predictor, READBits & r, Golomb & n, int k, 
     }
     return frames;
 }
+
+vector <int> frames_lossy_decode(uint32_t predictor, READBits & r, Golomb & n, int k, int size, int shamt){
+
+    vector<int> frames(size,0);
+    for (uint32_t j = 0; j < predictor; j++)
+    {
+        frames[j] = r.readItem(16 - shamt) << shamt;
+    }
+
+    uint32_t m = pow(2,k);
+    n.set_m( m );
+
+    switch( predictor ){
+        case 0:
+            for(int j = 0; j < size; j++){
+                frames.at(j) = n.decode(r) << shamt;
+            }
+            break;
+
+        case 1:
+            for(int j = 1; j < size; j++){
+                frames.at(j) = predict1(n.decode(r) << shamt, frames, j);
+            }
+            break;
+
+        case 2:
+            for(int j = 2; j < size; j++){
+                frames.at(j) = predict2(n.decode(r) << shamt, frames, j);
+            }
+            break;
+
+        case 3:
+            for(int j = 3; j < size; j++){
+                frames.at(j) = predict3(n.decode(r) << shamt, frames, j);
+            }
+            break;
+    }
+    return frames;
+}
+
 void write_samples_block(int size, vector<int> left, vector<int> right, SndfileHandle & sndFileOut){
 
     for( int l = 0; l < size; l++){
@@ -153,12 +197,12 @@ int main(int argc, char *argv[])
                 block_size = result["b"].as<int>();
                 histogram = result["H"].as<bool>();
 
-                exit(encodeMode(file, block_size, histogram));
+                exit(encodeLossyMode(file, block_size, histogram, 1));
             }else{
                 /*
                  * Decoding Mode
                  */
-                exit(decodeMode(file));
+                exit(decodeLossyMode(file,1));
             }
         }else{
             cout << options.help() << endl;
@@ -471,7 +515,7 @@ int encodeMode(string file, int block_size, bool histogram)
     return 0;
 }
 
-int encodeLossyMode(string file, int block_size, bool histogram)
+int encodeLossyMode(string file, int block_size, bool histogram, int shamt)
 {
     printf("========\n Encode \n========\n");
     SndfileHandle sndFileIn { file };
@@ -549,7 +593,7 @@ int encodeLossyMode(string file, int block_size, bool histogram)
         /*
          * Generate The residuals
          */
-        pr.gen_lossy_residuals(left_channel, 2);
+        pr.gen_lossy_residuals(left_channel, shamt);
         //pr.populate_v(left_channel);
 
         /*
@@ -589,7 +633,7 @@ int encodeLossyMode(string file, int block_size, bool histogram)
             uint32_t i = 0;
             for (i = 0; i < predictor_used; ++i)
             {
-                w.preWrite(left_channel.at(i), 16);
+                w.preWrite(left_channel.at(i) >> shamt, 16 - shamt);
             }
             for (i = predictor_used; i < residuals.size(); ++i)
             {
@@ -608,7 +652,7 @@ int encodeLossyMode(string file, int block_size, bool histogram)
          * Clean averages vector, residuals vector
          */
         pr.set_block_size_and_clean(differences.size());
-        pr.gen_lossy_residuals(differences, 2);
+        pr.gen_lossy_residuals(differences, shamt);
         //pr.populate_v(differences);
         predictor_settings = pr.get_best_predictor_settings();
 
@@ -643,7 +687,7 @@ int encodeLossyMode(string file, int block_size, bool histogram)
             uint32_t i = 0;
             for (i = 0; i < predictor_used; ++i)
             {
-                w.preWrite(differences.at(i), 16);
+                w.preWrite(differences.at(i) >> shamt, 16 - shamt);
             }
             for (i = predictor_used; i < residuals.size(); ++i)
             {
@@ -674,7 +718,7 @@ int encodeLossyMode(string file, int block_size, bool histogram)
     return 0;
 }
 
-int decodeLossyMode(string file)
+int decodeLossyMode(string file, int shamt)
 {
     printf("========\n Decode \n========\n");
 
@@ -723,7 +767,7 @@ int decodeLossyMode(string file)
 
 
             frames_left.resize(block_size);
-            frames_left = frames_decode(header_frame.at(1), r, n, header_frame.at(2), block_size);
+            frames_left = frames_lossy_decode(header_frame.at(1), r, n, header_frame.at(2), block_size, shamt);
         }
 
         /*
@@ -736,7 +780,7 @@ int decodeLossyMode(string file)
         }else{
 
             frames_right.resize(block_size);
-            frames_right = frames_decode(header_frame.at(1), r, n, header_frame.at(2), block_size);
+            frames_right = frames_lossy_decode(header_frame.at(1), r, n, header_frame.at(2), block_size, shamt);
 
         }
         write_samples_block(block_size, frames_left, frames_right, sndFileOut);
@@ -751,7 +795,7 @@ int decodeLossyMode(string file)
             frames_left = constant_frame(lastBlock, r);
         }else{
             frames_left.resize(lastBlock);
-            frames_left = frames_decode(header_frame.at(1), r, n, header_frame.at(2), lastBlock);
+            frames_left = frames_lossy_decode(header_frame.at(1), r, n, header_frame.at(2), lastBlock, shamt);
 
         }
 
@@ -761,7 +805,7 @@ int decodeLossyMode(string file)
             frames_right = constant_frame(lastBlock, r);
         }else{
             frames_right.resize(lastBlock);
-            frames_right = frames_decode(header_frame.at(1), r, n, header_frame.at(2), lastBlock);
+            frames_right = frames_lossy_decode(header_frame.at(1), r, n, header_frame.at(2), lastBlock, shamt);
         }
         write_samples_block(lastBlock, frames_left, frames_right, sndFileOut);
     }
