@@ -104,25 +104,25 @@ vector <int> frames_lossy_decode(uint32_t predictor, READBits & r, Golomb & n, i
     switch( predictor ){
         case 0:
             for(int j = 0; j < size; j++){
-                frames.at(j) = n.decode(r) << shamt;
+                frames.at(j) = ((n.decode(r) << 1) | 1U ) << (shamt-1);
             }
             break;
 
         case 1:
             for(int j = 1; j < size; j++){
-                frames.at(j) = predict1(n.decode(r) << shamt, frames, j);
+                frames.at(j) = predict1(((n.decode(r) << 1) | 1U ) << (shamt-1), frames, j);
             }
             break;
 
         case 2:
             for(int j = 2; j < size; j++){
-                frames.at(j) = predict2(n.decode(r) << shamt, frames, j);
+                frames.at(j) = predict2(((n.decode(r) << 1) | 1U ) << (shamt-1), frames, j);
             }
             break;
 
         case 3:
             for(int j = 3; j < size; j++){
-                frames.at(j) = predict3(n.decode(r) << shamt, frames, j);
+                frames.at(j) = predict3(((n.decode(r) << 1) | 1U ) << (shamt-1), frames, j);
             }
             break;
     }
@@ -283,6 +283,14 @@ int decodeMode(string file)
             frames_right.resize(block_size);
             frames_right = frames_decode(header_frame.at(1), r, n, header_frame.at(2), block_size);
 
+        }
+        uint32_t k = 0;
+        while(k < frames_left.size()){
+            if(frames_left.at(k) != (short)frames_left.at(k) || frames_right.at(k) != (short)frames_right.at(k)){
+                cout << "BELA MERDA DEU OVERFLOW" << endl;
+            }
+        
+        
         }
         write_samples_block(block_size, frames_left, frames_right, sndFileOut);
     }
