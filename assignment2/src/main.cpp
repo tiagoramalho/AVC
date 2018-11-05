@@ -86,6 +86,17 @@ vector <int> frames_decode(uint32_t predictor, READBits & r, Golomb & n, int k, 
     }
     return frames;
 }
+void write_samples_block(int size, vector<int> left, vector<int> right, SndfileHandle & sndFileOut){
+
+    for( int l = 0; l < size; l++){
+        //printf("%3d -> %8x | %8x\n",l,  frames_left.at(l), frames_right.at(l) + frames_left.at(l));
+        short frame [2];
+        frame[0] = left.at(l);
+        frame[1] = right.at(l);
+        sndFileOut.writef(frame, 1);
+    }
+
+}
 
 int main(int argc, char *argv[])
 {
@@ -169,7 +180,9 @@ int decodeMode(string file)
 
     READBits r (file);
 
-    // read header of file
+    /*
+     * Read header of file
+     */
     vector<uint32_t> properties = r.read_header_cavlac();
 
     int number_of_frames = (int) properties.at(0);
@@ -177,38 +190,28 @@ int decodeMode(string file)
     int channels = (int) properties.at(2);
     int format = (int) properties.at(3);
     int block_size = (int) properties.at(4);
-
-    printf("PROPERTIES of the file:\n"
-            "number of frames: %d\n"
-            "sample rate:      %d\n"
-            "channels:         %d\n"
-            "format:           %d\n"
-            "block size:       %d\n", number_of_frames, sample_rate, channels, format, block_size);
-
-
     int full_cavlac_frames = number_of_frames/block_size;
     int lastBlock = number_of_frames - (full_cavlac_frames*block_size);
 
 
-    // Open an sndfile for writing
-    // after having parameters from header of cavlac file
+    /*
+     * Open an sndfile for writing, after having parameters from header of cavlac file
+     */
     string new_file = file.substr(0, file.size()-11);
     SndfileHandle sndFileOut { new_file+"_new.wav", SFM_WRITE,format,channels,sample_rate };
 
     vector<int> frames_left(block_size,0);
     vector<int> frames_right(block_size,0);
 
-    // start reading frames
-    //
+    /*
+     * Start reading frames
+     */
+    vector<uint32_t> header_frame;
     for( int i = 0; i < full_cavlac_frames; i++){
-        // Decode Left Channel
-        vector<uint32_t> header_frame = r.reade_header_frame();
-
-        printf("FRAME LEFT%d:\n"
-                "constant:   %d\n"
-                "predictor:  %d\n"
-                "k:          %d\n",i, header_frame.at(0), header_frame.at(1), header_frame.at(2));
-        uint32_t m = 0;
+        /*
+         * Decode Left Channel
+         */
+        header_frame = r.reade_header_frame();
         if(header_frame.at(0) == 1){
             frames_left.resize(block_size);
             frames_left = constant_frame(block_size, r);
@@ -218,50 +221,13 @@ int decodeMode(string file)
 
             frames_left.resize(block_size);
             frames_left = frames_decode(header_frame.at(1), r, n, header_frame.at(2), block_size);
-            
-            
-            /*for (uint32_t j = 0; j < header_frame.at(1); j++)
-            {
-                frames_left[j] = r.readItem(16);
-            }
-
-            m = pow(2,header_frame.at(2));
-            n.set_m( m );
-
-            switch( header_frame.at(1)){
-                case 0:
-                    for(int j = 0; j < block_size; j++){
-                        frames_left.at(j) = n.decode(r);
-                    }
-                    break;
-
-                case 1:
-                    for(int j = 1; j < block_size; j++){
-                        frames_left.at(j) = predict1(n.decode(r),frames_left, j);
-                    }
-                    break;
-
-                case 2:
-                    for(int j = 2; j < block_size; j++){
-                        frames_left.at(j) = predict2(n.decode(r),frames_left, j);
-                    }
-                    break;
-
-                case 3:
-                    for(int j = 3; j < block_size; j++){
-                        frames_left.at(j) = predict3(n.decode(r),frames_left, j);
-                    }
-                    break;
-            }*/
         }
 
 
+        /*
+         * Decode Right Channel
+         */
         header_frame = r.reade_header_frame();
-
-        printf("FRAME DIFFS%d:\n"
-                "constant:   %d\n"
-                "predictor:  %d\n"
-                "k:          %d\n",i, header_frame.at(0), header_frame.at(1), header_frame.at(2));
         if(header_frame.at(0) == 1){
             frames_right.resize(block_size);
             frames_right = constant_frame(block_size, r);
@@ -270,157 +236,32 @@ int decodeMode(string file)
             frames_right.resize(block_size);
             frames_right = frames_decode(header_frame.at(1), r, n, header_frame.at(2), block_size);
 
-            /*for (uint32_t j = 0; j < header_frame.at(1); j++)
-            {
-                frames_right[j] = r.readItem(16);
-            }
-
-            m = pow(2,header_frame.at(2));
-            n.set_m( m );
-
-            switch( header_frame.at(1)){
-                case 0:
-                    for(int j = 0; j < block_size; j++){
-                        frames_right.at(j) = n.decode(r);
-                    }
-                    break;
-
-                case 1:
-                    for(int j = 1; j < block_size; j++){
-                        frames_right.at(j) = predict1(n.decode(r),frames_right, j);
-                    }
-                    break;
-
-                case 2:
-                    for(int j = 2; j < block_size; j++){
-                        frames_right.at(j) = predict2(n.decode(r),frames_right, j);
-                    }
-                    break;
-
-                case 3:
-                    for(int j = 3; j < block_size; j++){
-                        frames_right.at(j) = predict3(n.decode(r),frames_right, j);
-                    }
-                    break;
-            }*/
-
         }
-        for( int l = 0; l < block_size; l++){
-            printf("%3d -> %8x | %8x\n",l,  frames_left.at(l), frames_right.at(l) + frames_left.at(l));
-            short frame [2];
-            frame[0] = frames_left.at(l);
-            frame[1] = frames_right.at(l);
-            sndFileOut.writef(frame, 1);
-        }
+        write_samples_block(block_size, frames_left, frames_right, sndFileOut);
     }
-
-    // TODO handle the not complete blocks
-    vector<uint32_t> header_frame = r.reade_header_frame();
-
-    printf("LAST_FRAME:\n"
-            "constant:   %d\n"
-            "predictor:  %d\n"
-            "k:          %d\n", header_frame.at(0), header_frame.at(1), header_frame.at(2));
-
-    uint32_t m = 0;
-    if(header_frame.at(0) == 1){
-        frames_left.resize(lastBlock);
-        frames_left = constant_frame(lastBlock, r);
-    }else{
+    /*
+     * Decode last block
+     */
+    if(lastBlock > 0){
+        header_frame = r.reade_header_frame();
+        if(header_frame.at(0) == 1){
+            frames_left.resize(lastBlock);
+            frames_left = constant_frame(lastBlock, r);
+        }else{
             frames_left.resize(lastBlock);
             frames_left = frames_decode(header_frame.at(1), r, n, header_frame.at(2), lastBlock);
 
-        /*for (uint32_t j = 0; j < header_frame.at(1); j++)
-        {
-            frames_left[j] = r.readItem(16);
         }
 
-        m = pow(2,header_frame.at(2));
-        n.set_m( m );
-
-        switch( header_frame.at(1)){
-            case 0:
-                for(int j = 0; j < lastBlock; j++){
-                    frames_left.at(j) = n.decode(r);
-                }
-                break;
-
-            case 1:
-                for(int j = 1; j < lastBlock; j++){
-                    frames_left.at(j) = predict1(n.decode(r),frames_left, j);
-                }
-                break;
-
-            case 2:
-                for(int j = 2; j < lastBlock; j++){
-                    frames_left.at(j) = predict2(n.decode(r),frames_left, j);
-                }
-                break;
-
-            case 3:
-                for(int j = 3; j < lastBlock; j++){
-                    frames_left.at(j) = predict3(n.decode(r),frames_left, j);
-                }
-                break;
-        }*/
-
-    }
-
-    header_frame = r.reade_header_frame();
-
-    printf("LAST FRAME DIFF:\n"
-            "constant:   %d\n"
-            "predictor:  %d\n"
-            "k:          %d\n", header_frame.at(0), header_frame.at(1), header_frame.at(2));
-
-
-    if(header_frame.at(0) == 1){
-        frames_right.resize(lastBlock);
-        frames_right = constant_frame(lastBlock, r);
-    }else{
-        frames_right.resize(lastBlock);
-        frames_right = frames_decode(header_frame.at(1), r, n, header_frame.at(2), lastBlock);
-        /*for (uint32_t j = 0; j < header_frame.at(1); j++)
-        {
-            frames_right[j] = r.readItem(16);
+        header_frame = r.reade_header_frame();
+        if(header_frame.at(0) == 1){
+            frames_right.resize(lastBlock);
+            frames_right = constant_frame(lastBlock, r);
+        }else{
+            frames_right.resize(lastBlock);
+            frames_right = frames_decode(header_frame.at(1), r, n, header_frame.at(2), lastBlock);
         }
-
-        m = pow(2,header_frame.at(2));
-        n.set_m( m );
-
-        switch( header_frame.at(1)){
-            case 0:
-                for(int j = 0; j < lastBlock; j++){
-                    frames_right.at(j) = n.decode(r);
-                }
-                break;
-
-            case 1:
-                for(int j = 1; j < lastBlock; j++){
-                    frames_right.at(j) = predict1(n.decode(r),frames_right, j);
-                }
-                break;
-
-            case 2:
-                for(int j = 2; j < lastBlock; j++){
-                    frames_right.at(j) = predict2(n.decode(r),frames_right, j);
-                }
-                break;
-
-            case 3:
-                for(int j = 3; j < lastBlock; j++){
-                    frames_right.at(j) = predict3(n.decode(r),frames_right, j);
-                }
-                break;
-        }*/
-
-    }
-    for( int l = 0; l < lastBlock; l++){
-        printf("%3d -> %8x | %8x\n",l,  frames_left.at(l), frames_right.at(l) + frames_left.at(l));
-        short frame [2];
-        frame[0] = frames_left.at(l);
-        frame[1] = frames_right.at(l);
-        sndFileOut.writef(frame, 1);
+        write_samples_block(lastBlock, frames_left, frames_right, sndFileOut);
     }
 
     return 0;

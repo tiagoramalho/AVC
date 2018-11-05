@@ -11,14 +11,6 @@ Golomb::Golomb(): m(1){
     t = std::pow(2,b) - m;
 }
 
-// READBits Golomb::open_to_read(){
-//   return READBits(path);
-// }
-//
-// WRITEBits Golomb::open_to_write(){
-//   return WRITEBits(path);
-// }
-
 void Golomb::set_m(uint32_t m){
     this->m = m;
     b = ceil(log2(m));
@@ -26,13 +18,8 @@ void Golomb::set_m(uint32_t m){
 }
 
 void Golomb::encode_and_write(int number, WRITEBits & w){
-    uint32_t ret = 0;
     uint32_t new_number = 0;
-
     uint32_t shift = log2(this->m);
-
-    cout << number << endl;
-    //printf("%08x", number);
 
     if(number >= 0)
         new_number = number * 2;
@@ -42,11 +29,9 @@ void Golomb::encode_and_write(int number, WRITEBits & w){
     uint32_t q = (uint32_t) floor( (float) new_number/(float) this->m );
 
     for( uint32_t i = 0; i < q; i++){
-      //ret = ret |  1U;
-      //ret = ret << 1;
-      w.writeBits(1);
+        w.writeBits(1);
     }
-      w.writeBits(0);
+    w.writeBits(0);
 
     uint32_t r = new_number - q*this->m;
 
@@ -58,11 +43,9 @@ void Golomb::encode_and_write(int number, WRITEBits & w){
     //ret = ret | r;
 
     //uint32_t number_of_bits = q + 1 + shift;
-//    printf("%08x | %08x\n" ,q, r);
 
     w.preWrite(r, shift);
 
-    //return std::make_tuple(number_of_bits, ret);
 }
 
 std::tuple<uint32_t,uint32_t> Golomb::truncatedBinary(uint32_t r){
@@ -96,7 +79,6 @@ int Golomb::decode(READBits & r){
         q++;
     }
 
-    //printf("MEIO 1\n");
 
     /*
      * Calculate r
@@ -107,6 +89,10 @@ int Golomb::decode(READBits & r){
     {
         resto = resto << 1 | r.readBits();
     }
+
+    /*
+     * Esquecer truncated binary
+     */
 
     /*
     uint32_t resto = 0;
@@ -126,21 +112,15 @@ int Golomb::decode(READBits & r){
         result = q * m + resto - t;
     }
     */
-    //printf("%08x | %08x\n" , q, resto);
     result = q * m + resto;
     
 
-    //printf("Saiu no Golomb\n");
 
     if(result % 2 == 0)
     {
-        cout << result / 2 << endl;
-        //printf("%08x\n" , result / 2);
         return  result / 2;
     }
     else{
-        cout << (result+1) / (-2) << endl;
-        //printf("%08x\n" , (result + 1) / (-2));
         return  (result + 1) / (-2);
     }
 }
