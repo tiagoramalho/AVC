@@ -347,10 +347,6 @@ int encodeMode(string file, int block_size, bool histogram)
         pr.populate_v(left_channel);
         vector<short> predictor_settings = pr.get_best_predictor_settings();
 
-        //IF U WANT TO PRINT
-        //cout << "Constant Or Not: " << predictor_settings.at(2)<<endl;
-        //cout << "best k: " << predictor_settings.at(1)<<endl;
-        //cout << "Predictor Used: " << predictor_settings.at(0) <<endl;
         uint8_t constant = predictor_settings.at(2);
         uint8_t best_k = predictor_settings.at(1);
         uint8_t predictor_used = predictor_settings.at(0);
@@ -373,7 +369,6 @@ int encodeMode(string file, int block_size, bool histogram)
 
         uint32_t m = pow(2,best_k);
 
-        //cout << "m: " << m << endl;
 
         golo.set_m( m );
         w.preWrite(write_header, 8);
@@ -386,7 +381,6 @@ int encodeMode(string file, int block_size, bool histogram)
          */
         if (constant == 1)
         {
-            cout << "Foi constante no left" << endl;
             w.preWrite(left_channel.at(0), 16);
         } else {
             residuals = pr.get_residuals(predictor_used);
@@ -429,18 +423,8 @@ int encodeMode(string file, int block_size, bool histogram)
         write_header = write_header << 4;
         write_header = write_header | best_k;
 
-        printf("FRAME DIFFS%d:\n"
-                "constant:   %d\n"
-                "predictor:  %d\n"
-                "k:          %d\n",count, constant, predictor_used , best_k);
-
-
-        // printf("Header Differences: %x\n", write_header);
-        //cout << "Header: " << hex << write_header << endl;
-
         m = pow(2,best_k);
 
-        //cout << "m: " << m << endl;
         golo.set_m( m );
 
         w.preWrite(write_header, 8);
@@ -450,7 +434,6 @@ int encodeMode(string file, int block_size, bool histogram)
          */
         if (constant == 1)
         {
-            cout << "Foi constante no right" << endl;
             w.preWrite(differences.at(0), 16);
         } else {
             residuals = pr.get_residuals(predictor_used);
