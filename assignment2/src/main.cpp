@@ -37,6 +37,18 @@ int predict3( int residual, vector<int> & frames, int idx)
     return prediction;
 }
 
+vector<int> constant_frame(int size, READBits & r){
+    int j = 0;
+    vector<int> frames(size,0);
+    short item = r.readItem(16);
+    while(j < size){
+        frames[j] = item;
+        j++;
+    }
+    return frames;
+
+}
+
 int main(int argc, char *argv[])
 {
     try {
@@ -160,14 +172,16 @@ int decodeMode(string file)
                 "k:          %d\n",i, header_frame.at(0), header_frame.at(1), header_frame.at(2));
         uint32_t m = 0;
         if(header_frame.at(0) == 1){
-            int j = 0;
+            frames_left.resize(block_size);
+            frames_left = constant_frame(block_size, r);
+            /*int j = 0;
             cout << "entrou 1 while" <<endl;
             short item = r.readItem(16);
             while(j < block_size){
                 frames_left[j] = item;
                 j++;
             }
-            cout << "saiu 1 while" <<endl;
+            cout << "saiu 1 while" <<endl;*/
         }
         else{
 
@@ -215,14 +229,16 @@ int decodeMode(string file)
                 "predictor:  %d\n"
                 "k:          %d\n",i, header_frame.at(0), header_frame.at(1), header_frame.at(2));
         if(header_frame.at(0) == 1){
-            int j = 0;
+            frames_right.resize(block_size);
+            frames_right = constant_frame(block_size, r);
+            /*int j = 0;
             cout << "entrou 2 while" <<endl;
             short item = r.readItem(16);
             while(j < block_size){
                 frames_left[j] = item;
                 j++;
             }
-            cout << "saiu 2 while" <<endl;
+            cout << "saiu 2 while" <<endl;*/
         }else{
 
 
@@ -280,14 +296,16 @@ int decodeMode(string file)
 
     uint32_t m = 0;
     if(header_frame.at(0) == 1){
-        int j = 0;
+        frames_left.resize(lastBlock);
+        frames_left = constant_frame(lastBlock, r);
+        /*int j = 0;
         cout << "entrou 3 while" <<endl;
         short item = r.readItem(16);
         while(j < lastBlock){
                 frames_left[j] = item;
             j++;
         }
-        cout << "saiu 3 while" <<endl;
+        cout << "saiu 3 while" <<endl;*/
     }else{
         for (uint32_t j = 0; j < header_frame.at(1); j++)
         {
@@ -334,14 +352,16 @@ int decodeMode(string file)
 
     }
     if(header_frame.at(0) == 1){
-        int j = 0;
+        frames_right.resize(lastBlock);
+        frames_right = constant_frame(lastBlock, r);
+        /*int j = 0;
         cout << "entrou 4 while" <<endl;
         short item = r.readItem(16);
         while(j < lastBlock){
             frames_left[j] = item;
             j++;
         }
-        cout << "saiu 4 while" <<endl;
+        cout << "saiu 4 while" <<endl;*/
     }else{
         for (uint32_t j = 0; j < header_frame.at(1); j++)
         {
