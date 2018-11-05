@@ -48,6 +48,44 @@ vector<int> constant_frame(int size, READBits & r){
     return frames;
 
 }
+vector <int> frames_decode(uint32_t predictor, READBits & r, Golomb & n, int k, int size){
+
+    vector<int> frames(size,0);
+    for (uint32_t j = 0; j < predictor; j++)
+    {
+        frames[j] = r.readItem(16);
+    }
+
+    uint32_t m = pow(2,k);
+    n.set_m( m );
+
+    switch( predictor ){
+        case 0:
+            for(int j = 0; j < size; j++){
+                frames.at(j) = n.decode(r);
+            }
+            break;
+
+        case 1:
+            for(int j = 1; j < size; j++){
+                frames.at(j) = predict1(n.decode(r),frames, j);
+            }
+            break;
+
+        case 2:
+            for(int j = 2; j < size; j++){
+                frames.at(j) = predict2(n.decode(r),frames, j);
+            }
+            break;
+
+        case 3:
+            for(int j = 3; j < size; j++){
+                frames.at(j) = predict3(n.decode(r),frames, j);
+            }
+            break;
+    }
+    return frames;
+}
 
 int main(int argc, char *argv[])
 {
@@ -174,19 +212,15 @@ int decodeMode(string file)
         if(header_frame.at(0) == 1){
             frames_left.resize(block_size);
             frames_left = constant_frame(block_size, r);
-            /*int j = 0;
-            cout << "entrou 1 while" <<endl;
-            short item = r.readItem(16);
-            while(j < block_size){
-                frames_left[j] = item;
-                j++;
-            }
-            cout << "saiu 1 while" <<endl;*/
         }
         else{
 
 
-            for (uint32_t j = 0; j < header_frame.at(1); j++)
+            frames_left.resize(block_size);
+            frames_left = frames_decode(header_frame.at(1), r, n, header_frame.at(2), block_size);
+            
+            
+            /*for (uint32_t j = 0; j < header_frame.at(1); j++)
             {
                 frames_left[j] = r.readItem(16);
             }
@@ -218,7 +252,7 @@ int decodeMode(string file)
                         frames_left.at(j) = predict3(n.decode(r),frames_left, j);
                     }
                     break;
-            }
+            }*/
         }
 
 
@@ -231,18 +265,12 @@ int decodeMode(string file)
         if(header_frame.at(0) == 1){
             frames_right.resize(block_size);
             frames_right = constant_frame(block_size, r);
-            /*int j = 0;
-            cout << "entrou 2 while" <<endl;
-            short item = r.readItem(16);
-            while(j < block_size){
-                frames_left[j] = item;
-                j++;
-            }
-            cout << "saiu 2 while" <<endl;*/
         }else{
 
+            frames_right.resize(block_size);
+            frames_right = frames_decode(header_frame.at(1), r, n, header_frame.at(2), block_size);
 
-            for (uint32_t j = 0; j < header_frame.at(1); j++)
+            /*for (uint32_t j = 0; j < header_frame.at(1); j++)
             {
                 frames_right[j] = r.readItem(16);
             }
@@ -274,7 +302,7 @@ int decodeMode(string file)
                         frames_right.at(j) = predict3(n.decode(r),frames_right, j);
                     }
                     break;
-            }
+            }*/
 
         }
         for( int l = 0; l < block_size; l++){
@@ -298,16 +326,11 @@ int decodeMode(string file)
     if(header_frame.at(0) == 1){
         frames_left.resize(lastBlock);
         frames_left = constant_frame(lastBlock, r);
-        /*int j = 0;
-        cout << "entrou 3 while" <<endl;
-        short item = r.readItem(16);
-        while(j < lastBlock){
-                frames_left[j] = item;
-            j++;
-        }
-        cout << "saiu 3 while" <<endl;*/
     }else{
-        for (uint32_t j = 0; j < header_frame.at(1); j++)
+            frames_left.resize(lastBlock);
+            frames_left = frames_decode(header_frame.at(1), r, n, header_frame.at(2), lastBlock);
+
+        /*for (uint32_t j = 0; j < header_frame.at(1); j++)
         {
             frames_left[j] = r.readItem(16);
         }
@@ -339,31 +362,25 @@ int decodeMode(string file)
                     frames_left.at(j) = predict3(n.decode(r),frames_left, j);
                 }
                 break;
-        }
-
-
-        header_frame = r.reade_header_frame();
-
-        printf("LAST FRAME DIFF:\n"
-                "constant:   %d\n"
-                "predictor:  %d\n"
-                "k:          %d\n", header_frame.at(0), header_frame.at(1), header_frame.at(2));
-
+        }*/
 
     }
+
+    header_frame = r.reade_header_frame();
+
+    printf("LAST FRAME DIFF:\n"
+            "constant:   %d\n"
+            "predictor:  %d\n"
+            "k:          %d\n", header_frame.at(0), header_frame.at(1), header_frame.at(2));
+
+
     if(header_frame.at(0) == 1){
         frames_right.resize(lastBlock);
         frames_right = constant_frame(lastBlock, r);
-        /*int j = 0;
-        cout << "entrou 4 while" <<endl;
-        short item = r.readItem(16);
-        while(j < lastBlock){
-            frames_left[j] = item;
-            j++;
-        }
-        cout << "saiu 4 while" <<endl;*/
     }else{
-        for (uint32_t j = 0; j < header_frame.at(1); j++)
+        frames_right.resize(lastBlock);
+        frames_right = frames_decode(header_frame.at(1), r, n, header_frame.at(2), lastBlock);
+        /*for (uint32_t j = 0; j < header_frame.at(1); j++)
         {
             frames_right[j] = r.readItem(16);
         }
@@ -395,7 +412,7 @@ int decodeMode(string file)
                     frames_right.at(j) = predict3(n.decode(r),frames_right, j);
                 }
                 break;
-        }
+        }*/
 
     }
     for( int l = 0; l < lastBlock; l++){
