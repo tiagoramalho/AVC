@@ -67,6 +67,95 @@ int Predictor::gen_residuals(vector<int> & samples, uint32_t index, uint32_t ord
     return rn;
 }
 
+int Predictor::predict1( int residual, vector<int> & frames , int idx)
+{
+    int prediction = residual + frames.at(idx-1);
+    return prediction;
+}
+
+int Predictor::predict2( int residual, vector<int> & frames , int idx)
+{
+    int prediction = residual + ( 2 * frames.at(idx-1) - frames.at(idx-2));
+    return prediction;
+}
+
+int Predictor::predict3( int residual, vector<int> & frames, int idx)
+{
+    int prediction = residual + ( 3 * frames.at(idx-1) - 3 * frames.at(idx-2) + frames.at(idx-3) );
+    return prediction;
+}
+void Predictor::gen_lossy_residuals(vector<int> & samples, int shamnt){
+
+    vector<int> rn (4, 0);
+    vector<int> r_tilde (4, 0);
+    vector<int> x_tilde (4, 0);
+    vector<vector<int>> last (this->max_order);
+    last.at(0).resize(1,0);
+    last.at(1).resize(1,0);
+    last.at(2).resize(2,0);
+    last.at(3).resize(3,0);
+
+    this->block_all_residuals.resize(this->max_order, vector<int>(samples.size(),0));
+    
+    //TODO otimizar para 0 
+    for(uint32_t i = 0; i < samples.size(); i++){
+        for(uint32_t j = 0; j < this->max_order; j++){
+
+            rn.at(j) = samples.at(i) - last.at(j).at(0);
+            r_tilde.at(j) = rn.at(j) >> shamnt;
+
+            block_all_residuals.at(j).at(i) = r_tilde.at(j);
+            this->averages.at(j) = this->averages.at(j) + abs(r_tilde.at(j));
+
+            x_tilde.at(j) = (((r_tilde.at(j) << 1) | 1U) << (shamnt-1)) + last.at(j).at(0);
+            
+
+            switch(j){
+                case 0:
+                    last.at(j).at(0) = 0;
+                    break;
+
+                case 1:
+                    last.at(j).at(0) =  x_tilde.at(j);
+                    break;
+
+                case 2:
+                    if(i == 0){
+                        last.at(j).at(1) = x_tilde.at(j);
+
+                    }else if(i==1){
+                        last.at(j).at(0) = x_tilde.at(j);
+                    }
+                    else{
+                        int tmp = last.at(j).at(0);
+                        last.at(j).at(0) = (2 * x_tilde.at(j) ) - last.at(j).at(1) ;
+                        last.at(j).at(1) = tmp;
+                    }
+                    break;
+
+                case 3:
+                    if(i == 0){
+                        last.at(j).at(2) = x_tilde.at(j);
+                    }
+                    else if(i==1){
+                        last.at(j).at(1) = x_tilde.at(j);
+                    }
+                    else if(i==2){
+                        last.at(j).at(0) = x_tilde.at(j);
+                    }
+                    else{
+                        int tmp = last.at(j).at(0);
+                        int tmp2 = last.at(j).at(1);
+                        last.at(j).at(0) = 3 * x_tilde.at(j) - 3*last.at(j).at(1) + last.at(j).at(2);
+                        last.at(j).at(1) = tmp;
+                        last.at(j).at(2) = tmp2;
+                    }
+                    break;
+            }
+        }
+    }
+}
+
 
 vector<float> Predictor::calculate_entropies(){
 

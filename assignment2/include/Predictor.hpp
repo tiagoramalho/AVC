@@ -51,6 +51,9 @@ class Predictor {
         // up to max_order
         int gen_residuals(vector<int> & samples, uint32_t index, uint32_t order);
 
+        // Recursive function that generates the lossy residual values
+        void gen_lossy_residuals(vector<int> & samples, int shamnt);
+
         // Get Id of the best predictor setting
         // 0 - id of the best predictor
         // 1 - value for m in GOlomb encoding
@@ -68,6 +71,10 @@ class Predictor {
 
         // Print a matrix
         void print_matrix( vector<vector<int>> & matrix );
+
+        int predict1(int residual, vector<int> & frames, int idx);
+        int predict2(int residual, vector<int> & frames, int idx);
+        int predict3(int residual, vector<int> & frames, int idx);
 
 };
 

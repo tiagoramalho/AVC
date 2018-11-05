@@ -32,7 +32,6 @@ int predict2( int residual, vector<int> & frames , int idx)
 
 int predict3( int residual, vector<int> & frames, int idx)
 {
-    //printf("Predict3\n");
     int prediction = residual + ( 3 * frames.at(idx-1) - 3 * frames.at(idx-2) + frames.at(idx-3) );
     return prediction;
 }
@@ -89,7 +88,6 @@ vector <int> frames_decode(uint32_t predictor, READBits & r, Golomb & n, int k, 
 void write_samples_block(int size, vector<int> left, vector<int> right, SndfileHandle & sndFileOut){
 
     for( int l = 0; l < size; l++){
-        //printf("%3d -> %8x | %8x\n",l,  frames_left.at(l), frames_right.at(l) + frames_left.at(l));
         short frame [2];
         frame[0] = left.at(l);
         frame[1] = right.at(l);
@@ -103,9 +101,10 @@ int main(int argc, char *argv[])
     try {
         cxxopts::Options options("CAVLAC", "Lossless Audio Codec made for CAV");
 
-        // Mode of operation of the codec
-        // 0 - encode
-        // 1 - decode
+        /* Mode of operation of the codec
+         * 0 - encode
+         * 1 - decode
+         */
         int mode_operation = 0;
         int block_size = 0;
         string file;
@@ -127,8 +126,9 @@ int main(int argc, char *argv[])
             exit(0);
         }
 
-        // Verify if a file was passed because its needed
-        // in both modes of operation
+        /*
+         * Verify if a file was passed because its needed in both modes of operation
+         */
         if (result.count("f") != 1){
             cout << endl << "You always need to specify a file" << endl << endl;
             cout << options.help() << endl;
@@ -141,7 +141,9 @@ int main(int argc, char *argv[])
             mode_operation = result["m"].as<int>();
             if (  !mode_operation ){
 
-                // Encoding Mode
+                /*
+                 * Encoding Mode
+                 */
                 if(result.count("b") != 1){
                     cout << endl << "In Encoding Mode you need to specify a block size" << endl << endl;
                     cout << options.help() << endl;
@@ -153,7 +155,9 @@ int main(int argc, char *argv[])
 
                 exit(encodeMode(file, block_size, histogram));
             }else{
-                // Decoding Mode
+                /*
+                 * Decoding Mode
+                 */
                 exit(decodeMode(file));
             }
         }else{
@@ -222,7 +226,6 @@ int decodeMode(string file)
             frames_left.resize(block_size);
             frames_left = frames_decode(header_frame.at(1), r, n, header_frame.at(2), block_size);
         }
-
 
         /*
          * Decode Right Channel
@@ -298,26 +301,25 @@ int encodeMode(string file, int block_size, bool histogram)
     Golomb golo;
 
     WRITEBits w (file+".cavlac");
-    // frames -> 32 bits -> 4 bytes
-    // samplerate -> 32 bits -> 4 bytes
-    // channels- > 16 bits -> 2 bytes
-    // format -> 16 bits -> 2 bytes
+    /* 
+     * Header Format
+     *
+     * frames -> 32 bits -> 4 bytes
+     * samplerate -> 32 bits -> 4 bytes
+     * channels- > 16 bits -> 2 bytes
+     * format -> 16 bits -> 2 bytes
+     */
 
-    //TODO ver frames
     w.preWrite(sndFileIn.frames(), 32);
     w.preWrite(sndFileIn.samplerate(), 32);
     w.preWrite(sndFileIn.channels(), 16);
     w.preWrite(sndFileIn.format(), 32);
     w.preWrite(block_size, 16);
 
-    printf("PROPERTIES of the file:\n"
-            "number of frames: %d\n"
-            "sample rate:      %d\n"
-            "channels:         %d\n"
-            "format:           %d\n"
-            "block size:       %d\n", (int) sndFileIn.frames(), sndFileIn.samplerate(), sndFileIn.channels(), sndFileIn.format(), block_size);
 
-    // Codificar
+    /*
+     * Coding
+     */
     Predictor pr(4, block_size);
     int count = 0;
     while((nFrames = sndFileIn.readf(samples.data(), block_size))) {
@@ -343,10 +345,15 @@ int encodeMode(string file, int block_size, bool histogram)
             n++;
         }
 
-        // Generate The residuals
+        /*
+         * Generate The residuals
+         */
         pr.populate_v(left_channel);
-        vector<short> predictor_settings = pr.get_best_predictor_settings();
 
+        /*
+         * Get predictor settings
+         */
+        vector<short> predictor_settings = pr.get_best_predictor_settings();
         uint8_t constant = predictor_settings.at(2);
         uint8_t best_k = predictor_settings.at(1);
         uint8_t predictor_used = predictor_settings.at(0);
@@ -359,13 +366,6 @@ int encodeMode(string file, int block_size, bool histogram)
         write_header = write_header | predictor_used;
         write_header = write_header << 4;
         write_header = write_header | best_k;
-        printf("FRAME LEFT%d:\n"
-                "constant:   %d\n"
-                "predictor:  %d\n"
-                "k:          %d\n",count, constant, predictor_used, best_k);
-
-
-        // printf("Header: %x\n", write_header);
 
         uint32_t m = pow(2,best_k);
 
@@ -455,20 +455,315 @@ int encodeMode(string file, int block_size, bool histogram)
             residuals_hist.simple_update_index(7, pr.get_residuals(3));
         }
 
-        // Debug Prints
-        for( uint32_t l = 0; l < nFrames; l++){
-            printf("%3d -> %8x | %8x\n",l,  left_channel.at(l), left_channel.at(l) + differences.at(l));
-        }
-
+        /* Debug Prints
+         * for( uint32_t l = 0; l < nFrames; l++){
+         *  printf("%3d -> %8x | %8x\n",l,  left_channel.at(l), left_channel.at(l) + differences.at(l));
+         * }
+         */
         count++;
-
-
     }
     w.flush();
 
     if(histogram){
         hist.full_dump();
         residuals_hist.full_dump();
+    }
+    return 0;
+}
+
+int encodeLossyMode(string file, int block_size, bool histogram)
+{
+    printf("========\n Encode \n========\n");
+    SndfileHandle sndFileIn { file };
+    if(sndFileIn.error()) {
+        cerr << "Error: invalid input file" << endl;
+        return 1;
+    }
+
+    if((sndFileIn.format() & SF_FORMAT_TYPEMASK) != SF_FORMAT_WAV) {
+        cerr << "Error: file is not in WAV format" << endl;
+        return 1;
+    }
+
+    if((sndFileIn.format() & SF_FORMAT_SUBMASK) != SF_FORMAT_PCM_16) {
+        cerr << "Error: file is not in PCM_16 format" << endl;
+        return 1;
+    }
+
+    WAVHist residuals_hist { sndFileIn, file, 4 };
+    WAVHist hist { sndFileIn, file };
+
+    vector<int> left_channel(block_size);
+    vector<int> differences(block_size);
+
+    size_t nFrames;
+    vector<short> samples(block_size * 2);
+
+    Golomb golo;
+
+    WRITEBits w (file+".cavlac");
+    /* 
+     * Header Format
+     *
+     * frames -> 32 bits -> 4 bytes
+     * samplerate -> 32 bits -> 4 bytes
+     * channels- > 16 bits -> 2 bytes
+     * format -> 16 bits -> 2 bytes
+     */
+
+    w.preWrite(sndFileIn.frames(), 32);
+    w.preWrite(sndFileIn.samplerate(), 32);
+    w.preWrite(sndFileIn.channels(), 16);
+    w.preWrite(sndFileIn.format(), 32);
+    w.preWrite(block_size, 16);
+
+
+    /*
+     * Coding
+     */
+    Predictor pr(4, block_size);
+    int count = 0;
+    while((nFrames = sndFileIn.readf(samples.data(), block_size))) {
+        /*
+         * Resize vector, because last block couldn't be multiple of block size
+         */
+        samples.resize(nFrames * 2);
+        left_channel.resize(nFrames);
+        differences.resize(nFrames);
+
+        /*
+         * Resize block size and vector of residuals on Predictor
+         */
+        pr.set_block_size_and_clean(left_channel.size());
+
+        uint32_t index = 0, n = 0;
+        for(auto s : samples) {
+            index = n % sndFileIn.channels();
+            if(index == 0)
+                left_channel.at(n/2) = s;
+            else 
+                differences.at((n-1)/2) = s;
+            n++;
+        }
+
+        /*
+         * Generate The residuals
+         */
+        pr.gen_lossy_residuals(left_channel, 2);
+        //pr.populate_v(left_channel);
+
+        /*
+         * Get predictor settings
+         */
+        vector<short> predictor_settings = pr.get_best_predictor_settings();
+        uint8_t constant = predictor_settings.at(2);
+        uint8_t best_k = predictor_settings.at(1);
+        uint8_t predictor_used = predictor_settings.at(0);
+
+        /*
+         * Write Frame Header of left channel
+         */
+        uint32_t write_header = constant;
+        write_header = write_header << 2;
+        write_header = write_header | predictor_used;
+        write_header = write_header << 4;
+        write_header = write_header | best_k;
+
+        uint32_t m = pow(2,best_k);
+
+
+        golo.set_m( m );
+        w.preWrite(write_header, 8);
+
+        vector<int> residuals;
+
+
+        /*
+         * If constant samples only need write one frame
+         */
+        if (constant == 1)
+        {
+            w.preWrite(left_channel.at(0), 16);
+        } else {
+            residuals = pr.get_residuals(predictor_used);
+            uint32_t i = 0;
+            for (i = 0; i < predictor_used; ++i)
+            {
+                w.preWrite(left_channel.at(i), 16);
+            }
+            for (i = predictor_used; i < residuals.size(); ++i)
+            {
+                golo.encode_and_write(residuals.at(i), w);
+            }
+        }
+        if(histogram){
+            hist.simple_update_index(0, pr.get_residuals(predictor_used));
+            residuals_hist.simple_update_index(0, pr.get_residuals(0));
+            residuals_hist.simple_update_index(2, pr.get_residuals(1));
+            residuals_hist.simple_update_index(4, pr.get_residuals(2));
+            residuals_hist.simple_update_index(6, pr.get_residuals(3));
+        }
+
+        /*
+         * Clean averages vector, residuals vector
+         */
+        pr.set_block_size_and_clean(differences.size());
+        pr.gen_lossy_residuals(differences, 2);
+        //pr.populate_v(differences);
+        predictor_settings = pr.get_best_predictor_settings();
+
+
+        /*
+         * Write Frame Header of differences
+         */
+        constant = predictor_settings.at(2);
+        best_k = predictor_settings.at(1);
+        predictor_used = predictor_settings.at(0);
+
+        write_header = constant;
+        write_header = write_header << 2;
+        write_header = write_header | predictor_used;
+        write_header = write_header << 4;
+        write_header = write_header | best_k;
+
+        m = pow(2,best_k);
+
+        golo.set_m( m );
+
+        w.preWrite(write_header, 8);
+
+        /*
+         * If constant samples only need write one frame
+         */
+        if (constant == 1)
+        {
+            w.preWrite(differences.at(0), 16);
+        } else {
+            residuals = pr.get_residuals(predictor_used);
+            uint32_t i = 0;
+            for (i = 0; i < predictor_used; ++i)
+            {
+                w.preWrite(differences.at(i), 16);
+            }
+            for (i = predictor_used; i < residuals.size(); ++i)
+            {
+                golo.encode_and_write(residuals.at(i), w);
+            }
+        }
+        if(histogram){
+            hist.simple_update_index(1, pr.get_residuals(predictor_used));
+            residuals_hist.simple_update_index(1, pr.get_residuals(0));
+            residuals_hist.simple_update_index(3, pr.get_residuals(1));
+            residuals_hist.simple_update_index(5, pr.get_residuals(2));
+            residuals_hist.simple_update_index(7, pr.get_residuals(3));
+        }
+
+        /* Debug Prints
+         * for( uint32_t l = 0; l < nFrames; l++){
+         *  printf("%3d -> %8x | %8x\n",l,  left_channel.at(l), left_channel.at(l) + differences.at(l));
+         * }
+         */
+        count++;
+    }
+    w.flush();
+
+    if(histogram){
+        hist.full_dump();
+        residuals_hist.full_dump();
+    }
+    return 0;
+}
+
+int decodeLossyMode(string file)
+{
+    printf("========\n Decode \n========\n");
+
+    // TODO: verify if the file is a Cavlac one
+    Golomb n;
+
+    READBits r (file);
+
+    /*
+     * Read header of file
+     */
+    vector<uint32_t> properties = r.read_header_cavlac();
+
+    int number_of_frames = (int) properties.at(0);
+    int sample_rate = (int) properties.at(1);
+    int channels = (int) properties.at(2);
+    int format = (int) properties.at(3);
+    int block_size = (int) properties.at(4);
+    int full_cavlac_frames = number_of_frames/block_size;
+    int lastBlock = number_of_frames - (full_cavlac_frames*block_size);
+
+
+    /*
+     * Open an sndfile for writing, after having parameters from header of cavlac file
+     */
+    string new_file = file.substr(0, file.size()-11);
+    SndfileHandle sndFileOut { new_file+"_new.wav", SFM_WRITE,format,channels,sample_rate };
+
+    vector<int> frames_left(block_size,0);
+    vector<int> frames_right(block_size,0);
+
+    /*
+     * Start reading frames
+     */
+    vector<uint32_t> header_frame;
+    for( int i = 0; i < full_cavlac_frames; i++){
+        /*
+         * Decode Left Channel
+         */
+        header_frame = r.reade_header_frame();
+        if(header_frame.at(0) == 1){
+            frames_left.resize(block_size);
+            frames_left = constant_frame(block_size, r);
+        }
+        else{
+
+
+            frames_left.resize(block_size);
+            frames_left = frames_decode(header_frame.at(1), r, n, header_frame.at(2), block_size);
+        }
+
+        /*
+         * Decode Right Channel
+         */
+        header_frame = r.reade_header_frame();
+        if(header_frame.at(0) == 1){
+            frames_right.resize(block_size);
+            frames_right = constant_frame(block_size, r);
+        }else{
+
+            frames_right.resize(block_size);
+            frames_right = frames_decode(header_frame.at(1), r, n, header_frame.at(2), block_size);
+
+        }
+        write_samples_block(block_size, frames_left, frames_right, sndFileOut);
+    }
+    /*
+     * Decode last block
+     */
+    if(lastBlock > 0){
+        header_frame = r.reade_header_frame();
+        if(header_frame.at(0) == 1){
+            frames_left.resize(lastBlock);
+            frames_left = constant_frame(lastBlock, r);
+        }else{
+            frames_left.resize(lastBlock);
+            frames_left = frames_decode(header_frame.at(1), r, n, header_frame.at(2), lastBlock);
+
+        }
+
+        header_frame = r.reade_header_frame();
+        if(header_frame.at(0) == 1){
+            frames_right.resize(lastBlock);
+            frames_right = constant_frame(lastBlock, r);
+        }else{
+            frames_right.resize(lastBlock);
+            frames_right = frames_decode(header_frame.at(1), r, n, header_frame.at(2), lastBlock);
+        }
+        write_samples_block(lastBlock, frames_left, frames_right, sndFileOut);
     }
 
     return 0;
