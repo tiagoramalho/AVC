@@ -13,18 +13,18 @@ Predictor::Predictor(uint32_t max_order, uint32_t block_size) :
     max_order(max_order),
     block_size(block_size),
     averages (max_order, 0),
-    block_all_residuals(max_order, vector<short> (block_size))
+    block_all_residuals(max_order, vector<int> (block_size))
 {
 }
 
 void Predictor::set_block_size_and_clean(uint32_t size){
     this->block_size = size;
     this->block_all_residuals.clear();
-    this->block_all_residuals.resize(this->max_order, vector<short>(size,0));
+    this->block_all_residuals.resize(this->max_order, vector<int>(size,0));
     this->averages = vector<double> (this->max_order, 0);
 }
 
-void Predictor::populate_v(vector<short> & samples) {
+void Predictor::populate_v(vector<int> & samples) {
     for (uint32_t i = this->block_size - 1; i > 1; i--){
         gen_residuals( samples, i, max_order-1);
     }
@@ -32,7 +32,7 @@ void Predictor::populate_v(vector<short> & samples) {
     //print_matrix(this->block_all_residuals);
 }
 
-void Predictor::print_matrix( vector<vector<short>> & matrix){
+void Predictor::print_matrix( vector<vector<int>> & matrix){
     uint32_t i = 0;
     uint32_t j = 0;
     uint32_t max_order = matrix.size();
@@ -48,9 +48,9 @@ void Predictor::print_matrix( vector<vector<short>> & matrix){
 }
 
 
-short Predictor::gen_residuals(vector<short> & samples, uint32_t index, uint32_t order) {
+int Predictor::gen_residuals(vector<int> & samples, uint32_t index, uint32_t order) {
 
-    short rn = 0;
+    int rn = 0;
 
     if(block_all_residuals.at(order).at(index) != 0) return block_all_residuals.at(order).at(index);
     else if (order == 0) rn = samples.at(index);
@@ -114,12 +114,23 @@ vector<short> Predictor::get_best_predictor_settings(){
     vector<double>::iterator result = min_element(begin(averages), end(averages));
     short minimum_median_index = distance(begin(averages), result);
     settings.at(0)= minimum_median_index;
-    settings.at(1)= ceil(log2(*result));
-    settings.at(2)= averages.at(1) == 0 ? 1 : 0 ;
+    if(*result < 1){
+        settings.at(1)= 1;
+    }
+    else{
+        settings.at(1)= ceil(log2(*result));
+    }
+    /*if(ceil(log2(*result)) >= 16 || ceil(log2(*result)) < 0){
+        cout << "BELA MERDA" << endl;
+        cout << settings.at(1) << endl;
+        cout << *result << endl;
+    
+    }*/
+    settings.at(2)= averages.at(1) == (double)0.0 ? 1 : 0 ;
 
     return settings;
 }
 
-vector<short> Predictor::get_residuals(uint32_t predictor_index){
+vector<int> Predictor::get_residuals(uint32_t predictor_index){
     return this->block_all_residuals.at(predictor_index);
 }

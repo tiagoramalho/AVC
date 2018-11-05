@@ -20,9 +20,9 @@ class Golomb {
 
         void set_m( uint32_t m);
 
-        void encode_and_write( short number, WRITEBits & w);
+        void encode_and_write( int number, WRITEBits & w);
 
-        short decode(READBits & r);
+        int decode(READBits & r);
         void close(WRITEBits & w);
 };
 

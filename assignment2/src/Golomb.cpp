@@ -25,12 +25,14 @@ void Golomb::set_m(uint32_t m){
     t = std::pow(2,b) - m;
 }
 
-void Golomb::encode_and_write(short number, WRITEBits & w){
+void Golomb::encode_and_write(int number, WRITEBits & w){
     uint32_t ret = 0;
     uint32_t new_number = 0;
 
     uint32_t shift = log2(this->m);
 
+    cout << number << endl;
+    //printf("%08x", number);
 
     if(number >= 0)
         new_number = number * 2;
@@ -40,9 +42,11 @@ void Golomb::encode_and_write(short number, WRITEBits & w){
     uint32_t q = (uint32_t) floor( (float) new_number/(float) this->m );
 
     for( uint32_t i = 0; i < q; i++){
-      ret = ret |  1U;
-      ret = ret << 1;
+      //ret = ret |  1U;
+      //ret = ret << 1;
+      w.writeBits(1);
     }
+      w.writeBits(0);
 
     uint32_t r = new_number - q*this->m;
 
@@ -50,12 +54,13 @@ void Golomb::encode_and_write(short number, WRITEBits & w){
     //if( (this->m & -(this->m)) == this->m)
     //  std::tie(r,shift) = truncatedBinary(r);
 
-    ret = ret << shift;
-    ret = ret | r;
+    //ret = ret << shift;
+    //ret = ret | r;
 
-    uint32_t number_of_bits = q + 1 + shift;
+    //uint32_t number_of_bits = q + 1 + shift;
+//    printf("%08x | %08x\n" ,q, r);
 
-    w.preWrite(ret, number_of_bits);
+    w.preWrite(r, shift);
 
     //return std::make_tuple(number_of_bits, ret);
 }
@@ -76,7 +81,7 @@ std::tuple<uint32_t,uint32_t> Golomb::truncatedBinary(uint32_t r){
     return std::make_tuple(bin, shift);
 }
 
-short Golomb::decode(READBits & r){
+int Golomb::decode(READBits & r){
     /*
      * Ver:
      * https://w3.ual.es/~vruiz/Docencia/Apuntes/Coding/Text/03-symbol_encoding/09-Golomb_coding/index.html
@@ -84,7 +89,7 @@ short Golomb::decode(READBits & r){
     //printf("Entrou no Golomb\n");
 
     uint32_t q = 0;
-    uint32_t result  = 0;
+    int result  = 0;
     uint32_t bit = r.readBits();
     while(bit ==  1){
         bit = r.readBits();
@@ -121,12 +126,21 @@ short Golomb::decode(READBits & r){
         result = q * m + resto - t;
     }
     */
+    //printf("%08x | %08x\n" , q, resto);
     result = q * m + resto;
     
 
     //printf("Saiu no Golomb\n");
+
     if(result % 2 == 0)
-        return (short) result / 2;
-    else
-        return (short) (result + 1) / (-2);
+    {
+        cout << result / 2 << endl;
+        //printf("%08x\n" , result / 2);
+        return  result / 2;
+    }
+    else{
+        cout << (result+1) / (-2) << endl;
+        //printf("%08x\n" , (result + 1) / (-2));
+        return  (result + 1) / (-2);
+    }
 }

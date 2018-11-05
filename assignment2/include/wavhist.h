@@ -44,7 +44,7 @@ class WAVHist {
             }
         }
 
-        void simple_update_index(uint8_t idx, const std::vector<short>& samples) {
+        void simple_update_index(uint8_t idx, const std::vector<int>& samples) {
             for(auto s : samples) {
                 counts[idx][s]++; 
             }

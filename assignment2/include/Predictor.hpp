@@ -15,7 +15,7 @@ class Predictor {
 
         vector<double> averages;
 
-        vector<vector<short>> block_all_residuals ;
+        vector<vector<int>> block_all_residuals ;
 
         // Entropy Calculation
         // It will also be able to output histogram data
@@ -45,11 +45,11 @@ class Predictor {
         Predictor(uint32_t max_order, uint32_t block_size);
 
         // Function that will build de matrix with all the residuals
-        void populate_v(vector<short> & samples);
+        void populate_v(vector<int> & samples);
 
         // Recursive function that generates the residual values
         // up to max_order
-        short gen_residuals(vector<short> & samples, uint32_t index, uint32_t order);
+        int gen_residuals(vector<int> & samples, uint32_t index, uint32_t order);
 
         // Get Id of the best predictor setting
         // 0 - id of the best predictor
@@ -58,7 +58,7 @@ class Predictor {
         vector<short> get_best_predictor_settings();
 
         // Get residual values of the best predictor
-        vector<short> get_residuals(uint32_t predictor_index);
+        vector<int> get_residuals(uint32_t predictor_index);
 
         //                  HELPER fUNCTIONS
 
@@ -67,7 +67,7 @@ class Predictor {
         void set_block_size_and_clean(uint32_t size);
 
         // Print a matrix
-        void print_matrix( vector<vector<short>> & matrix );
+        void print_matrix( vector<vector<int>> & matrix );
 
 };
 
