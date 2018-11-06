@@ -136,6 +136,7 @@ void write_samples_block(int size, vector<int> left, vector<int> right, SndfileH
 
         frame[0] = left.at(l);
         frame[1] = right.at(l);
+
         sndFileOut.writef(frame, 1);
     }
 
@@ -150,6 +151,7 @@ int main(int argc, char *argv[])
          * 0 - encode
          * 1 - decode
          */
+        int shamt = -1;
         int mode_operation = 0;
         int block_size = 0;
         string file;
@@ -162,7 +164,9 @@ int main(int argc, char *argv[])
             ("f,file", "File (obrigatory)", cxxopts::value<std::string>())
             ("m,modeopps", "Mode of operation (obrigatory)", cxxopts::value(mode_operation))
             ("b,blocksize", "Block Size (needed when encoding)", cxxopts::value(block_size))
-            ("H,histogram", "If present when executed the program will write the histograms of the residuals", cxxopts::value(histogram));
+            ("H,histogram", "If present when executed the program will write the histograms of the residuals", cxxopts::value(histogram))
+            ("q,quantization", "Shift ammount of residual quantization. If present the encode method used is lossy coding, based on residual quantization.", cxxopts::value(shamt));
+
 
         auto result = options.parse(argc, argv);
 
@@ -182,6 +186,10 @@ int main(int argc, char *argv[])
             file = result["f"].as<string>();
         }
 
+        if (result.count("q") == 1){
+            shamt = result["q"].as<int>();
+        }
+
         if(result.count("m")){
             mode_operation = result["m"].as<int>();
             if (  !mode_operation ){
@@ -198,12 +206,17 @@ int main(int argc, char *argv[])
                 block_size = result["b"].as<int>();
                 histogram = result["H"].as<bool>();
 
-                exit(encodeLossyMode(file, block_size, histogram, 4));
+                if(shamt < 0)
+                    exit(encodeMode(file, block_size, histogram));
+                exit(encodeLossyMode(file, block_size, histogram, shamt));
+
             }else{
                 /*
                  * Decoding Mode
                  */
-                exit(decodeLossyMode(file,4));
+                if(shamt < 0)
+                    exit(decodeMode(file));
+                exit(decodeLossyMode(file, 8));
             }
         }else{
             cout << options.help() << endl;
@@ -584,7 +597,7 @@ int encodeLossyMode(string file, int block_size, bool histogram, int shamt)
             if(index == 0)
                 left_channel.at(n/2) = s;
             else 
-                differences.at((n-1)/2) = s;
+                differences.at((n-1)/2) =  s;
             n++;
         }
 
