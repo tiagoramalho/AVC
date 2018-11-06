@@ -95,7 +95,7 @@ vector <int> frames_lossy_decode(uint32_t predictor, READBits & r, Golomb & n, i
     vector<int> frames(size,0);
     for (uint32_t j = 0; j < predictor; j++)
     {
-        frames[j] = ((r.readItem(16 - shamt) << 1) | 1U ) << (shamt-1);
+        frames[j] = r.readItem(16 - shamt) ;
     }
 
     uint32_t m = pow(2,k);
@@ -133,6 +133,7 @@ void write_samples_block(int size, vector<int> left, vector<int> right, SndfileH
 
     for( int l = 0; l < size; l++){
         short frame [2];
+
         frame[0] = left.at(l);
         frame[1] = right.at(l);
         sndFileOut.writef(frame, 1);
@@ -197,12 +198,12 @@ int main(int argc, char *argv[])
                 block_size = result["b"].as<int>();
                 histogram = result["H"].as<bool>();
 
-                exit(encodeLossyMode(file, block_size, histogram, 8));
+                exit(encodeLossyMode(file, block_size, histogram, 4));
             }else{
                 /*
                  * Decoding Mode
                  */
-                exit(decodeLossyMode(file,8));
+                exit(decodeLossyMode(file,4));
             }
         }else{
             cout << options.help() << endl;
@@ -221,7 +222,6 @@ int main(int argc, char *argv[])
 
 int decodeMode(string file)
 {
-    printf("========\n Decode \n========\n");
 
     // TODO: verify if the file is a Cavlac one
     Golomb n;
@@ -284,14 +284,6 @@ int decodeMode(string file)
             frames_right = frames_decode(header_frame.at(1), r, n, header_frame.at(2), block_size);
 
         }
-        uint32_t k = 0;
-        while(k < frames_left.size()){
-            if(frames_left.at(k) != (short)frames_left.at(k) || frames_right.at(k) != (short)frames_right.at(k)){
-                cout << "BELA MERDA DEU OVERFLOW" << endl;
-            }
-        
-        
-        }
         write_samples_block(block_size, frames_left, frames_right, sndFileOut);
     }
     /*
@@ -324,7 +316,6 @@ int decodeMode(string file)
 
 int encodeMode(string file, int block_size, bool histogram)
 {
-    printf("========\n Encode \n========\n");
     SndfileHandle sndFileIn { file };
     if(sndFileIn.error()) {
         cerr << "Error: invalid input file" << endl;
@@ -525,7 +516,6 @@ int encodeMode(string file, int block_size, bool histogram)
 
 int encodeLossyMode(string file, int block_size, bool histogram, int shamt)
 {
-    printf("========\n Encode \n========\n");
     SndfileHandle sndFileIn { file };
     if(sndFileIn.error()) {
         cerr << "Error: invalid input file" << endl;
@@ -728,7 +718,6 @@ int encodeLossyMode(string file, int block_size, bool histogram, int shamt)
 
 int decodeLossyMode(string file, int shamt)
 {
-    printf("========\n Decode \n========\n");
 
     // TODO: verify if the file is a Cavlac one
     Golomb n;

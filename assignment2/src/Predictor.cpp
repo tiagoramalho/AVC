@@ -204,19 +204,12 @@ vector<short> Predictor::get_best_predictor_settings(){
     vector<double>::iterator result = min_element(begin(averages), end(averages));
     short minimum_median_index = distance(begin(averages), result);
     settings.at(0)= minimum_median_index;
-    cout << minimum_median_index << endl; 
     if(*result < 1){
         settings.at(1)= 1;
     }
     else{
         settings.at(1)= ceil(log2(*result));
     }
-    /*if(ceil(log2(*result)) >= 16 || ceil(log2(*result)) < 0){
-        cout << "BELA MERDA" << endl;
-        cout << settings.at(1) << endl;
-        cout << *result << endl;
-    
-    }*/
     settings.at(2)= averages.at(1) == (double)0.0 ? 1 : 0 ;
 
     return settings;
