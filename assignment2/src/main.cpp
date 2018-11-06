@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
                  */
                 if(shamt < 0)
                     exit(decodeMode(file));
-                exit(decodeLossyMode(file, 8));
+                exit(decodeLossyMode(file, shamt));
             }
         }else{
             cout << options.help() << endl;
