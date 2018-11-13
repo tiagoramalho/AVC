@@ -1,5 +1,7 @@
 # Created by https://www.gitignore.io/api/c++
 
+assignment3/samples/
+
 *.swp
 *.cavlac
 
