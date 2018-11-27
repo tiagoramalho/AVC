@@ -16,7 +16,79 @@ using namespace std;
 
 ReaderWriterQueue<Mat> q(100);
 
-void frame_decoding(ifstream const & file, int const & end, int loop, int yCols, int yRows) {
+void frame_decoding444(ifstream const & file, int const & end, int loop, int yCols, int yRows) {
+
+    int & end_t = const_cast<int &>(end);
+    /* Opening video file */
+    ifstream & myfile = const_cast<ifstream &>(file);
+
+    /* auxiliary variables */
+    int i, r, g, b, y, u, v;
+
+    string line;
+
+    /* file data buffer */
+    unsigned char *imgData;
+    /* unsigned char pointer to the Mat data*/
+    uchar *buffer;
+
+
+    while(1){
+        /* data structure for the OpenCv image */
+        Mat img = Mat(Size(yCols, yRows), CV_8UC3);
+
+        /* buffer to store the frame */
+        imgData = new unsigned char[yCols * yRows * 3];
+
+        getline (myfile,line); // Skipping word FRAME
+        myfile.read((char *)imgData, yCols * yRows * 3);
+        if(myfile.gcount() == 0)
+        {
+            if(loop)
+            {
+                myfile.clear();
+                myfile.seekg(0);
+                getline (myfile,line); // read the header continue;
+            }
+            else
+            {
+                end_t= 1;
+                break;
+            }
+        }
+
+        /* The video is stored in YUV planar mode but OpenCv uses packed modes*/
+        buffer = (uchar*)img.ptr();
+        for(i = 0 ; i < yRows * yCols * 3 ; i += 3)
+        {
+            /* Accessing to planar info */
+            y = imgData[i / 3];
+            u = imgData[(i / 3) + (yRows * yCols)];
+            v = imgData[(i / 3) + (yRows * yCols) * 2];
+
+            /* convert to RGB */
+            b = (int)(1.164*(y - 16) + 2.018*(u-128));
+            g = (int)(1.164*(y - 16) - 0.813*(u-128) - 0.391*(v-128));
+            r = (int)(1.164*(y - 16) + 1.596*(v-128));
+
+            /* clipping to [0 ... 255] */
+            if(r < 0) r = 0;
+            if(g < 0) g = 0;
+            if(b < 0) b = 0;
+            if(r > 255) r = 255;
+            if(g > 255) g = 255;
+            if(b > 255) b = 255;
+
+            /* Fill the OpenCV buffer - packed mode: BGRBGR...BGR */
+            buffer[i] = b;
+            buffer[i + 1] = g;
+            buffer[i + 2] = r;
+        }
+
+        q.enqueue(img);
+    }
+}
+void frame_decoding422(ifstream const & file, int const & end, int loop, int yCols, int yRows) {
 
     int & end_t = const_cast<int &>(end);
     /* Opening video file */
@@ -63,9 +135,10 @@ void frame_decoding(ifstream const & file, int const & end, int loop, int yCols,
         for(i = 0 ; i < yRows * yCols * 3 ; i += 3)
         {
             /* Accessing to planar info */
-            y = imgData[i / 3];
-            u = imgData[(i / 3) + (yRows * yCols)];
-            v = imgData[(i / 3) + (yRows * yCols) * 2];
+            y = imgData[i / 3]; 
+			u = imgData[(i / 6) + (yRows * yCols)]; 
+			v = imgData[(i / 6) + (yRows * yCols) + ((yRows * yCols)/2)]; 
+
 
             /* convert to RGB */
             b = (int)(1.164*(y - 16) + 2.018*(u-128));
@@ -158,6 +231,7 @@ int main(int argc, char** argv)
     char inputKey = '?';
 
     /* Processing header */
+    int colorSpace = 0;
     getline(myfile,line);
     cout << "Header: " << line << endl;
     string token;
@@ -165,6 +239,7 @@ int main(int argc, char** argv)
     size_t pos = 0;
     while ((pos = line.find(delimiter)) != std::string::npos) {
         token = line.substr(0, pos);
+        cout << token << endl;
         if(token.at(0) == 'W'){
             cout << "Width " << token.substr(1) << endl;
             yCols = stoi(token.substr(1));
@@ -183,12 +258,18 @@ int main(int argc, char** argv)
             cout << "Aspect Ratio not parsed" << endl;
         }
         else if(token.at(0) == 'C'){
-            cout << "Colour Space not parsed" << endl;
+            cout << "Colour Space " << token.substr(1)<< endl;
+            colorSpace = stoi(token.substr(1));
         }
         line.erase(0, pos + delimiter.length());
     }
-
-    std::thread t(frame_decoding, ref(myfile), ref(end), loop, yCols, yRows);
+    cout << colorSpace << endl;
+    std::thread t;
+    if(colorSpace == 444){
+        t = std::thread(frame_decoding444, ref(myfile), ref(end), loop, yCols, yRows);
+    }else if(colorSpace == 422){
+        t = std::thread(frame_decoding422, ref(myfile), ref(end), loop, yCols, yRows);
+    }
 
     /* create a window */
     namedWindow( "rgb");
