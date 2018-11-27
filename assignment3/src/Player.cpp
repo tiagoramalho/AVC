@@ -16,6 +16,53 @@ using namespace std;
 
 ReaderWriterQueue<Mat> q(100);
 
+/* Function that parses the Header of the file
+ *
+ * Returns a map with the values parsed
+*/
+map<char,string> parse_header(string line, int delimiter(int) = ::isspace ){
+
+    string token;
+
+    map<char,string> result;
+
+    auto e=line.end();
+    auto i=line.begin();
+
+    while(i!=e){
+        i=find_if_not(i,e, delimiter);
+        if(i==e) break;
+        auto j=find_if(i,e, delimiter);
+        token = string(i,j);
+        cout << token << endl;
+        if(token.at(0) == 'W'){
+            cout << "Width " << token.substr(1) << endl;
+            result['W'] = token.substr(1);
+        }
+        else if(token.at(0) == 'H'){
+            cout << "Height " << token.substr(1) <<endl;
+            result['H'] = token.substr(1);
+        }
+        else if(token.at(0) == 'F'){
+            cout << "Frame Rate " << token.substr(1) << endl;
+            result['F'] = token.substr(1);
+        }
+        else if(token.at(0) == 'I'){
+            cout << "Interlacing not parsed" << endl;
+        }
+        else if(token.at(0) == 'A'){
+            cout << "Aspect Ratio not parsed" << endl;
+        }
+        else if(token.at(0) == 'C'){
+            cout << "Colour Space " << token.substr(1) << endl;
+            result['C'] = token.substr(1);
+        }
+        i=j;
+    }
+
+    return result;
+}
+
 void frame_decoding444(ifstream const & file, int const & end, int loop, int yCols, int yRows) {
 
     int & end_t = const_cast<int &>(end);
@@ -136,8 +183,8 @@ void frame_decoding422(ifstream const & file, int const & end, int loop, int yCo
         {
             /* Accessing to planar info */
             y = imgData[i / 3]; 
-			u = imgData[(i / 6) + (yRows * yCols)]; 
-			v = imgData[(i / 6) + (yRows * yCols) + ((yRows * yCols)/2)]; 
+            u = imgData[(i / 6) + (yRows * yCols)]; 
+            v = imgData[(i / 6) + (yRows * yCols) + ((yRows * yCols)/2)]; 
 
 
             /* convert to RGB */
@@ -230,49 +277,22 @@ int main(int argc, char** argv)
             /* parse the pressed key */
     char inputKey = '?';
 
-    /* Processing header */
-    int colorSpace = 0;
     getline(myfile,line);
-    cout << "Header: " << line << endl;
-    string token;
-    string delimiter = " ";
-    size_t pos = 0;
-    while ((pos = line.find(delimiter)) != std::string::npos) {
-        token = line.substr(0, pos);
-        cout << token << endl;
-        if(token.at(0) == 'W'){
-            cout << "Width " << token.substr(1) << endl;
-            yCols = stoi(token.substr(1));
-        }
-        else if(token.at(0) == 'H'){
-            cout << "Height " << token.substr(1) <<endl;
-            yRows = stoi(token.substr(1));
-        }
-        else if(token.at(0) == 'F'){
-            cout << "Frame Rate not parsed" << endl;
-        }
-        else if(token.at(0) == 'I'){
-            cout << "Interlacing not parsed" << endl;
-        }
-        else if(token.at(0) == 'A'){
-            cout << "Aspect Ratio not parsed" << endl;
-        }
-        else if(token.at(0) == 'C'){
-            cout << "Colour Space " << token.substr(1)<< endl;
-            colorSpace = stoi(token.substr(1));
-        }
-        line.erase(0, pos + delimiter.length());
-    }
-    cout << colorSpace << endl;
+    map<char,string> header = parse_header(line);
+
+    yCols = stoi(header['W']);
+    yRows = stoi(header['H']);
+
     std::thread t;
-    if(colorSpace == 444){
+    if(stoi(header['C']) == 444){
         t = std::thread(frame_decoding444, ref(myfile), ref(end), loop, yCols, yRows);
-    }else if(colorSpace == 422){
+    }else if(stoi(header['C']) == 422){
         t = std::thread(frame_decoding422, ref(myfile), ref(end), loop, yCols, yRows);
     }
 
     /* create a window */
     namedWindow( "rgb");
+
 
 
     Mat img;
@@ -307,3 +327,5 @@ int main(int argc, char** argv)
 
     return 0;
 }
+
+
