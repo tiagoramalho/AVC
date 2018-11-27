@@ -3,6 +3,7 @@ project( DisplayImage )
 
 MESSAGE ("\n==> Finding 3rd Party Packages")
 find_package( OpenCV REQUIRED )
+find_package( Threads REQUIRED )
 
 SET( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -W" )
 SET( CMAKE_C_FLAGS_RELEASE "-O3" )
@@ -17,14 +18,11 @@ SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BASE_DIR}/bin )
 
 # Make include directories available for all..
 INCLUDE_DIRECTORIES(
-  ${OpenCV_INCLUDE_DIR}
+  ${OpenCV_INCLUDE_DIR} ${BASE_DIR}/include/
 )
 
-include_directories(include)
-#file(GLOB SOURCES "src/*.cpp")
+#add_executable( PlayerCamera ${BASE_DIR}/src/PlayerCamera.cpp )
+#target_link_libraries( PlayerCamera ${OpenCV_LIBS} )
 
-add_executable( PlayerCamera ${BASE_DIR}/src/PlayerCamera.cpp )
-target_link_libraries( PlayerCamera ${OpenCV_LIBS} )
-
-add_executable( PlayerYUV444 ${BASE_DIR}/src//PlayerYUV444.cpp )
-target_link_libraries( PlayerYUV444 ${OpenCV_LIBS} )
+add_executable( psrb ${BASE_DIR}/src//Player.cpp )
+target_link_libraries( psrb ${OpenCV_LIBS} ${CMAKE_THREAD_LIBS_INIT})
