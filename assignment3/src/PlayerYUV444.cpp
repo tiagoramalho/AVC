@@ -108,8 +108,12 @@ int main(int argc, char** argv)
 		{ 
 			/* Accessing to planar info */
 			y = imgData[i / 3]; 
-			u = imgData[(i / 3) + (yRows * yCols)]; 
-			v = imgData[(i / 3) + (yRows * yCols) * 2]; 
+			u = imgData[(i / 12) + (yRows * yCols)]; 
+			v = imgData[(i / 12) + (yRows * yCols) + ((yRows * yCols)/4)]; 
+            //
+            //y = imgData[i / 3]; 
+			//u = imgData[(i / 6) + (yRows * yCols)]; 
+			//v = imgData[(i / 6) + (yRows * yCols) + ((yRows * yCols)/2)]; 
 
 			/* convert to RGB */
 			b = (int)(1.164*(y - 16) + 2.018*(u-128));
