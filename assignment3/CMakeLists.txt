@@ -20,8 +20,8 @@ INCLUDE_DIRECTORIES(
   ${OpenCV_INCLUDE_DIR} ${BASE_DIR}/include/
 )
 
-add_executable( PlayerCamera ${BASE_DIR}/src/PlayerCamera.cpp )
-target_link_libraries( PlayerCamera ${OpenCV_LIBS} )
+#add_executable( PlayerCamera ${BASE_DIR}/src/PlayerCamera.cpp )
+#target_link_libraries( PlayerCamera ${OpenCV_LIBS} )
 
-add_executable( PlayerYUV444 ${BASE_DIR}/src//PlayerYUV444.cpp )
-target_link_libraries( PlayerYUV444 ${OpenCV_LIBS} )
+add_executable( psrb ${BASE_DIR}/src//Player.cpp )
+target_link_libraries( psrb ${OpenCV_LIBS} )

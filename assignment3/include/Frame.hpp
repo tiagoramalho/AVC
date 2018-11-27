@@ -4,7 +4,7 @@
 class Frame {
 
     public:
-        Frame(){};
+        Frame(){}
 };
 
 #endif
