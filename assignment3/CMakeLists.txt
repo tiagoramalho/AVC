@@ -17,11 +17,8 @@ SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BASE_DIR}/bin )
 
 # Make include directories available for all..
 INCLUDE_DIRECTORIES(
-  ${OpenCV_INCLUDE_DIR}
+  ${OpenCV_INCLUDE_DIR} ${BASE_DIR}/include/
 )
-
-include_directories(include)
-#file(GLOB SOURCES "src/*.cpp")
 
 add_executable( PlayerCamera ${BASE_DIR}/src/PlayerCamera.cpp )
 target_link_libraries( PlayerCamera ${OpenCV_LIBS} )
