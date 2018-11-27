@@ -14,9 +14,84 @@ using namespace moodycamel;
 using namespace cv;
 using namespace std;
 
+ReaderWriterQueue<Mat> q(100);
+
+void frame_decoding(ifstream const & file, int const & end, int loop, int yCols, int yRows) {
+
+    int & end_t = const_cast<int &>(end);
+    /* Opening video file */
+    ifstream & myfile = const_cast<ifstream &>(file);
+
+    /* auxiliary variables */
+    int i, r, g, b, y, u, v;
+
+    string line;
+
+    /* file data buffer */
+    unsigned char *imgData;
+    /* unsigned char pointer to the Mat data*/
+    uchar *buffer;
+
+
+    while(1){
+        /* data structure for the OpenCv image */
+        Mat img = Mat(Size(yCols, yRows), CV_8UC3);
+
+        /* buffer to store the frame */
+        imgData = new unsigned char[yCols * yRows * 3];
+
+        getline (myfile,line); // Skipping word FRAME
+        myfile.read((char *)imgData, yCols * yRows * 3);
+        if(myfile.gcount() == 0)
+        {
+            if(loop)
+            {
+                myfile.clear();
+                myfile.seekg(0);
+                getline (myfile,line); // read the header
+                continue;
+            }
+            else
+            {
+                end_t= 1;
+                break;
+            }
+        }
+
+        /* The video is stored in YUV planar mode but OpenCv uses packed modes*/
+        buffer = (uchar*)img.ptr();
+        for(i = 0 ; i < yRows * yCols * 3 ; i += 3)
+        {
+            /* Accessing to planar info */
+            y = imgData[i / 3];
+            u = imgData[(i / 3) + (yRows * yCols)];
+            v = imgData[(i / 3) + (yRows * yCols) * 2];
+
+            /* convert to RGB */
+            b = (int)(1.164*(y - 16) + 2.018*(u-128));
+            g = (int)(1.164*(y - 16) - 0.813*(u-128) - 0.391*(v-128));
+            r = (int)(1.164*(y - 16) + 1.596*(v-128));
+
+            /* clipping to [0 ... 255] */
+            if(r < 0) r = 0;
+            if(g < 0) g = 0;
+            if(b < 0) b = 0;
+            if(r > 255) r = 255;
+            if(g > 255) g = 255;
+            if(b > 255) b = 255;
+
+            /* Fill the OpenCV buffer - packed mode: BGRBGR...BGR */
+            buffer[i] = b;
+            buffer[i + 1] = g;
+            buffer[i + 2] = r;
+        }
+
+        q.enqueue(img);
+    }
+}
+
 int main(int argc, char** argv)
 {
-    ReaderWriterQueue<int> q(100);
     /* store the filename */
     string file;
     /* frames per second */
@@ -74,21 +149,13 @@ int main(int argc, char** argv)
 
     Frame fr;
 
+    ifstream myfile (file);
     /* store the header */
     string line;
     /* frame dimension */
     int yCols, yRows;
-    /* auxiliary variables */
-    int i, n, r, g, b, y, u, v;
-    /* file data buffer */
-    unsigned char *imgData;
-    /* unsigned char pointer to the Mat data*/
-    uchar *buffer; 
-    /* parse the pressed key */
+            /* parse the pressed key */
     char inputKey = '?';
-
-    /* Opening video file */
-    ifstream myfile (file);
 
     /* Processing header */
     getline(myfile,line);
@@ -121,82 +188,22 @@ int main(int argc, char** argv)
         line.erase(0, pos + delimiter.length());
     }
 
-    /* data structure for the OpenCv image */
-    Mat img = Mat(Size(yCols, yRows), CV_8UC3);
-
-    /* buffer to store the frame */
-    imgData = new unsigned char[yCols * yRows * 3];
+    std::thread t(frame_decoding, ref(myfile), ref(end), loop, yCols, yRows);
 
     /* create a window */
     namedWindow( "rgb");
 
-    time_t current_time;
-    time_t elapsed_time;
 
+    Mat img;
     while(!end)
     {
-        auto begin = chrono::high_resolution_clock::now();
-        /* load a new frame, if possible */
-        getline (myfile,line); // Skipping word FRAME
-        myfile.read((char *)imgData, yCols * yRows * 3);
-        if(myfile.gcount() == 0)
-        {
-            if(loop)
-            {
-                myfile.clear();
-                myfile.seekg(0);
-                getline (myfile,line); // read the header
-                continue;
-            }
-            else
-            {
-                end = 1;
-                break;
-            }
-        }
-
-        /* The video is stored in YUV planar mode but OpenCv uses packed modes*/
-        buffer = (uchar*)img.ptr();
-        for(i = 0 ; i < yRows * yCols * 3 ; i += 3)
-        {
-            /* Accessing to planar info */
-            y = imgData[i / 3];
-            u = imgData[(i / 3) + (yRows * yCols)];
-            v = imgData[(i / 3) + (yRows * yCols) * 2];
-
-            /* convert to RGB */
-            b = (int)(1.164*(y - 16) + 2.018*(u-128));
-            g = (int)(1.164*(y - 16) - 0.813*(u-128) - 0.391*(v-128));
-            r = (int)(1.164*(y - 16) + 1.596*(v-128));
-
-            /* clipping to [0 ... 255] */
-            if(r < 0) r = 0;
-            if(g < 0) g = 0;
-            if(b < 0) b = 0;
-            if(r > 255) r = 255;
-            if(g > 255) g = 255;
-            if(b > 255) b = 255;
-
-            /* Fill the OpenCV buffer - packed mode: BGRBGR...BGR */
-            buffer[i] = b;
-            buffer[i + 1] = g;
-            buffer[i + 2] = r;
-        }
-
-        auto end_time = chrono::high_resolution_clock::now();
-
-        auto dur = end_time - begin;
-        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
-
-        cout << "-->" <<  ms << endl;
-        cout << "max" << (1.0 / fps) * 1000 << endl;
-
+        q.try_dequeue(img);
         /* display the image */
         imshow( "rgb", img );
         if(playing)
         {
             /* wait according to the frame rate */
-            inputKey = waitKey(max((((1.0 / fps)* 1000) - ms), 1.0));
+            inputKey = waitKey((1.0 / fps)* 1000);
         }
         else
         {
@@ -213,10 +220,9 @@ int main(int argc, char** argv)
                 playing = playing ? 0 : 1;
                 break;
         }
-
-
-        // Optical Flow stuff
-        //std::swap(prevgray, gray);
     }
+
+    t.join();
+
     return 0;
 }

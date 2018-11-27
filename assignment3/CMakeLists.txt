@@ -3,6 +3,7 @@ project( DisplayImage )
 
 MESSAGE ("\n==> Finding 3rd Party Packages")
 find_package( OpenCV REQUIRED )
+find_package( Threads REQUIRED )
 
 SET( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -W" )
 SET( CMAKE_C_FLAGS_RELEASE "-O3" )
@@ -24,4 +25,4 @@ INCLUDE_DIRECTORIES(
 #target_link_libraries( PlayerCamera ${OpenCV_LIBS} )
 
 add_executable( psrb ${BASE_DIR}/src//Player.cpp )
-target_link_libraries( psrb ${OpenCV_LIBS} )
+target_link_libraries( psrb ${OpenCV_LIBS} ${CMAKE_THREAD_LIBS_INIT})
