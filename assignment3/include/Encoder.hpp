@@ -6,11 +6,12 @@
 class Encoder {
 
     private:
-        Golomb & g;
+        ifstream infile;
+        Golomb g;
 
     public:
 
-        Encoder(Golomb & golomb):g(golomb){};
+        Encoder(const string & in_file, const string & out_file);
 
         /*  Function used to encode and write N Frames ( used for easy debug ) */
         void encode_and_write_n( int n);

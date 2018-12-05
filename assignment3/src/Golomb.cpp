@@ -1,4 +1,5 @@
 #include "Golomb.hpp"
+#include "fstreamBits.h"
 #include <math.h>
 #include <tuple>
 #include <bitset>
@@ -6,14 +7,16 @@
 
 using namespace std;
 
-Golomb::Golomb(WRITEBits & w): m(1), stream(w){
-    b = ceil(log2(m));
-    t = std::pow(2,b) - m;
-}
+Golomb::Golomb(const string & file, int mode){
+    this->m = 1;
+    this->b = ceil(log2(m));
+    this->t = std::pow(2,b) - m;
 
-Golomb::Golomb(READBits & r): m(1), stream(r){
-    b = ceil(log2(m));
-    t = std::pow(2,b) - m;
+    if( mode == 0){
+        this->stream = READBits(file);
+    }else{
+        this->stream = WRITEBits(file);
+    }
 }
 
 void Golomb::set_m(uint32_t m){
@@ -61,7 +64,7 @@ std::tuple<uint32_t,uint32_t> Golomb::truncatedBinary(uint32_t r){
     return std::make_tuple(bin, shift);
 }
 
-int Golomb::decode(){
+int Golomb::read_and_decode(){
 
     READBits* rb = static_cast<READBits*>( & this->stream);
 

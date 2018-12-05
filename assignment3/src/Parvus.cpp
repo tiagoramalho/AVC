@@ -40,11 +40,8 @@ int main(int argc, char** argv)
     }
 
     /* Rest of the Code */
-
-    READBits r (file);
-    Golomb g_r (r);
-
-    Encoder enc (g_r);
+    string out_file = file + ".pv";
+    Encoder enc (file, out_file);
 
     enc.encode_and_write();
 
