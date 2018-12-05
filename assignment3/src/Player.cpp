@@ -205,7 +205,7 @@ void frame_decoding444(ifstream const & file, int const & end, int loop, int yCo
             }
         }
         q.enqueue(img);
-        cout << q.size_approx() << endl;
+        // cout << q.size_approx() << endl;
     }
 }
 
@@ -371,7 +371,7 @@ int main(int argc, char** argv)
     namedWindow( "rgb");
 
 
-    this_thread::sleep_for(chrono::seconds(10));
+    //  this_thread::sleep_for(chrono::seconds(10));
     Mat img;
     while(!end)
     {
