@@ -8,16 +8,15 @@
 #include "readerwriterqueue.h"
 #include "atomicops.h"
 #include <thread>
-#include "Frame.hpp"
 
 using namespace moodycamel;
 using namespace cv;
 using namespace std;
 
-ReaderWriterQueue<Mat> q(100);
+BlockingReaderWriterQueue<Mat> q(500);
 
-/* Function that parses the Header of the file
- *
+/*
+ * Function that parses the Header of the file
  * Returns a map with the values parsed
 */
 map<char,string> parse_header(string line, int delimiter(int) = ::isspace )
@@ -149,21 +148,23 @@ void frame_decoding420(ifstream const & file, int const & end, int loop, int yCo
 void frame_decoding444(ifstream const & file, int const & end, int loop, int yCols, int yRows) {
 
     int & end_t = const_cast<int &>(end);
+
     /* Opening video file */
     ifstream & myfile = const_cast<ifstream &>(file);
-
-    /* auxiliary variables */
-    int i, r, g, b, y, u, v;
 
     string line;
 
     /* file data buffer */
     unsigned char *imgData;
+
     /* unsigned char pointer to the Mat data*/
     uchar *buffer;
 
+    int cols,lines, width = yCols, indexer =0;
+    int rgb[3];
 
     while(1){
+
         /* data structure for the OpenCv image */
         Mat img = Mat(Size(yCols, yRows), CV_8UC3);
 
@@ -171,53 +172,43 @@ void frame_decoding444(ifstream const & file, int const & end, int loop, int yCo
         imgData = new unsigned char[yCols * yRows * 3];
 
         getline (myfile,line); // Skipping word FRAME
+
         myfile.read((char *)imgData, yCols * yRows * 3);
-        if(myfile.gcount() == 0)
-        {
-            if(loop)
-            {
+
+        /* data structure to handle frames */
+        Frame f(0, yCols, yRows);
+        f.set_frame_data(imgData);
+
+        if(myfile.gcount() == 0) {
+            if(loop) {
                 myfile.clear();
                 myfile.seekg(0);
                 getline (myfile,line); // read the header continue;
             }
-            else
-            {
+            else {
                 end_t= 1;
                 break;
             }
         }
 
-        /* The video is stored in YUV planar mode but OpenCv uses packed modes*/
         buffer = (uchar*)img.ptr();
-        for(i = 0 ; i < yRows * yCols * 3 ; i += 3)
-        {
-            /* Accessing to planar info */
-            y = imgData[i / 3];
-            u = imgData[(i / 3) + (yRows * yCols)];
-            v = imgData[(i / 3) + (yRows * yCols) * 2];
 
-            /* convert to RGB */
-            b = (int)(1.164*(y - 16) + 2.018*(u-128));
-            g = (int)(1.164*(y - 16) - 0.813*(u-128) - 0.391*(v-128));
-            r = (int)(1.164*(y - 16) + 1.596*(v-128));
+        for( lines = 0; lines < yRows; lines+=1){
+            for( cols = 0; cols < yCols; cols+=1){
+                indexer = (cols*3) + (width * lines * 3);
 
-            /* clipping to [0 ... 255] */
-            if(r < 0) r = 0;
-            if(g < 0) g = 0;
-            if(b < 0) b = 0;
-            if(r > 255) r = 255;
-            if(g > 255) g = 255;
-            if(b > 255) b = 255;
+                f.get_rgb(rgb, lines, cols);
 
-            /* Fill the OpenCV buffer - packed mode: BGRBGR...BGR */
-            buffer[i] = b;
-            buffer[i + 1] = g;
-            buffer[i + 2] = r;
+                buffer[ indexer ]     = rgb[2];
+                buffer[ indexer + 1]  = rgb[1];
+                buffer[ indexer + 2]  = rgb[0];
+            }
         }
-
         q.enqueue(img);
+        cout << q.size_approx() << endl;
     }
 }
+
 void frame_decoding422(ifstream const & file, int const & end, int loop, int yCols, int yRows) {
 
     int & end_t = const_cast<int &>(end);
@@ -350,8 +341,6 @@ int main(int argc, char** argv)
         exit(1);
     }
 
-    Frame fr;
-
     ifstream myfile (file);
     /* store the header */
     string line;
@@ -382,17 +371,17 @@ int main(int argc, char** argv)
     namedWindow( "rgb");
 
 
-
+    this_thread::sleep_for(chrono::seconds(10));
     Mat img;
     while(!end)
     {
-        q.try_dequeue(img);
-        /* display the image */
+        q.wait_dequeue(img);
+        ///* display the image */
         imshow( "rgb", img );
         if(playing)
         {
             /* wait according to the frame rate */
-            inputKey = waitKey((1.0 / fps)* 1000);
+            inputKey = waitKey((1.0 / fps) * 1000);
         }
         else
         {
