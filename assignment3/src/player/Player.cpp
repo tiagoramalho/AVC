@@ -124,9 +124,6 @@ void frame_decoding422(ifstream const & file, int const & end, int loop, int yCo
     /* Opening video file */
     ifstream & myfile = const_cast<ifstream &>(file);
 
-    /* auxiliary variables */
-    int i, r, g, b, y, u, v;
-
     string line;
 
     /* file data buffer */
@@ -139,10 +136,10 @@ void frame_decoding422(ifstream const & file, int const & end, int loop, int yCo
         /* data structure for the OpenCv image */
         Mat img = Mat(Size(yCols, yRows), CV_8UC3); 
         /* buffer to store the frame */
-        imgData = new unsigned char[yCols * yRows * 3];
+        imgData = new unsigned char[yCols * yRows * 2];
 
         getline (myfile,line); // Skipping word FRAME
-        myfile.read((char *)imgData, yCols * yRows * 3);
+        myfile.read((char *)imgData, yCols * yRows * 2);
 
         /* data structure to handle frames */
         Frame422 f(yCols, yRows);
@@ -186,9 +183,6 @@ void frame_decoding420(ifstream const & file, int const & end, int loop, int yCo
     /* Opening video file */
     ifstream & myfile = const_cast<ifstream &>(file);
 
-    /* auxiliary variables */
-    int x, y, r, g, b, y_, u, v;
-
     string line;
 
     /* file data buffer */
@@ -202,10 +196,10 @@ void frame_decoding420(ifstream const & file, int const & end, int loop, int yCo
         Mat img = Mat(Size(yCols, yRows), CV_8UC3);
 
         /* buffer to store the frame */
-        imgData = new unsigned char[yCols * yRows * 3];
+        imgData = new unsigned char[yCols * yRows + (yCols * yRows)/2];
 
         getline (myfile,line); // Skipping word FRAME
-        myfile.read((char *)imgData, yCols * yRows * 3);
+        myfile.read((char *)imgData, yCols * yRows + (yCols * yRows)/2);
 
         /* data structure to handle frames */
         Frame420 f(yCols, yRows);
@@ -342,7 +336,11 @@ int main(int argc, char** argv)
             ///* display the image */
             imshow( "rgb", img );
             /* wait according to the frame rate */
+        auto start = std::chrono::high_resolution_clock::now();
             inputKey = waitKey((1.0 / fps) * 1000);
+        auto finish = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = finish - start;
+        std::cout << "wait key: " << elapsed.count() << " s\n";
         }
         else
         {
@@ -362,7 +360,6 @@ int main(int argc, char** argv)
                 break;
         }
     }
-    t.join();
     exit(0);
     return 0;
 }
