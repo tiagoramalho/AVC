@@ -3,10 +3,10 @@
 #include <opencv2/opencv.hpp>
 #include <fstream>
 #include <chrono>
-#include "cxxopts.hpp"
-#include "Frame.hpp"
-#include "readerwriterqueue.h"
-#include "atomicops.h"
+#include "../../include/cxxopts.hpp"
+#include "../../include/Frame.hpp"
+#include "../../include/readerwriterqueue.h"
+#include "../../include/atomicops.h"
 #include <thread>
 
 using namespace moodycamel;
