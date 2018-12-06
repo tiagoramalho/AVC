@@ -1,5 +1,4 @@
 #include "Golomb.hpp"
-#include "fstreamBits.h"
 #include <math.h>
 #include <tuple>
 #include <bitset>
@@ -7,16 +6,9 @@
 
 using namespace std;
 
-Golomb::Golomb(const string & file, int mode){
-    this->m = 1;
-    this->b = ceil(log2(m));
-    this->t = std::pow(2,b) - m;
-
-    if( mode == 0){
-        this->stream = READBits(file);
-    }else{
-        this->stream = WRITEBits(file);
-    }
+Golomb::Golomb(): m(1){
+    b = ceil(log2(m));
+    t = std::pow(2,b) - m;
 }
 
 void Golomb::set_m(uint32_t m){
@@ -25,65 +17,37 @@ void Golomb::set_m(uint32_t m){
     t = std::pow(2,b) - m;
 }
 
-void Golomb::encode_and_write(int number){
-    WRITEBits * wb = static_cast<WRITEBits*>(& this->stream);
-
+void Golomb::encode_and_write(int number, WRITEBits & w){
     uint32_t new_number = 0;
     uint32_t shift = log2(this->m);
-
     if(number >= 0)
         new_number = number * 2;
     else
         new_number = -2*number-1;
-
     uint32_t q = (uint32_t) floor( (float) new_number/(float) this->m );
-
     for( uint32_t i = 0; i < q; i++){
-        wb->writeBits(1);
+        w.writeBits(1);
     }
-    wb->writeBits(0);
-
+    w.writeBits(0);
     uint32_t r = new_number - q*this->m;
-
-    wb->preWrite(r, shift);
+    w.preWrite(r, shift);
 }
 
-std::tuple<uint32_t,uint32_t> Golomb::truncatedBinary(uint32_t r){
-
-    uint32_t bin;
-    uint32_t shift;
-
-    if( r < t){
-        shift = b-1;
-        bin = r;
-    }else{
-        shift = b;
-        bin = r + t;
-    }
-
-    return std::make_tuple(bin, shift);
-}
-
-int Golomb::read_and_decode(){
-
-    READBits* rb = static_cast<READBits*>( & this->stream);
-
+int Golomb::read_and_decode(READBits & r){
     uint32_t q = 0;
     int result  = 0;
-    uint32_t bit = rb->readBits();
+    uint32_t bit = r.readBits();
     while(bit ==  1){
-        bit = rb->readBits();
+        bit = r.readBits();
         q++;
     }
-
     /*
      * Calculate r
      */
-
     uint32_t resto = 0;
     for (uint32_t i = 0; i < b; ++i)
     {
-        resto = resto << 1 | rb->readBits();
+        resto = resto << 1 | r.readBits();
     }
 
     result = q * m + resto;

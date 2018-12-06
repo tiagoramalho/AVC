@@ -3,22 +3,11 @@
 #include <cstdio>
 
 Encoder::Encoder(const string & in_file, const string & out_file):
-    infile(in_file.c_str()), g(out_file.c_str(), 0){}
+    infile(in_file.c_str()),w(out_file.c_str()){}
 
-void Encoder::encode_and_write_frame(Frame & frame){
-    printf("Going To Encode Frame");
-
-
-};
-
-void Encoder::encode_and_write(){
-    printf("Going To Encode");
-
-};
-
-void parse_header(  map<char,string> & header,
-                            string header_line,
-                            int delimiter(int) = ::isspace){
+void Encoder::parse_header(  map<char,string> & header,
+                    string header_line,
+                    int delimiter(int)){
 
     string token;
 
@@ -33,15 +22,15 @@ void parse_header(  map<char,string> & header,
         cout << token << endl;
         if(token.at(0) == 'W'){
             cout << "Width " << token.substr(1) << endl;
-            header.at('W') = token.substr(1);
+            header['W'] = token.substr(1);
         }
         else if(token.at(0) == 'H'){
             cout << "Height " << token.substr(1) <<endl;
-            header.at('H') = token.substr(1);
+            header['H'] = token.substr(1);
         }
         else if(token.at(0) == 'F'){
             cout << "Frame Rate " << token.substr(1) << endl;
-            header.at('F') = token.substr(1);
+            header['F'] = token.substr(1);
         }
         else if(token.at(0) == 'I'){
             cout << "Interlacing not parsed" << endl;
@@ -51,8 +40,31 @@ void parse_header(  map<char,string> & header,
         }
         else if(token.at(0) == 'C'){
             cout << "Colour Space " << token.substr(1) << endl;
-            header.at('C') = token.substr(1);
+            header['C'] = token.substr(1);
         }
         i=j;
     }
 }
+
+void Encoder::encode_and_write_frame(Frame & frame){
+    printf("Going To Encode Frame");
+
+
+};
+
+void Encoder::encode_and_write(){
+    printf("Going To Encode");
+
+    string line;
+
+    getline(this->infile, line);
+
+    map<char, string> header;
+
+    parse_header(header, line);
+
+    this->w.writeHeader(12,12,12);
+    printf("Pum\n");
+};
+
+

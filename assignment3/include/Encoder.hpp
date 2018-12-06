@@ -8,11 +8,9 @@ class Encoder {
 
     private:
         ifstream infile;
-        Golomb g;
+        WRITEBits w;
 
-        void parse_header(  map<char,string> & header,  \
-                            string header_line,         \
-                            int delimiter(int) = ::isspace);
+        void parse_header(map<char,string> & header, string header_line, int delimiter(int) = ::isspace);
 
     public:
 

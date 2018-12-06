@@ -17,14 +17,13 @@ class READBits: public Stream {
         ifstream f;
 
     public:
-        READBits(const string & file) : f (file.c_str(), ios::binary){} 
-            //f (file.c_str(), ios::binary){};
+        READBits(const string & file) : f (file.c_str(), ios::binary){}
 
         /*
-         * Função que lê de um ficheiro um byte e devolve o seu valor bit a bit 
+         * Função que lê de um ficheiro um byte e devolve o seu valor bit a bit
          *
          * */
-        uint8_t readBits(){ 
+        uint8_t readBits(){
             if(shamnt == -1){
                 f.read(&buff, 1);
                 shamnt = 7;
@@ -69,6 +68,12 @@ class READBits: public Stream {
             string header;
             std::getline(f, header);
             return header;
+        }
+
+        vector<uint32_t> read_header_parvus(){
+            vector<uint32_t> header_properties (1,0);
+
+            return header_properties;
         }
 
         vector<uint32_t> read_header_cavlac(){
@@ -136,7 +141,8 @@ class WRITEBits: public Stream {
          * Função que escreve em um ficheiro um byte contendo apenas bits de informação
          *
          * */
-        WRITEBits(const string & file) : f (file.c_str(), ios::binary){} 
+        WRITEBits(const string & file) : f (file.c_str(), ios::binary){};
+
         void writeBits(char val){
             buff = buff | (val << shamnt);
             shamnt--;
@@ -167,8 +173,10 @@ class WRITEBits: public Stream {
          * Função que escreve o header no ficheiro
          *
          * */
-        void writeHeader(uint32_t frames, uint32_t channels, uint32_t samplerates, uint32_t format){
-            f << frames << ";" << channels << ";" << samplerates << ";" << format << ";\n";
+        void writeHeader(uint32_t width, uint32_t height, uint32_t colorspace){
+            cout << "Wow" << endl;
+            f << "PARVUS" << ";" << width << ";" << height << ";" << colorspace << endl;
+            cout << "Wow" << endl;
         }
 
         void writeBlockHeader(uint8_t predictor_index, uint32_t block_size, vector<short> seeds){

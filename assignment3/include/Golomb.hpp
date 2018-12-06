@@ -11,20 +11,15 @@ class Golomb {
 
     private:
         uint32_t m, b, t;
-        Stream stream;
-        tuple<uint32_t,uint32_t> truncatedBinary(uint32_t r);
 
     public:
-        // Mode 0 - Read
-        // Mode 1 - Write
-        Golomb(const string & file, int mode);
+        Golomb();
 
         void set_m( uint32_t m);
 
-        void encode_and_write( int number);
+        void encode_and_write( int number, WRITEBits & w);
 
-        int  read_and_decode();
-        void close();
+        int read_and_decode(READBits & r);
 };
 
 #endif
