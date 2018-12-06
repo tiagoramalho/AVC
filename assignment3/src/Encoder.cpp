@@ -49,11 +49,21 @@ void Encoder::parse_header(  map<char,string> & header,
 }
 
 void Encoder::encode_and_write_frame(Frame * frame){
-    printf("Going To Encode Frame");
 
-    frame->print_type();
+    /* encode the Luminance Matrix */
 
+        /* Use the (0,0) as seed and predict base on a linear predictor the first line */
+        /* Predict (0,1) based on (0,0) */
 
+        /* From here is possible to use "full" jpeg predictor */
+
+        /* Encode the residuals with Golomb */
+
+    /* encode the Crominance U Mantrix */
+        /* same */
+
+    /* encode the Crominance V Mantrix */
+        /* same */
 
 };
 
@@ -93,16 +103,11 @@ void Encoder::encode_and_write(){
     while(1){
         getline (this->infile,line); // Skipping word FRAME
         this->infile.read((char *)imgData, cols * rows * 3);
-
         f->set_frame_data(imgData);
-
         if(this->infile.gcount() == 0){
           break;
         }
-
-
         encode_and_write_frame(f);
-
         //printf("Frames -> %d\n", frame_counter);
         frame_counter += 1;
     }
