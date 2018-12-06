@@ -175,7 +175,7 @@ class WRITEBits: public Stream {
          * */
         void writeHeader(uint32_t width, uint32_t height, uint32_t colorspace){
             cout << "Wow" << endl;
-            f << "PARVUS" << ";" << width << ";" << height << ";" << colorspace << endl;
+            f << "PARVUS" << " W" << width << " H" << height << " C" << colorspace << endl;
             cout << "Wow" << endl;
         }
 

@@ -4,7 +4,13 @@
 #include <cstdint>
 #include <opencv2/opencv.hpp>
 
-class Frame{};
+class Frame{
+
+    public:
+        virtual void set_frame_data( uint8_t * frameData) = 0;
+        virtual void print_type() = 0;
+
+};
 
 class Frame444: public Frame {
 
@@ -18,6 +24,8 @@ class Frame444: public Frame {
         void set_frame_data( uint8_t * frameData);
 
         void get_rgb( uchar *buffer );
+
+        void print_type(){ std::cout << "=== 444 ===" << std::endl; };
 };
 
 class Frame422: public Frame {
@@ -32,6 +40,8 @@ class Frame422: public Frame {
         void set_frame_data( uint8_t * frameData);
 
         void get_rgb( uchar *buffer );
+
+        void print_type(){ std::cout << "=== 422 ===" << std::endl; };
 };
 
 class Frame420: public Frame {
@@ -46,6 +56,8 @@ class Frame420: public Frame {
         void set_frame_data( uint8_t * frameData);
 
         void get_rgb( uchar *buffer );
+
+        void print_type(){ std::cout << "=== 420 ===" << std::endl; };
 };
 
 #endif

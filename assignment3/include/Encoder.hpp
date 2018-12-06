@@ -17,7 +17,7 @@ class Encoder {
         Encoder(const string & in_file, const string & out_file);
 
         /*  Function used to encode and write N Frames ( used for easy debug ) */
-        void encode_and_write_frame( Frame & frame );
+        void encode_and_write_frame( Frame * frame );
 
         /* Function used to encode and write */
         void encode_and_write();

@@ -1,7 +1,6 @@
-#include "../include/Frame.hpp"
+#include "Frame.hpp"
 
 //  Frame 444 functions
- 
 void Frame444::set_frame_data(uint8_t * frameData){
     this->y = cv::Mat(this->height, this->width, CV_8UC1, frameData);
     frameData = frameData + (this->height * this->width);

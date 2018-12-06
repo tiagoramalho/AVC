@@ -1,6 +1,8 @@
 #include "Encoder.hpp"
 
+
 #include <cstdio>
+#include "Frame.hpp"
 
 Encoder::Encoder(const string & in_file, const string & out_file):
     infile(in_file.c_str()),w(out_file.c_str()){}
@@ -46,16 +48,20 @@ void Encoder::parse_header(  map<char,string> & header,
     }
 }
 
-void Encoder::encode_and_write_frame(Frame & frame){
+void Encoder::encode_and_write_frame(Frame * frame){
     printf("Going To Encode Frame");
+
+    frame->print_type();
+
 
 
 };
 
 void Encoder::encode_and_write(){
-    printf("Going To Encode");
-
     string line;
+    int cols, rows, frame_counter =0;
+    unsigned char *imgData;
+    Frame * f;
 
     getline(this->infile, line);
 
@@ -63,8 +69,43 @@ void Encoder::encode_and_write(){
 
     parse_header(header, line);
 
-    this->w.writeHeader(12,12,12);
-    printf("Pum\n");
+    cols = stoi(header['W']);
+    rows = stoi(header['H']);
+
+    printf("Writing Header To Compressed File...");
+    this->w.writeHeader(cols,rows,stoi(header['C']));
+    printf("done %d\n",stoi(header['C']));
+
+    switch(stoi(header['C'])){
+        case 444:{
+            Frame444 f44 (rows, cols);
+            f = &f44;
+            imgData = new unsigned char[cols * rows * 3];
+            break;
+        }
+        default:
+            exit(1);
+    }
+
+
+    f->print_type();
+
+    while(1){
+        getline (this->infile,line); // Skipping word FRAME
+        this->infile.read((char *)imgData, cols * rows * 3);
+
+        f->set_frame_data(imgData);
+
+        if(this->infile.gcount() == 0){
+          break;
+        }
+
+
+        encode_and_write_frame(f);
+
+        //printf("Frames -> %d\n", frame_counter);
+        frame_counter += 1;
+    }
 };
 
 
