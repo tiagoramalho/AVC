@@ -62,95 +62,6 @@ map<char,string> parse_header(string line, int delimiter(int) = ::isspace )
 
     return result;
 }
-void frame_decoding420(ifstream const & file, int const & end, int loop, int yCols, int yRows)
-{
-
-    int & end_t = const_cast<int &>(end);
-    /* Opening video file */
-    ifstream & myfile = const_cast<ifstream &>(file);
-
-    /* auxiliary variables */
-    int x, y, r, g, b, y_, u, v;
-
-    string line;
-
-    /* file data buffer */
-    unsigned char *imgData;
-    /* unsigned char pointer to the Mat data*/
-    uchar *buffer;
-
-
-    while(1){
-        /* data structure for the OpenCv image */
-        Mat img = Mat(Size(yCols, yRows), CV_8UC3);
-
-        /* buffer to store the frame */
-        imgData = new unsigned char[yCols * yRows * 3];
-
-        getline (myfile,line); // Skipping word FRAME
-        myfile.read((char *)imgData, yCols * yRows * 3);
-        if(myfile.gcount() == 0)
-        {
-            if(loop)
-            {
-                myfile.clear();
-                myfile.seekg(0);
-                getline (myfile,line); // read the header continue;
-            }
-            else
-            {
-                end_t= 1;
-                break;
-            }
-        }
-
-        /* The video is stored in YUV planar mode but OpenCv uses packed modes*/
-        buffer = (uchar*)img.ptr();
-
-        auto size = yRows * yCols;
-        auto width = yCols;
-
-        auto start = std::chrono::high_resolution_clock::now();
-        for(y = 0 ; y < yRows; y += 1)
-        {
-            for(x = 0 ; x < yCols; x += 1){
-                /* Accessing to planar info */
-                y_ = imgData[ y * width + x ];
-                u = imgData[(int) ( (y/2) * (width/2) + (x/2) + size)];
-                v = imgData[(int) ( (y/2) * (width/2) + (x/2) + size + (size/4))];
-
-                /* convert to RGB */
-                // b = (int)(1.164*(y - 16) + 2.018*(u-128));
-                // g = (int)(1.164*(y - 16) - 0.813*(u-128) - 0.391*(v-128));
-                // r = (int)(1.164*(y - 16) + 1.596*(v-128));
-
-                int r = y_ + (1.370705 * (v-128));
-                int g = y_ - (0.698001 * (v-128)) - (0.337633 * (u-128));
-                int b = y_ + (1.732446 * (u-128));
-
-                /* clipping to [0 ... 255] */
-                if(r < 0) r = 0;
-                if(g < 0) g = 0;
-                if(b < 0) b = 0;
-                if(r > 255) r = 255;
-                if(g > 255) g = 255;
-                if(b > 255) b = 255;
-
-                /* Fill the OpenCV buffer - packed mode: BGRBGR...BGR */
-                buffer[ y*3*width + 3* x ] = b;
-                buffer[(y*3*width + 3*x) + 1] = g;
-                buffer[(y*3*width + 3*x) + 2] = r;
-                //cout << "x: "<< x << " y: "<<y<<endl;
-            }
-        }
-        auto finish = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = finish - start;
-        std::cout << "Elapsed time: " << elapsed.count() << " s\n";
-
-        q.enqueue(img);
-    }
-    q.enqueue(Mat());
-}
 void frame_decoding444(ifstream const & file, int const & end, int loop, int yCols, int yRows) {
 
     int & end_t = const_cast<int &>(end);
@@ -179,7 +90,7 @@ void frame_decoding444(ifstream const & file, int const & end, int loop, int yCo
         myfile.read((char *)imgData, yCols * yRows * 3);
 
         /* data structure to handle frames */
-        Frame f(0, yCols, yRows);
+        Frame444 f(yCols, yRows);
         f.set_frame_data(imgData);
 
         if(myfile.gcount() == 0) {
@@ -196,15 +107,13 @@ void frame_decoding444(ifstream const & file, int const & end, int loop, int yCo
 
         buffer = (uchar*)img.ptr();
 
-        auto start = std::chrono::high_resolution_clock::now();
-
+        //Uncomment for frame time
+        //auto start = std::chrono::high_resolution_clock::now();
         f.get_rgb(buffer);
-
-        auto finish = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = finish - start;
-        std::cout << "Elapsed time: " << elapsed.count() << " s\n";
+        //auto finish = std::chrono::high_resolution_clock::now();
+        //std::chrono::duration<double> elapsed = finish - start;
+        //std::cout << "Elapsed time: " << elapsed.count() << " s\n";
         q.enqueue(img);
-        // cout << q.size_approx() << endl;
     }
     q.enqueue(Mat());
 }
@@ -234,6 +143,11 @@ void frame_decoding422(ifstream const & file, int const & end, int loop, int yCo
 
         getline (myfile,line); // Skipping word FRAME
         myfile.read((char *)imgData, yCols * yRows * 3);
+
+        /* data structure to handle frames */
+        Frame422 f(yCols, yRows);
+        f.set_frame_data(imgData);
+
         if(myfile.gcount() == 0)
         {
             if(loop)
@@ -250,39 +164,77 @@ void frame_decoding422(ifstream const & file, int const & end, int loop, int yCo
             }
         }
 
-        auto start = std::chrono::high_resolution_clock::now();
         /* The video is stored in YUV planar mode but OpenCv uses packed modes*/
         buffer = (uchar*)img.ptr();
-        for(i = 0 ; i < yRows * yCols * 3 ; i += 3)
+
+        //Uncomment for frame time
+        //auto start = std::chrono::high_resolution_clock::now();
+        f.get_rgb(buffer);
+        //auto finish = std::chrono::high_resolution_clock::now();
+        //std::chrono::duration<double> elapsed = finish - start;
+        //std::cout << "Elapsed time: " << elapsed.count() << " s\n";
+        q.enqueue(img);
+
+    }
+    q.enqueue(Mat());
+}
+
+void frame_decoding420(ifstream const & file, int const & end, int loop, int yCols, int yRows)
+{
+
+    int & end_t = const_cast<int &>(end);
+    /* Opening video file */
+    ifstream & myfile = const_cast<ifstream &>(file);
+
+    /* auxiliary variables */
+    int x, y, r, g, b, y_, u, v;
+
+    string line;
+
+    /* file data buffer */
+    unsigned char *imgData;
+    /* unsigned char pointer to the Mat data*/
+    uchar *buffer;
+
+
+    while(1){
+        /* data structure for the OpenCv image */
+        Mat img = Mat(Size(yCols, yRows), CV_8UC3);
+
+        /* buffer to store the frame */
+        imgData = new unsigned char[yCols * yRows * 3];
+
+        getline (myfile,line); // Skipping word FRAME
+        myfile.read((char *)imgData, yCols * yRows * 3);
+
+        /* data structure to handle frames */
+        Frame420 f(yCols, yRows);
+        f.set_frame_data(imgData);
+
+        if(myfile.gcount() == 0)
         {
-            /* Accessing to planar info */
-            y = imgData[i / 3];
-            u = imgData[(i / 6) + (yRows * yCols)];
-            v = imgData[(i / 6) + (yRows * yCols) + ((yRows * yCols)/2)]; 
-
-
-            /* convert to RGB */
-            b = (int)(1.164*(y - 16) + 2.018*(u-128));
-            g = (int)(1.164*(y - 16) - 0.813*(u-128) - 0.391*(v-128));
-            r = (int)(1.164*(y - 16) + 1.596*(v-128));
-
-            /* clipping to [0 ... 255] */
-            if(r < 0) r = 0;
-            if(g < 0) g = 0;
-            if(b < 0) b = 0;
-            if(r > 255) r = 255;
-            if(g > 255) g = 255;
-            if(b > 255) b = 255;
-
-            /* Fill the OpenCV buffer - packed mode: BGRBGR...BGR */
-            buffer[i] = b;
-            buffer[i + 1] = g;
-            buffer[i + 2] = r;
+            if(loop)
+            {
+                myfile.clear();
+                myfile.seekg(0);
+                getline (myfile,line); // read the header continue;
+            }
+            else
+            {
+                end_t= 1;
+                break;
+            }
         }
-        auto finish = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = finish - start;
-        std::cout << "Elapsed time: " << elapsed.count() << " s\n";
 
+        /* The video is stored in YUV planar mode but OpenCv uses packed modes*/
+        buffer = (uchar*)img.ptr();
+
+        //Uncomment for frame time
+        //auto start = std::chrono::high_resolution_clock::now();
+        f.get_rgb(buffer);
+        //auto finish = std::chrono::high_resolution_clock::now();
+        //std::chrono::duration<double> elapsed = finish - start;
+        //std::cout << "Elapsed time: " << elapsed.count() << " s\n";
         q.enqueue(img);
     }
     q.enqueue(Mat());
@@ -410,6 +362,7 @@ int main(int argc, char** argv)
                 break;
         }
     }
+    t.join();
     exit(0);
     return 0;
 }
