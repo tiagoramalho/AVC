@@ -15,7 +15,7 @@ class Frame {
 
         void set_frame_data( uint8_t * frameData);
 
-        void get_rgb( int rgb[] , int line, int col );
+        void get_rgb( uchar *buffer );
 };
 
 #endif

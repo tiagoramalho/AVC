@@ -109,6 +109,8 @@ void frame_decoding420(ifstream const & file, int const & end, int loop, int yCo
 
         auto size = yRows * yCols;
         auto width = yCols;
+
+        auto start = std::chrono::high_resolution_clock::now();
         for(y = 0 ; y < yRows; y += 1)
         {
             for(x = 0 ; x < yCols; x += 1){
@@ -141,9 +143,13 @@ void frame_decoding420(ifstream const & file, int const & end, int loop, int yCo
                 //cout << "x: "<< x << " y: "<<y<<endl;
             }
         }
+        auto finish = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = finish - start;
+        std::cout << "Elapsed time: " << elapsed.count() << " s\n";
 
         q.enqueue(img);
     }
+    q.enqueue(Mat());
 }
 void frame_decoding444(ifstream const & file, int const & end, int loop, int yCols, int yRows) {
 
@@ -159,9 +165,6 @@ void frame_decoding444(ifstream const & file, int const & end, int loop, int yCo
 
     /* unsigned char pointer to the Mat data*/
     uchar *buffer;
-
-    int cols,lines, width = yCols, indexer =0;
-    int rgb[3];
 
     while(1){
 
@@ -193,20 +196,17 @@ void frame_decoding444(ifstream const & file, int const & end, int loop, int yCo
 
         buffer = (uchar*)img.ptr();
 
-        for( lines = 0; lines < yRows; lines+=1){
-            for( cols = 0; cols < yCols; cols+=1){
-                indexer = (cols*3) + (width * lines * 3);
+        auto start = std::chrono::high_resolution_clock::now();
 
-                f.get_rgb(rgb, lines, cols);
+        f.get_rgb(buffer);
 
-                buffer[ indexer ]     = rgb[2];
-                buffer[ indexer + 1]  = rgb[1];
-                buffer[ indexer + 2]  = rgb[0];
-            }
-        }
+        auto finish = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = finish - start;
+        std::cout << "Elapsed time: " << elapsed.count() << " s\n";
         q.enqueue(img);
         // cout << q.size_approx() << endl;
     }
+    q.enqueue(Mat());
 }
 
 void frame_decoding422(ifstream const & file, int const & end, int loop, int yCols, int yRows) {
@@ -228,8 +228,7 @@ void frame_decoding422(ifstream const & file, int const & end, int loop, int yCo
 
     while(1){
         /* data structure for the OpenCv image */
-        Mat img = Mat(Size(yCols, yRows), CV_8UC3);
-
+        Mat img = Mat(Size(yCols, yRows), CV_8UC3); 
         /* buffer to store the frame */
         imgData = new unsigned char[yCols * yRows * 3];
 
@@ -251,6 +250,7 @@ void frame_decoding422(ifstream const & file, int const & end, int loop, int yCo
             }
         }
 
+        auto start = std::chrono::high_resolution_clock::now();
         /* The video is stored in YUV planar mode but OpenCv uses packed modes*/
         buffer = (uchar*)img.ptr();
         for(i = 0 ; i < yRows * yCols * 3 ; i += 3)
@@ -279,9 +279,13 @@ void frame_decoding422(ifstream const & file, int const & end, int loop, int yCo
             buffer[i + 1] = g;
             buffer[i + 2] = r;
         }
+        auto finish = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = finish - start;
+        std::cout << "Elapsed time: " << elapsed.count() << " s\n";
 
         q.enqueue(img);
     }
+    q.enqueue(Mat());
 }
 
 int main(int argc, char** argv)
@@ -373,13 +377,18 @@ int main(int argc, char** argv)
 
     //  this_thread::sleep_for(chrono::seconds(10));
     Mat img;
-    while(!end)
+    while(1)
     {
-        q.wait_dequeue(img);
-        ///* display the image */
-        imshow( "rgb", img );
+        if(img.empty() && end){
+            cout << "break" <<endl;
+            break;
+        }
+
         if(playing)
         {
+            q.wait_dequeue(img);
+            ///* display the image */
+            imshow( "rgb", img );
             /* wait according to the frame rate */
             inputKey = waitKey((1.0 / fps) * 1000);
         }
@@ -392,16 +401,16 @@ int main(int argc, char** argv)
         switch((char)inputKey)
         {
             case 'q':
-                end = 1;
+                cout << "q" <<endl;
+                exit(0);
                 break;
             case 'p':
+                cout << "p" <<endl;
                 playing = playing ? 0 : 1;
                 break;
         }
     }
-
-    t.join();
-
+    exit(0);
     return 0;
 }
 
