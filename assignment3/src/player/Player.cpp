@@ -62,6 +62,8 @@ map<char,string> parse_header(string line, int delimiter(int) = ::isspace )
 
     return result;
 }
+
+
 void frame_decoding444(ifstream const & file, int const & end, int loop, int yCols, int yRows) {
 
     int & end_t = const_cast<int &>(end);
@@ -76,11 +78,11 @@ void frame_decoding444(ifstream const & file, int const & end, int loop, int yCo
 
     /* unsigned char pointer to the Mat data*/
     uchar *buffer;
-
+    Mat img;
     while(1){
 
         /* data structure for the OpenCv image */
-        Mat img = Mat(Size(yCols, yRows), CV_8UC3);
+        img = Mat(Size(yCols, yRows), CV_8UC3);
 
         /* buffer to store the frame */
         imgData = new unsigned char[yCols * yRows * 3];
@@ -239,7 +241,7 @@ int main(int argc, char** argv)
     /* store the filename */
     string file;
     /* frames per second */
-    int fps = 15;
+    int fps = 50;
     /* control variables */
     int end = 0, playing = 1, loop = 0;
 
@@ -336,11 +338,11 @@ int main(int argc, char** argv)
             ///* display the image */
             imshow( "rgb", img );
             /* wait according to the frame rate */
-        auto start = std::chrono::high_resolution_clock::now();
+            auto start = std::chrono::high_resolution_clock::now();
             inputKey = waitKey((1.0 / fps) * 1000);
-        auto finish = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = finish - start;
-        std::cout << "wait key: " << elapsed.count() << " s\n";
+            auto finish = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> elapsed = finish - start;
+            std::cout << "wait key: " << elapsed.count() << " s\n";
         }
         else
         {

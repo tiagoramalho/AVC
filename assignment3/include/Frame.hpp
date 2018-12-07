@@ -12,6 +12,10 @@ class Frame{
         virtual void print_type() = 0;
         virtual cv::Mat get_y() = 0;
 
+        virtual ~Frame(){
+
+        }
+
 };
 
 class Frame444: public Frame {
@@ -25,7 +29,7 @@ class Frame444: public Frame {
 
         void get_rgb( uchar *buffer );
 
-        void print_type(){ std::cout << "=== 444 ===" << std::endl; };
+        void print_type(){ std::cout << "=== 420 ===" << std::endl; };
 
         cv::Mat get_y(){return this->y;};
 };
@@ -44,6 +48,9 @@ class Frame422: public Frame {
         void get_rgb( uchar *buffer );
 
         void print_type(){ std::cout << "=== 422 ===" << std::endl; };
+
+        cv::Mat get_y(){return this->y;};
+
 };
 
 class Frame420: public Frame {
@@ -60,6 +67,9 @@ class Frame420: public Frame {
         void get_rgb( uchar *buffer );
 
         void print_type(){ std::cout << "=== 420 ===" << std::endl; };
+
+        cv::Mat get_y(){return this->y;};
+        
 };
 
 #endif

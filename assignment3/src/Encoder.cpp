@@ -72,14 +72,20 @@ void Encoder::parse_header(  map<char,string> & header,
         }
         i=j;
     }
+    if (header.find('C') == header.end()){
+        cout << "Colour Space " << token.substr(1) << endl;
+        header['C'] = "420";
+    }
 }
 
 void Encoder::encode_and_write_frame(Frame * frame){
 
+    /*
     printf("Pim");
     frame->print_type();
     printf("Pam");
-
+    */
+    
     int mini_block_size = 8;
     int mini_x, mini_y;
     vector<int> residuals;
@@ -88,7 +94,7 @@ void Encoder::encode_and_write_frame(Frame * frame){
     uint8_t seed = frame->get_y().at<uint8_t>(0,0);
     uint8_t last_real = seed;
     uint8_t prediction;
-    printf("Going to encode 1 mini_block");
+
     for( mini_y = 0; mini_y < mini_block_size; mini_y++){
         if( mini_y == 0 ){
             // First row
@@ -116,8 +122,8 @@ void Encoder::encode_and_write_frame(Frame * frame){
 
 void Encoder::encode_and_write(){
     string line;
-    int cols, rows, frame_counter =0;
-    unsigned char *imgData;
+    int cols, rows;
+    vector<unsigned char> imgData;
     Frame * f;
 
     getline(this->infile, line);
@@ -129,40 +135,43 @@ void Encoder::encode_and_write(){
     cols = stoi(header['W']);
     rows = stoi(header['H']);
 
-    printf("Writing Header To Compressed File...");
+
+    // printf("Writing Header To Compressed File...");
     this->w.writeHeader(cols,rows,stoi(header['C']));
-    printf("done %d\n",stoi(header['C']));
 
     switch(stoi(header['C'])){
         case 444:{
-            printf("ALBERTINA %d\n",stoi(header['C']));
-            Frame444 f44 (rows, cols);
-            printf("ALBERTINA %d\n",stoi(header['C']));
-            f = &f44;
-            printf("ALBERTINA %d\n",stoi(header['C']));
-            imgData = new unsigned char[cols * rows * 3];
+            f = new Frame444 (rows, cols);
+            imgData.resize(cols * rows * 3);
+            break;
+        }
+        case 422:{
+            f = new Frame422 (rows, cols);
+            imgData.resize(cols * rows * 2);
+            break;
+        }
+        case 420:{
+            f = new Frame420 (rows, cols);
+            imgData.resize(cols * rows * 3/2);
             break;
         }
         default:
             exit(1);
     }
 
-
-    printf("ALBERTINA %d\n",stoi(header['C']));
     f->print_type();
-    printf("ALBERTINA %d\n",stoi(header['C']));
 
     while(1){
         getline (this->infile,line); // Skipping word FRAME
-        this->infile.read((char *)imgData, cols * rows * 3);
-        f->set_frame_data(imgData);
+        this->infile.read((char *) imgData.data(), imgData.size());
+        f->set_frame_data(imgData.data());
         if(this->infile.gcount() == 0){
-          break;
+            break;
         }
         encode_and_write_frame(f);
-        //printf("Frames -> %d\n", frame_counter);
-        frame_counter += 1;
     }
+
+    delete f;
 };
 
 
