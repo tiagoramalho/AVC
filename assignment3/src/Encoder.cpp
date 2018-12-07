@@ -7,6 +7,33 @@
 Encoder::Encoder(const string & in_file, const string & out_file):
     infile(in_file.c_str()),w(out_file.c_str()){}
 
+int Encoder::get_residual_uniform( uint8_t previous_pixel_value, uint8_t real_pixel_value ){
+
+    int residual = real_pixel_value - previous_pixel_value;
+    return residual;
+
+}
+
+int Encoder::get_residual_LOCO( uint8_t pixel_A, uint8_t pixel_B, uint8_t pixel_C, uint8_t real_pixel_value){
+
+    uint8_t pixel_prevision, maxAB, minAB;
+    int residual;
+
+    maxAB = std::max(pixel_A, pixel_B);
+    minAB = std::min(pixel_A, pixel_B);
+
+    if( pixel_C >= maxAB){
+        pixel_prevision = minAB;
+    }else if ( pixel_C <= minAB ){
+        pixel_prevision = maxAB;
+    }else{
+        pixel_prevision = pixel_A + pixel_B - pixel_C;
+    }
+
+    return get_residual_uniform( pixel_prevision, real_pixel_value);
+}
+
+
 void Encoder::parse_header(  map<char,string> & header,
                     string header_line,
                     int delimiter(int)){
