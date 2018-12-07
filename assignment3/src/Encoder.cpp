@@ -17,7 +17,6 @@ int Encoder::get_residual_uniform( uint8_t previous_pixel_value, uint8_t real_pi
 int Encoder::get_residual_LOCO( uint8_t pixel_A, uint8_t pixel_B, uint8_t pixel_C, uint8_t real_pixel_value){
 
     uint8_t pixel_prevision, maxAB, minAB;
-    int residual;
 
     maxAB = std::max(pixel_A, pixel_B);
     minAB = std::min(pixel_A, pixel_B);
@@ -77,21 +76,42 @@ void Encoder::parse_header(  map<char,string> & header,
 
 void Encoder::encode_and_write_frame(Frame * frame){
 
+    printf("Pim");
+    frame->print_type();
+    printf("Pam");
+
+    int mini_block_size = 8;
+    int mini_x, mini_y;
+    vector<int> residuals;
+
     /* encode the Luminance Matrix */
+    uint8_t seed = frame->get_y().at<uint8_t>(0,0);
+    uint8_t last_real = seed;
+    uint8_t prediction;
+    printf("Going to encode 1 mini_block");
+    for( mini_y = 0; mini_y < mini_block_size; mini_y++){
+        if( mini_y == 0 ){
+            // First row
+            for( mini_x = 1; mini_x < mini_block_size; mini_x++){
+                residuals.push_back(get_residual_uniform(last_real, frame->get_y().at<uint8_t>(mini_x,mini_y)));
+                last_real = frame->get_y().at<uint8_t>(mini_x,mini_y);
+            }
+        }else{
+            // Other rows
+            residuals.push_back(get_residual_uniform(seed, frame->get_y().at<uint8_t>(0,1)));
+            for( mini_x = 1; mini_x < mini_block_size; mini_x++){
+                prediction = get_residual_LOCO(
+                        frame->get_y().at<uint8_t>(mini_x-1,mini_y),
+                        frame->get_y().at<uint8_t>(mini_x,mini_y-1),
+                        frame->get_y().at<uint8_t>(mini_x-1,mini_y-1),
+                        frame->get_y().at<uint8_t>(mini_x,mini_y));
 
-        /* Use the (0,0) as seed and predict base on a linear predictor the first line */
-        /* Predict (0,1) based on (0,0) */
+                residuals.push_back(prediction);
+            }
+        }
+    }
 
-        /* From here is possible to use "full" jpeg predictor */
-
-        /* Encode the residuals with Golomb */
-
-    /* encode the Crominance U Mantrix */
-        /* same */
-
-    /* encode the Crominance V Mantrix */
-        /* same */
-
+    printf("Done");
 };
 
 void Encoder::encode_and_write(){
@@ -115,8 +135,11 @@ void Encoder::encode_and_write(){
 
     switch(stoi(header['C'])){
         case 444:{
+            printf("ALBERTINA %d\n",stoi(header['C']));
             Frame444 f44 (rows, cols);
+            printf("ALBERTINA %d\n",stoi(header['C']));
             f = &f44;
+            printf("ALBERTINA %d\n",stoi(header['C']));
             imgData = new unsigned char[cols * rows * 3];
             break;
         }
@@ -125,7 +148,9 @@ void Encoder::encode_and_write(){
     }
 
 
+    printf("ALBERTINA %d\n",stoi(header['C']));
     f->print_type();
+    printf("ALBERTINA %d\n",stoi(header['C']));
 
     while(1){
         getline (this->infile,line); // Skipping word FRAME
