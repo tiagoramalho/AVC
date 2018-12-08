@@ -1,0 +1,8 @@
+reset
+set term png #output terminal and file
+if (!exists("out")) out='histogram.png'
+set output out
+set boxwidth 1
+set style fill solid
+if (!exists("in")) in='default.dat'
+plot in with boxes

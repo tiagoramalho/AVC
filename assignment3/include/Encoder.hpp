@@ -10,6 +10,8 @@ class Encoder {
         ifstream infile;
         WRITEBits w;
 
+        double get_best_k( vector<int> * residuals, int frame );
+
         void parse_header(map<char,string> & header, string header_line, int delimiter(int) = ::isspace);
 
         int get_residual_uniform( uint8_t pixel_value, uint8_t real_pixel_value);
@@ -21,7 +23,7 @@ class Encoder {
         Encoder(const string & in_file, const string & out_file);
 
         /*  Function used to encode and write N Frames ( used for easy debug ) */
-        void encode_and_write_frame( Frame * frame );
+        void encode_and_write_frame( Frame * frame , int f_counter);
 
         /* Function used to encode and write */
         void encode_and_write();

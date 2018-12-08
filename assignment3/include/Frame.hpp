@@ -29,7 +29,7 @@ class Frame444: public Frame {
 
         void get_rgb( uchar *buffer );
 
-        void print_type(){ std::cout << "=== 420 ===" << std::endl; };
+        void print_type(){ std::cout << "=== 444 ===" << std::endl; };
 
         cv::Mat get_y(){return this->y;};
 };
@@ -69,7 +69,6 @@ class Frame420: public Frame {
         void print_type(){ std::cout << "=== 420 ===" << std::endl; };
 
         cv::Mat get_y(){return this->y;};
-        
 };
 
 #endif

@@ -2,10 +2,52 @@
 
 
 #include <cstdio>
+#include <numeric>
 #include "Frame.hpp"
 
 Encoder::Encoder(const string & in_file, const string & out_file):
     infile(in_file.c_str()),w(out_file.c_str()){}
+
+int WriteFile(std::string fname, std::map<int,int> *m) {
+    int count = 0;
+    if (m->empty())
+        return 0;
+
+    FILE *fp = fopen(fname.c_str(), "w");
+    if (!fp)
+        return -errno;
+
+    for(std::map<int, int>::iterator it = m->begin(); it != m->end(); it++) {
+        fprintf(fp, "%d %d\n", it->first, it->second);
+        count++;
+    }
+
+    fclose(fp);
+    return count;
+}
+
+double Encoder::get_best_k( vector<int> * residuals , int frame){
+
+    double average = std::accumulate( residuals->begin(), residuals->end(), 0.0)/residuals->size();
+
+    double E=0;
+    double inverse = 1.0 / static_cast<double>(residuals->size());
+
+    std::map<int, int> freq;
+
+    for(unsigned int i=0;i<residuals->size();i++){
+      freq[residuals->at(i)]++;
+      E+=pow(static_cast<double>(residuals->at(i)) - average, 2);
+    }
+
+    printf("%d", frame);
+    string fname = "hist"+ to_string(frame);
+    printf("%s\n", fname.c_str());
+    WriteFile( fname, &freq);
+
+    printf("Average -> %f Deviation-> %f\n", average, sqrt(inverse*E));
+    return average;
+}
 
 int Encoder::get_residual_uniform( uint8_t previous_pixel_value, uint8_t real_pixel_value ){
 
@@ -78,15 +120,9 @@ void Encoder::parse_header(  map<char,string> & header,
     }
 }
 
-void Encoder::encode_and_write_frame(Frame * frame){
+void Encoder::encode_and_write_frame(Frame * frame, int f_counter){
 
-    /*
-    printf("Pim");
-    frame->print_type();
-    printf("Pam");
-    */
-    
-    int mini_block_size = 8;
+    int mini_block_size = frame->get_y().cols;
     int mini_x, mini_y;
     vector<int> residuals;
 
@@ -116,13 +152,13 @@ void Encoder::encode_and_write_frame(Frame * frame){
             }
         }
     }
-
-    printf("Done");
+    get_best_k(&residuals, f_counter);
+    printf("Done \n");
 };
 
 void Encoder::encode_and_write(){
     string line;
-    int cols, rows;
+    int cols, rows,frame_counter =0;
     vector<unsigned char> imgData;
     Frame * f;
 
@@ -168,7 +204,8 @@ void Encoder::encode_and_write(){
         if(this->infile.gcount() == 0){
             break;
         }
-        encode_and_write_frame(f);
+        encode_and_write_frame(f, frame_counter);
+        frame_counter +=1;
     }
 
     delete f;
