@@ -129,7 +129,7 @@ void Encoder::encode_and_write_frame(Frame * frame, int f_counter){
     /* encode the Luminance Matrix */
     uint8_t seed = frame->get_y().at<uint8_t>(0,0);
     uint8_t last_real = seed;
-    uint8_t prediction;
+    int residual;
 
     for( mini_y = 0; mini_y < mini_block_size; mini_y++){
         if( mini_y == 0 ){
@@ -140,15 +140,15 @@ void Encoder::encode_and_write_frame(Frame * frame, int f_counter){
             }
         }else{
             // Other rows
-            residuals.push_back(get_residual_uniform(seed, frame->get_y().at<uint8_t>(0,1)));
+            residuals.push_back(get_residual_uniform(frame->get_y().at<uint8_t>(0,mini_y-1), frame->get_y().at<uint8_t>(0,mini_y)));
             for( mini_x = 1; mini_x < mini_block_size; mini_x++){
-                prediction = get_residual_LOCO(
+                residual = get_residual_LOCO(
                         frame->get_y().at<uint8_t>(mini_x-1,mini_y),
                         frame->get_y().at<uint8_t>(mini_x,mini_y-1),
                         frame->get_y().at<uint8_t>(mini_x-1,mini_y-1),
                         frame->get_y().at<uint8_t>(mini_x,mini_y));
 
-                residuals.push_back(prediction);
+                residuals.push_back(residual);
             }
         }
     }
