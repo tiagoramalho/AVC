@@ -3,6 +3,8 @@
 
 #include <cstdio>
 #include <numeric>
+#include <math.h>
+#include <cmath>
 #include "Frame.hpp"
 
 Encoder::Encoder(const string & in_file, const string & out_file):
@@ -26,27 +28,33 @@ int WriteFile(std::string fname, std::map<int,int> *m) {
     return count;
 }
 
-double Encoder::get_best_k( vector<int> * residuals , int frame){
+int Encoder::get_best_k( vector<int> * residuals , int frame, int tck){
 
-    double average = std::accumulate( residuals->begin(), residuals->end(), 0.0)/residuals->size();
+    /* This Function can be reworked */
 
-    double E=0;
-    double inverse = 1.0 / static_cast<double>(residuals->size());
+    int k = 0;
+    //double average = std::accumulate( residuals->begin(), residuals->end(), 0.0)/residuals->size();
 
-    std::map<int, int> freq;
+    //double E=0;
+    //double inverse = 1.0 / static_cast<double>(residuals->size());
 
-    for(unsigned int i=0;i<residuals->size();i++){
-      freq[residuals->at(i)]++;
-      E+=pow(static_cast<double>(residuals->at(i)) - average, 2);
-    }
+    //std::map<int, int> freq;
 
-    printf("%d", frame);
-    string fname = "hist"+ to_string(frame);
-    printf("%s\n", fname.c_str());
-    WriteFile( fname, &freq);
+    //for(unsigned int i=0;i<residuals->size();i++){
+    //  freq[residuals->at(i)]++;
+    //  E+=pow(static_cast<double>(residuals->at(i)) - average, 2);
+    //}
 
-    printf("Average -> %f Deviation-> %f\n", average, sqrt(inverse*E));
-    return average;
+    //printf("%d", frame);
+    //string fname = "./histograms/rawdata/hist"+ to_string(frame);
+    //printf("%s\n", fname.c_str());
+    //WriteFile( fname, &freq);
+
+    double tck_a = tck/residuals->size();
+    k = std::ceil(std::log2(tck_a));
+    //printf("K used-> %d \n", k);
+    //printf("Average -> %f | Deviation-> %f | K-> %f\n", average, sqrt(inverse*E), k );
+    return k;
 }
 
 int Encoder::get_residual_uniform( uint8_t previous_pixel_value, uint8_t real_pixel_value ){
@@ -120,43 +128,108 @@ void Encoder::parse_header(  map<char,string> & header,
     }
 }
 
-void Encoder::encode_and_write_frame(Frame * frame, int f_counter){
+int Encoder::get_residuals_from_matrix(cv::Mat * matrix, vector<int> * residuals){
 
-    int mini_block_size = frame->get_y().cols;
-    int mini_x, mini_y;
-    vector<int> residuals;
+    int x = 0, y=0,residual = 0,to_calculate_k = 0;
+    int width = matrix->cols;
+    int height= matrix->rows;
+    int last_real = matrix->at<uint8_t>(0,0);
 
-    /* encode the Luminance Matrix */
-    uint8_t seed = frame->get_y().at<uint8_t>(0,0);
-    uint8_t last_real = seed;
-    int residual;
-
-    for( mini_y = 0; mini_y < mini_block_size; mini_y++){
-        if( mini_y == 0 ){
+    for( y = 0; y < height; y++){
+        if( y == 0 ){
             // First row
-            for( mini_x = 1; mini_x < mini_block_size; mini_x++){
-                residuals.push_back(get_residual_uniform(last_real, frame->get_y().at<uint8_t>(mini_x,mini_y)));
-                last_real = frame->get_y().at<uint8_t>(mini_x,mini_y);
+            for( x = 1; x < width; x++){
+                residual = get_residual_uniform(last_real, matrix->at<uint8_t>(x,y));
+                residuals->push_back(residual);
+                //to_calculate_k += std::abs(residual);
+                if(residual >= 0)
+                  to_calculate_k += residual * 2;
+                else
+                  to_calculate_k += -2*residual-1;
+
+                last_real = matrix->at<uint8_t>(x,y);
             }
         }else{
             // Other rows
-            residuals.push_back(get_residual_uniform(frame->get_y().at<uint8_t>(0,mini_y-1), frame->get_y().at<uint8_t>(0,mini_y)));
-            for( mini_x = 1; mini_x < mini_block_size; mini_x++){
-                residual = get_residual_LOCO(
-                        frame->get_y().at<uint8_t>(mini_x-1,mini_y),
-                        frame->get_y().at<uint8_t>(mini_x,mini_y-1),
-                        frame->get_y().at<uint8_t>(mini_x-1,mini_y-1),
-                        frame->get_y().at<uint8_t>(mini_x,mini_y));
+            residual = get_residual_uniform(matrix->at<uint8_t>(0,y-1), matrix->at<uint8_t>(0,y));
+            residuals->push_back(residual);
+            //to_calculate_k += std::abs(residual);
+            if(residual >= 0)
+                to_calculate_k += residual * 2;
+            else
+                to_calculate_k += -2*residual-1;
 
-                residuals.push_back(residual);
+            for( x = 1; x < width; x++){
+                residual = get_residual_LOCO(
+                        matrix->at<uint8_t>(x-1,y),
+                        matrix->at<uint8_t>(x,y-1),
+                        matrix->at<uint8_t>(x-1,y-1),
+                        matrix->at<uint8_t>(x,y));
+
+                residuals->push_back(residual);
+                //to_calculate_k += std::abs(residual);
+                if(residual >= 0)
+                    to_calculate_k += residual * 2;
+                else
+                    to_calculate_k += -2*residual-1;
+
             }
         }
     }
-    get_best_k(&residuals, f_counter);
-    printf("Done \n");
+
+    return to_calculate_k;
+}
+
+void Encoder::encode_and_write_frame(Frame * frame, int f_counter, Golomb * g){
+
+    vector<int> residuals = {};
+    cv::Mat matrix = frame->get_y();
+    int to_calculate_k = 0;
+
+    /* encode the Luminance Matrix */
+    uint8_t seed = frame->get_y().at<uint8_t>(0,0);
+    to_calculate_k = get_residuals_from_matrix( & matrix , & residuals);
+    int k = get_best_k(&residuals, f_counter, to_calculate_k);
+    /* Write Frame Header */
+    this->w.writeFrameHeader(k, seed);
+    /* Encode Residuals */
+    g->set_m(k);
+    for(unsigned int i = 0; i < residuals.size(); i++){
+        g->encode_and_write(residuals.at(i), w);
+    }
+
+    /* encode the U Matrix */
+    residuals.clear();
+    matrix = frame->get_u();
+    seed = matrix.at<uint8_t>(0,0);
+    to_calculate_k = get_residuals_from_matrix( & matrix , & residuals);
+    k = get_best_k(&residuals, f_counter, to_calculate_k);
+
+    this->w.writeFrameHeader(k, seed);
+    g->set_m(k);
+    for(unsigned int i = 0; i < residuals.size(); i++){
+        g->encode_and_write(residuals.at(i), w);
+    }
+
+    /* encode the V Matrix */
+    residuals.clear();
+    matrix = frame->get_v();
+    seed = matrix.at<uint8_t>(0,0);
+    to_calculate_k = get_residuals_from_matrix( & matrix , & residuals);
+    k = get_best_k(&residuals, f_counter, to_calculate_k);
+
+    this->w.writeFrameHeader(k, seed);
+    g->set_m(k);
+    for(unsigned int i = 0; i < residuals.size(); i++){
+        g->encode_and_write(residuals.at(i), w);
+    }
+
+    printf("Done %d\n", f_counter);
 };
 
 void Encoder::encode_and_write(){
+    Golomb g;
+
     string line;
     int cols, rows,frame_counter =0;
     vector<unsigned char> imgData;
@@ -204,9 +277,11 @@ void Encoder::encode_and_write(){
         if(this->infile.gcount() == 0){
             break;
         }
-        encode_and_write_frame(f, frame_counter);
+        encode_and_write_frame(f, frame_counter, & g);
         frame_counter +=1;
     }
+
+    this->w.flush();
 
     delete f;
 };

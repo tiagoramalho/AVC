@@ -11,6 +11,8 @@ class Frame{
         virtual void set_frame_data( uint8_t * frameData) = 0;
         virtual void print_type() = 0;
         virtual cv::Mat get_y() = 0;
+        virtual cv::Mat get_u() = 0;
+        virtual cv::Mat get_v() = 0;
 
         virtual ~Frame(){
 
@@ -32,6 +34,8 @@ class Frame444: public Frame {
         void print_type(){ std::cout << "=== 444 ===" << std::endl; };
 
         cv::Mat get_y(){return this->y;};
+        cv::Mat get_u(){return this->u;};
+        cv::Mat get_v(){return this->v;};
 };
 
 class Frame422: public Frame {
@@ -50,6 +54,8 @@ class Frame422: public Frame {
         void print_type(){ std::cout << "=== 422 ===" << std::endl; };
 
         cv::Mat get_y(){return this->y;};
+        cv::Mat get_u(){return this->u;};
+        cv::Mat get_v(){return this->v;};
 
 };
 
@@ -69,6 +75,8 @@ class Frame420: public Frame {
         void print_type(){ std::cout << "=== 420 ===" << std::endl; };
 
         cv::Mat get_y(){return this->y;};
+        cv::Mat get_u(){return this->u;};
+        cv::Mat get_v(){return this->v;};
 };
 
 #endif
