@@ -174,17 +174,11 @@ class WRITEBits: public Stream {
          *
          * */
         void writeHeader(uint32_t width, uint32_t height, uint32_t colorspace){
-            cout << "Wow" << endl;
             f << "PARVUS" << " W" << width << " H" << height << " C" << colorspace << endl;
-            cout << "Wow" << endl;
         }
 
-        void writeBlockHeader(uint8_t predictor_index, uint32_t block_size, vector<short> seeds){
-            f << predictor_index << ";"<< block_size << ";";
-            for( uint32_t i = 0; i< seeds.size(); i++){
-                f << seeds.at(i) << ";";
-            }
-            f << "\n";
+        void writeFrameHeader(uint8_t k, uint8_t seed){
+            f << "S" << seed << " K" << k << endl;
         }
 
         void flush(){
