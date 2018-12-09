@@ -2,11 +2,13 @@
 
 #include "fstreamBits.h"
 #include "Encoder.hpp"
+#include "Decoder.hpp"
 #include "Golomb.hpp"
 
 using namespace std;
 int main(int argc, char** argv)
 {
+    bool mode_decode = false;
     /* store the filename */
     string file;
 
@@ -16,6 +18,7 @@ int main(int argc, char** argv)
 
         options.add_options()
             ("h,help", "Print help")
+            ("d,decode", "Decode Mode")
             ("f,file", "File (obrigatory)", cxxopts::value<std::string>())
             ;
 
@@ -34,16 +37,27 @@ int main(int argc, char** argv)
             file = result["f"].as<string>();
         }
 
+        if (result.count("d")){
+            mode_decode = true;
+        }
+
     }catch(const cxxopts::OptionException& e){
         std::cout << "error parsing options: " << e.what() << std::endl;
         exit(1);
     }
 
     /* Rest of the Code */
-    string out_file = file + ".pv";
-    Encoder enc (file, out_file);
 
-    enc.encode_and_write();
+    if(!mode_decode){
+        string out_file = file + ".pv";
+        Encoder enc (file, out_file);
+        enc.encode_and_write();
+    }else{
+        /* TODO: see again out_file and such */
+        string out_file = file + ".y4m";
+        Decoder dec ( file, out_file );
+        dec.read_and_decode();
+    }
 
     return 0;
 }
