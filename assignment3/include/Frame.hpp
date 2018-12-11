@@ -25,7 +25,11 @@ class Frame444: public Frame {
     public:
         int  width, height;
 
-        Frame444(int w, int h): width(w),height(h){};
+        Frame444(int w, int h): width(w),height(h){
+            this->y = cv::Mat(this->height, this->width, CV_8UC1);
+            this->u = cv::Mat(this->height, this->width, CV_8UC1);
+            this->v = cv::Mat(this->height, this->width, CV_8UC1);
+        };
 
         void set_frame_data( uint8_t * frameData);
 
@@ -45,7 +49,11 @@ class Frame422: public Frame {
 
         cv::Mat y,u,v;
 
-        Frame422(int w, int h): width(w),height(h){};
+        Frame422(int w, int h): width(w),height(h){
+            this->y = cv::Mat(this->height, this->width, CV_8UC1);
+            this->u = cv::Mat(this->height, this->width/2, CV_8UC1);
+            this->v = cv::Mat(this->height, this->width/2, CV_8UC1);
+        };
 
         void set_frame_data( uint8_t * frameData);
 
@@ -66,7 +74,11 @@ class Frame420: public Frame {
 
         cv::Mat y,u,v;
 
-        Frame420(int w, int h): width(w),height(h){};
+        Frame420(int w, int h): width(w),height(h){
+            this->y = cv::Mat(this->height, this->width, CV_8UC1);
+            this->u = cv::Mat(this->height/2, this->width/2, CV_8UC1);
+            this->v = cv::Mat(this->height/2, this->width/2, CV_8UC1);
+        };
 
         void set_frame_data( uint8_t * frameData);
 

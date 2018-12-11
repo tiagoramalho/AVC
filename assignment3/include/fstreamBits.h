@@ -5,6 +5,8 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <opencv2/opencv.hpp>
+
 
 using namespace std;
 class Stream {};
@@ -13,8 +15,8 @@ class READBits: public Stream {
 
     private:
         char buff = 0;
-        int shamnt = -1;
         ifstream f;
+        int shamnt = -1;
 
     public:
         READBits(const string & file) : f (file.c_str(), ios::binary){}
@@ -66,14 +68,64 @@ class READBits: public Stream {
          * */
         string readHeader(){
             string header;
-            std::getline(f, header);
+            getline(f, header);
             return header;
+
+        }
+        int gcount(){
+            return f.gcount();
         }
 
-        vector<uint32_t> read_header_parvus(){
-            vector<uint32_t> header_properties (1,0);
+        void parse_header_pv( map<char,string> & header, string header_line,
+                    int delimiter(int) = ::isspace){
 
-            return header_properties;
+            // string header_line = readHeader();
+            string token;
+
+            auto e=header_line.end();
+            auto i=header_line.begin();
+
+            while(i!=e){
+                i=find_if_not(i,e, delimiter);
+                if(i==e) break;
+                auto j=find_if(i,e, delimiter);
+                token = string(i,j);
+                cout << token << endl;
+                if(token.at(0) == 'W'){
+                    cout << "Width " << token.substr(1) << endl;
+                    header['W'] = token.substr(1);
+                }
+                else if(token.at(0) == 'H'){
+                    cout << "Height " << token.substr(1) <<endl;
+                    header['H'] = token.substr(1);
+                }
+                else if(token.at(0) == 'K'){
+                    cout << "K " << token.substr(1) <<endl;
+                    header['K'] = convertToASCII(token.substr(1));
+                }
+                else if(token.at(0) == 'S'){
+                    cout << "Seed " << token.substr(1) <<endl;
+                    header['S'] = convertToASCII(token.substr(1));
+                }
+                else if(token.at(0) == 'C'){
+                    cout << "Colour Space " << token.substr(1) << endl;
+                    header['C'] = token.substr(1);
+                }
+                i=j;
+            }
+            if (header.find('C') == header.end()){
+                cout << "Colour Space " << token.substr(1) << endl;
+                header['C'] = "420";
+            }
+        }
+
+        string convertToASCII(string letter){
+            string x;
+            for (uint32_t i = 0; i < letter.length(); i++)
+            {
+                x+=to_string(int(letter.at(i)));
+            }
+            return x;
         }
 
         vector<uint32_t> read_header_cavlac(){

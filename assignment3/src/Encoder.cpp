@@ -130,16 +130,18 @@ void Encoder::parse_header(  map<char,string> & header,
 
 int Encoder::get_residuals_from_matrix(cv::Mat * matrix, vector<int> * residuals){
 
+
     int x = 0, y=0,residual = 0,to_calculate_k = 0;
     int width = matrix->cols;
     int height= matrix->rows;
-    int last_real = matrix->at<uint8_t>(0,0);
+    uint8_t last_real = matrix->at<uint8_t>(0,0);
 
     for( y = 0; y < height; y++){
         if( y == 0 ){
             // First row
             for( x = 1; x < width; x++){
                 residual = get_residual_uniform(last_real, matrix->at<uint8_t>(x,y));
+                printf("%d -> %02x, %d\n",last_real, matrix->at<uint8_t>(x,y), residual);
                 residuals->push_back(residual);
                 //to_calculate_k += std::abs(residual);
                 if(residual >= 0)
@@ -180,6 +182,8 @@ int Encoder::get_residuals_from_matrix(cv::Mat * matrix, vector<int> * residuals
     return to_calculate_k;
 }
 
+/* TODO melhorar isto; Branco*/
+
 void Encoder::encode_and_write_frame(Frame * frame, int f_counter, Golomb * g){
 
     vector<int> residuals = {};
@@ -190,13 +194,18 @@ void Encoder::encode_and_write_frame(Frame * frame, int f_counter, Golomb * g){
     uint8_t seed = frame->get_y().at<uint8_t>(0,0);
     to_calculate_k = get_residuals_from_matrix( & matrix , & residuals);
     int k = get_best_k(&residuals, f_counter, to_calculate_k);
+
     /* Write Frame Header */
     this->w.writeFrameHeader(k, seed);
     /* Encode Residuals */
+
     g->set_m(k);
     for(unsigned int i = 0; i < residuals.size(); i++){
-        g->encode_and_write(residuals.at(i), w);
+        printf("%d -> %02x\n",i, residuals.at(i));
+        // g->encode_and_write(residuals.at(i), w);
     }
+    exit(1);
+
 
     /* encode the U Matrix */
     residuals.clear();
