@@ -90,7 +90,7 @@ class READBits: public Stream {
                 if(i==e) break;
                 auto j=find_if(i,e, delimiter);
                 token = string(i,j);
-                // cout << token << endl;
+                cout << token << endl;
                 if(token.at(0) == 'W'){
                     // cout << "Width " << token.substr(1) << endl;
                     header['W'] = token.substr(1);
@@ -230,7 +230,9 @@ class WRITEBits: public Stream {
         }
 
         void writeFrameHeader(uint8_t k, uint8_t seed){
-            f << "S" << seed << " K" << k << endl;
+            cout << "SEED" << endl;
+            printf("%02x\n", seed);
+            f << " S" << seed << " K" << k << endl;
         }
 
         void flush(){
