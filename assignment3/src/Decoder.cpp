@@ -48,7 +48,8 @@ void Decoder::read_and_decode_and_write_n(Frame * frame, uint8_t seed,int k, Gol
     {   
         residual = g.read_and_decode(this->r);
         mat.at<uint8_t>(0,x) = get_real_value_uniform(mat.at<uint8_t>(0,x-1), residual);
-        // printf("(%d, %d) -> %02x; residual -> %02x\n", x, 0, mat.at<uint8_t>(0,x), residual);
+        //if(type == 1)
+        //    printf("(%d, %d) -> %02x; residual -> %02x\n", x, 0, mat.at<uint8_t>(0,x), residual);
     }
 
     uint8_t * line = mat.ptr(0);
@@ -72,6 +73,10 @@ void Decoder::read_and_decode_and_write_n(Frame * frame, uint8_t seed,int k, Gol
                 mat.at<uint8_t>(y-1,x-1),
                 residual);
         }
+
+        uint8_t * line = mat.ptr(y);
+        this->outfile.write( (char*) line, mat.cols);
+
     }
 }
 
@@ -148,11 +153,15 @@ void Decoder::read_and_decode(){
         /* Decode Matrix U */
         line = this->r.readHeader();
         this->r.parse_header_pv(header, line);
+
         read_and_decode_and_write_n(f, stoi(header['S']), stoi(header['K']), g, 1);
 
         /* Decode Matrix V */
         line = this->r.readHeader();
+        exit(1);
+
         this->r.parse_header_pv(header, line);
+        
         read_and_decode_and_write_n(f, stoi(header['S']), stoi(header['K']), g, 2);
 
         // break;
