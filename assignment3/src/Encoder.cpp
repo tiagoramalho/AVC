@@ -140,8 +140,8 @@ int Encoder::get_residuals_from_matrix(cv::Mat * matrix, vector<int> * residuals
         if( y == 0 ){
             // First row
             for( x = 1; x < width; x++){
-                residual = get_residual_uniform(last_real, matrix->at<uint8_t>(x,y));
-                printf("%d -> %02x, %d\n",last_real, matrix->at<uint8_t>(x,y), residual);
+                residual = get_residual_uniform(last_real, matrix->at<uint8_t>(y,x));
+                // printf("%02x -> %02x, %d\n",last_real, matrix->at<uint8_t>(y,x), residual);
                 residuals->push_back(residual);
                 //to_calculate_k += std::abs(residual);
                 if(residual >= 0)
@@ -149,11 +149,11 @@ int Encoder::get_residuals_from_matrix(cv::Mat * matrix, vector<int> * residuals
                 else
                   to_calculate_k += -2*residual-1;
 
-                last_real = matrix->at<uint8_t>(x,y);
+                last_real = matrix->at<uint8_t>(y,x);
             }
         }else{
             // Other rows
-            residual = get_residual_uniform(matrix->at<uint8_t>(0,y-1), matrix->at<uint8_t>(0,y));
+            residual = get_residual_uniform(matrix->at<uint8_t>(y-1,0), matrix->at<uint8_t>(y,0));
             residuals->push_back(residual);
             //to_calculate_k += std::abs(residual);
             if(residual >= 0)
@@ -163,10 +163,10 @@ int Encoder::get_residuals_from_matrix(cv::Mat * matrix, vector<int> * residuals
 
             for( x = 1; x < width; x++){
                 residual = get_residual_LOCO(
-                        matrix->at<uint8_t>(x-1,y),
-                        matrix->at<uint8_t>(x,y-1),
-                        matrix->at<uint8_t>(x-1,y-1),
-                        matrix->at<uint8_t>(x,y));
+                        matrix->at<uint8_t>(y,x-1),
+                        matrix->at<uint8_t>(y-1,x),
+                        matrix->at<uint8_t>(y-1,x-1),
+                        matrix->at<uint8_t>(y,x));
 
                 residuals->push_back(residual);
                 //to_calculate_k += std::abs(residual);
@@ -201,10 +201,9 @@ void Encoder::encode_and_write_frame(Frame * frame, int f_counter, Golomb * g){
 
     g->set_m(k);
     for(unsigned int i = 0; i < residuals.size(); i++){
-        printf("%d -> %02x\n",i, residuals.at(i));
-        // g->encode_and_write(residuals.at(i), w);
+        // printf("%d -> %02x\n",i, residuals.at(i));
+        g->encode_and_write(residuals.at(i), w);
     }
-    exit(1);
 
 
     /* encode the U Matrix */

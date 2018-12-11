@@ -27,23 +27,28 @@ uint8_t Decoder::get_real_value_LOCO( uint8_t pixel_A, uint8_t pixel_B, uint8_t 
     return get_real_value_uniform( pixel_prevision, residual);
 }
 
-void Decoder::read_and_decode_and_write_n(Frame * frame, uint8_t seed,int k, Golomb & g){
+void Decoder::read_and_decode_and_write_n(Frame * frame, uint8_t seed,int k, Golomb & g, uint8_t type){
     cv::Mat mat;
     int residual;
     g.set_m(k);
-    mat = frame->get_y();
+
+    if(type == 0){
+        mat = frame->get_y();
+    } else if (type == 1) {
+        mat = frame->get_u();
+    } else{
+        mat = frame->get_v();
+    }
 
     mat.at<uint8_t>(0,0) = seed;
 
     /* Iteratiting over firstline's cols */
-    cout << "FRAME DECODE \n";
-    printf("(%d, %d) -> %02x\n", 0, 0, seed);
 
     for (int x = 1; x < mat.cols; ++x)
     {   
         residual = g.read_and_decode(this->r);
-        mat.at<uint8_t>(x,0) = get_real_value_uniform(mat.at<uint8_t>(x-1,0), residual);
-        printf("(%d, %d) -> %02x; residual -> %02x\n", x, 0, mat.at<uint8_t>(x,0), residual);
+        mat.at<uint8_t>(0,x) = get_real_value_uniform(mat.at<uint8_t>(0,x-1), residual);
+        // printf("(%d, %d) -> %02x; residual -> %02x\n", x, 0, mat.at<uint8_t>(0,x), residual);
     }
 
     uint8_t * line = mat.ptr(0);
@@ -55,16 +60,16 @@ void Decoder::read_and_decode_and_write_n(Frame * frame, uint8_t seed,int k, Gol
 
         /* Specific for the first col */
         residual = g.read_and_decode(this->r);
-        mat.at<uint8_t>(0,y) = get_real_value_uniform(mat.at<uint8_t>(0,y-1), residual);
+        mat.at<uint8_t>(y,0) = get_real_value_uniform(mat.at<uint8_t>(y-1, 0), residual);
 
         /* Iterate over the collumns. Start at j=1 */
         for (int x = 1; x < mat.cols; ++x)
         {
             residual = g.read_and_decode(this->r);
-            mat.at<uint8_t>(x,y) = get_real_value_LOCO(
-                mat.at<uint8_t>(x-1,y),
-                mat.at<uint8_t>(x,y-1),
-                mat.at<uint8_t>(x-1,y-1),
+            mat.at<uint8_t>(y,x) = get_real_value_LOCO(
+                mat.at<uint8_t>(y,x-1),
+                mat.at<uint8_t>(y-1,x),
+                mat.at<uint8_t>(y-1,x-1),
                 residual);
         }
     }
@@ -75,7 +80,8 @@ void Decoder::read_and_decode_and_write_n(Frame * frame, uint8_t seed,int k, Gol
 void Decoder::read_and_decode(){
     printf("Entrada\n");
 
-    int frame_counter =0, color_space;
+    int frame_counter =0;
+    int color_space;
 
     Golomb g;
 
@@ -133,23 +139,24 @@ void Decoder::read_and_decode(){
             printf("break\n");
             break;
         }
-        printf("Entrad5\n");
+        // printf("Entrad5\n");
 
         /* Decode Matrix Y */
         this->r.parse_header_pv(header, line);
-        read_and_decode_and_write_n(f, stoi(header['S']), stoi(header['K']), g);
-
-
+        read_and_decode_and_write_n(f, stoi(header['S']), stoi(header['K']), g, 0);
 
         /* Decode Matrix U */
-        // this->r.parse_header_pv(header, line);
-        // read_and_decode_and_write_n(f, stoi(header['S']), stoi(header['K']), g);
+        line = this->r.readHeader();
+        this->r.parse_header_pv(header, line);
+        read_and_decode_and_write_n(f, stoi(header['S']), stoi(header['K']), g, 1);
 
         /* Decode Matrix V */
-        // this->r.parse_header_pv(header, line);
-        // read_and_decode_and_write_n(f, stoi(header['S']), stoi(header['K']), g);
+        line = this->r.readHeader();
+        this->r.parse_header_pv(header, line);
+        read_and_decode_and_write_n(f, stoi(header['S']), stoi(header['K']), g, 2);
 
-        break;
+        // break;
+        printf("Done %d\n", frame_counter);
 
         frame_counter++;
     }

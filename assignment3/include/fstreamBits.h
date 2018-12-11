@@ -90,25 +90,25 @@ class READBits: public Stream {
                 if(i==e) break;
                 auto j=find_if(i,e, delimiter);
                 token = string(i,j);
-                cout << token << endl;
+                // cout << token << endl;
                 if(token.at(0) == 'W'){
-                    cout << "Width " << token.substr(1) << endl;
+                    // cout << "Width " << token.substr(1) << endl;
                     header['W'] = token.substr(1);
                 }
                 else if(token.at(0) == 'H'){
-                    cout << "Height " << token.substr(1) <<endl;
+                    // cout << "Height " << token.substr(1) <<endl;
                     header['H'] = token.substr(1);
                 }
                 else if(token.at(0) == 'K'){
-                    cout << "K " << token.substr(1) <<endl;
+                    // cout << "K " << token.substr(1) <<endl;
                     header['K'] = convertToASCII(token.substr(1));
                 }
                 else if(token.at(0) == 'S'){
-                    cout << "Seed " << token.substr(1) <<endl;
+                    // cout << "Seed " << token.substr(1) <<endl;
                     header['S'] = convertToASCII(token.substr(1));
                 }
                 else if(token.at(0) == 'C'){
-                    cout << "Colour Space " << token.substr(1) << endl;
+                    // cout << "Colour Space " << token.substr(1) << endl;
                     header['C'] = token.substr(1);
                 }
                 i=j;
