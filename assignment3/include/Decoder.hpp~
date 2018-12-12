@@ -18,11 +18,7 @@ class Decoder {
 
 
         void write_header_y4m(uint32_t width, uint32_t height, string fps, uint32_t colorspace){
-            if(colorspace == 420){
-                outfile << "YUV4MPEG2" << " W" << width << " H" << height << " F" << fps << " Ip A1:1"<< endl;
-            }else{
-                outfile << "YUV4MPEG2" << " W" << width << " H" << height << " F" << fps << " Ip A1:1 C"<< colorspace << endl;
-            }
+            outfile << "YUV4MPEG2" << " W" << width << " H" << height << " F" << fps << " Ip A1:1 C"<< colorspace << endl;
         }
 
         void write_header_frame(){

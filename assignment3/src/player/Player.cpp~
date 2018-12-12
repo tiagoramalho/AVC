@@ -337,9 +337,12 @@ int main(int argc, char** argv)
         {
             ///* display the image */
             imshow( "rgb", img );
-
             /* wait according to the frame rate */
+            auto start = std::chrono::high_resolution_clock::now();
             inputKey = waitKey((1.0 / fps) * 1000);
+            auto finish = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> elapsed = finish - start;
+            std::cout << "wait key: " << elapsed.count() << " s\n";
         }
         else
         {

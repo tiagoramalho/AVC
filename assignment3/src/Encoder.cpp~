@@ -199,7 +199,7 @@ void Encoder::encode_and_write_frame(Frame * frame, int f_counter, Golomb * g){
     this->w.writeFrameHeader(k, seed);
     /* Encode Residuals */
 
-    int m = pow(2,k);
+    uint32_t m = pow(2,k);
     g->set_m(m);
     for(unsigned int i = 0; i < residuals.size(); i++){
         // printf("%d -> %02x\n",i, residuals.at(i));
@@ -216,7 +216,7 @@ void Encoder::encode_and_write_frame(Frame * frame, int f_counter, Golomb * g){
 
     this->w.writeFrameHeader(k, seed);
     m = pow(2,k);
-    g->set_m(m);
+    g->set_m(k);
     for(unsigned int i = 0; i < residuals.size(); i++){
         g->encode_and_write(residuals.at(i), w);
     }
@@ -230,7 +230,7 @@ void Encoder::encode_and_write_frame(Frame * frame, int f_counter, Golomb * g){
 
     this->w.writeFrameHeader(k, seed);
     m = pow(2,k);
-    g->set_m(m);
+    g->set_m(k);
     for(unsigned int i = 0; i < residuals.size(); i++){
         g->encode_and_write(residuals.at(i), w);
         //printf("%d, %d\n", i, residuals.at(i));

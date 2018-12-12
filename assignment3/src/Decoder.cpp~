@@ -136,6 +136,8 @@ void Decoder::read_and_decode(){
     vector<int> h (2,0);
     while(1){
 
+        /* Write Frame Header */
+        this->write_header_frame();
 
         /*
          * Decode Matrix Y
@@ -152,8 +154,6 @@ void Decoder::read_and_decode(){
         if(this->r.gcount() == 0){
             break;
         }
-        /* Write Frame Header */
-        this->write_header_frame();
         //this->r.parse_header_pv(header, line);
         read_and_decode_and_write_n(f, h.at(0), h.at(1), g, 0);
 
