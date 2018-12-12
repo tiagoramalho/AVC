@@ -41,22 +41,22 @@ void Decoder::read_and_decode_and_write_n(Frame * frame, uint8_t seed,int k, Gol
     }
 
     mat.at<uint8_t>(0,0) = seed;
+    printf("%02x\n", seed);
+    printf("%d\n", k);
 
     /* Iteratiting over firstline's cols */
 
-    for (int x = 1; x < mat.cols; ++x)
+    for (int x = 1; x < mat.cols; x++)
     {   
         residual = g.read_and_decode(this->r);
         mat.at<uint8_t>(0,x) = get_real_value_uniform(mat.at<uint8_t>(0,x-1), residual);
-        //if(type == 1)
-        //    printf("(%d, %d) -> %02x; residual -> %02x\n", x, 0, mat.at<uint8_t>(0,x), residual);
     }
 
-    uint8_t * line = mat.ptr(0);
-    this->outfile.write( (char*) line, mat.cols);
+    //uint8_t * line = mat.ptr(0);
+    //this->outfile.write( (char*) line, mat.cols);
 
     /* Iterate over the lines. Start at j=1 */
-    for (int y = 1; y < mat.rows; ++y)
+    for (int y = 1; y < mat.rows; y++)
     {
 
         /* Specific for the first col */
@@ -64,9 +64,10 @@ void Decoder::read_and_decode_and_write_n(Frame * frame, uint8_t seed,int k, Gol
         mat.at<uint8_t>(y,0) = get_real_value_uniform(mat.at<uint8_t>(y-1, 0), residual);
 
         /* Iterate over the collumns. Start at j=1 */
-        for (int x = 1; x < mat.cols; ++x)
+        for (int x = 1; x < mat.cols; x++)
         {
             residual = g.read_and_decode(this->r);
+            //printf("%d", residual);
             mat.at<uint8_t>(y,x) = get_real_value_LOCO(
                 mat.at<uint8_t>(y,x-1),
                 mat.at<uint8_t>(y-1,x),
@@ -74,16 +75,19 @@ void Decoder::read_and_decode_and_write_n(Frame * frame, uint8_t seed,int k, Gol
                 residual);
         }
 
-        uint8_t * line = mat.ptr(y);
-        this->outfile.write( (char*) line, mat.cols);
+        //uint8_t * line = mat.ptr(y);
+        //this->outfile.write( (char*) line, mat.cols);
 
     }
+    uint8_t * line = mat.ptr(0);
+    this->outfile.write( (char*) line, mat.cols * mat.rows);
+
 }
 
 
 
 void Decoder::read_and_decode(){
-    printf("Entrada\n");
+    //printf("Entrada\n");
 
     int frame_counter =0;
     int color_space;
@@ -104,7 +108,7 @@ void Decoder::read_and_decode(){
     color_space = stoi(header['C']);
 
     Frame * f;
-    printf("color_space: %d\n", color_space);
+    //printf("color_space: %d\n", color_space);
 
 
     switch(color_space){
@@ -124,12 +128,13 @@ void Decoder::read_and_decode(){
             exit(1);
     }
 
-    printf("Entrada3\n");
+    //printf("Entrada3\n");
 
     /* Write File Header */
     /* TODO corrigir o 50 hardcoded abaixo. Mudar para FPS */
     this->write_header_y4m(stoi(header['W']), stoi(header['H']), "50:1", stoi(header['C']));
 
+    vector<int> h (2,0);
     while(1){
 
         /* Write Frame Header */
@@ -138,7 +143,7 @@ void Decoder::read_and_decode(){
         /*
          * Decode Matrix Y
          */
-        line = this->r.readHeader();
+        h = this->r.readHeaderNoLine();
         //cout << "line" << line << endl;
         if(line.size() == 0){
             printf("break\n");
@@ -148,25 +153,24 @@ void Decoder::read_and_decode(){
 
         /* Decode Matrix Y */
         this->r.parse_header_pv(header, line);
-        read_and_decode_and_write_n(f, stoi(header['S']), stoi(header['K']), g, 0);
+        read_and_decode_and_write_n(f, h.at(0), h.at(1), g, 0);
 
         /* Decode Matrix U */
-        line = this->r.readHeader();
+        h = this->r.readHeaderNoLine();
         this->r.parse_header_pv(header, line);
 
-        read_and_decode_and_write_n(f, stoi(header['S']), stoi(header['K']), g, 1);
+        read_and_decode_and_write_n(f, h.at(0), h.at(1), g, 1);
 
         /* Decode Matrix V */
-        line = this->r.readHeader();
-        exit(1);
+        h = this->r.readHeaderNoLine();
 
         this->r.parse_header_pv(header, line);
         
-        read_and_decode_and_write_n(f, stoi(header['S']), stoi(header['K']), g, 2);
+        read_and_decode_and_write_n(f, h.at(0), h.at(1), g, 2);
 
+        exit(1);
         // break;
         printf("Done %d\n", frame_counter);
-
         frame_counter++;
     }
 

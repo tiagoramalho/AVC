@@ -72,6 +72,20 @@ class READBits: public Stream {
             return header;
 
         }
+
+        vector<int> readHeaderNoLine(){
+            vector<int> header (2,0);
+            unsigned short  s = readItem(8) >> 8;
+            unsigned short  k = readItem(8) >> 8;
+            printf("fstream\n");
+            printf("%02x\n", s);
+            printf("%02x\n", k);
+            header.at(0) = s;
+            header.at(1) = k;
+
+            return header;
+        }
+
         int gcount(){
             return f.gcount();
         }
@@ -90,34 +104,31 @@ class READBits: public Stream {
                 if(i==e) break;
                 auto j=find_if(i,e, delimiter);
                 token = string(i,j);
-<<<<<<< HEAD
-                cout << token << endl;
-=======
->>>>>>> 81fa308915aef4f64d90da11195bdd492c7f3b72
+                //cout << token << endl;
                 if(token.at(0) == 'W'){
-                    cout << "Width " << token.substr(1) << endl;
+                    //cout << "Width " << token.substr(1) << endl;
                     header['W'] = token.substr(1);
                 }
                 else if(token.at(0) == 'H'){
-                    cout << "Height " << token.substr(1) <<endl;
+                    //cout << "Height " << token.substr(1) <<endl;
                     header['H'] = token.substr(1);
                 }
                 else if(token.at(0) == 'K'){
-                    printf("K %02x\n", stoi(convertToASCII(token.substr(1))));
+                    //printf("K %02x\n", stoi(convertToASCII(token.substr(1))));
                     header['K'] = convertToASCII(token.substr(1));
                 }
                 else if(token.at(0) == 'S'){
-                    printf("S %02x\n", stoi(convertToASCII(token.substr(1))));
+                    //printf("S %02x\n", stoi(convertToASCII(token.substr(1))));
                     header['S'] = convertToASCII(token.substr(1));
                 }
                 else if(token.at(0) == 'C'){
-                    cout << "Colour Space " << token.substr(1) << endl;
+                    //cout << "Colour Space " << token.substr(1) << endl;
                     header['C'] = token.substr(1);
                 }
                 i=j;
             }
             if (header.find('C') == header.end()){
-                cout << "Colour Space " << token.substr(1) << endl;
+                //cout << "Colour Space " << token.substr(1) << endl;
                 header['C'] = "420";
             }
         }
@@ -233,9 +244,11 @@ class WRITEBits: public Stream {
         }
 
         void writeFrameHeader(uint8_t k, uint8_t seed){
-            cout << "SEED" << endl;
-            printf("%02x\n", seed);
-            f << " S" << seed << " K" << k << endl;
+            //printf("%02x\n", seed);
+            preWrite(seed,8);
+            preWrite(k,8);
+            //f << seed; 
+            //f << k;
         }
 
         void flush(){
