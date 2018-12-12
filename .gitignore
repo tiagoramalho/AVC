@@ -4,6 +4,7 @@ assignment3/samples/
 
 *.swp
 *.cavlac
+*~
 
 *.bin
 *.wav
@@ -61,3 +62,5 @@ build
 assignment3/histograms/images/
 
 assignment3/histograms/rawdata/
+
+*.log
