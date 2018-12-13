@@ -7,8 +7,10 @@
 #include <cmath>
 #include "Frame.hpp"
 
-Encoder::Encoder(const string & in_file, const string & out_file):
-    infile(in_file.c_str()),w(out_file.c_str()){}
+using namespace cv;
+
+Encoder::Encoder(const string & in_file, const string & out_file, int p, int peri, int blocksize, int searcharea):
+    infile(in_file.c_str()),w(out_file.c_str()),profile(p), periodicity(peri), block_size(blocksize), search_area(searcharea){} 
 
 int WriteFile(std::string fname, std::map<int,int> *m) {
     int count = 0;
@@ -133,7 +135,9 @@ int Encoder::get_residuals_from_matrix(cv::Mat * matrix, vector<int> * residuals
 
     int x = 0, y=0,residual = 0,to_calculate_k = 0;
     int width = matrix->cols;
+    printf("----width %d\n", width);
     int height= matrix->rows;
+    printf("----height %d\n", height);
     uint8_t last_real = matrix->at<uint8_t>(0,0);
 
     for( y = 0; y < height; y++){
@@ -182,9 +186,90 @@ int Encoder::get_residuals_from_matrix(cv::Mat * matrix, vector<int> * residuals
     return to_calculate_k;
 }
 
+void Encoder::get_best_fit( cv::Mat macroblock, cv::Mat searchingArea, vector<int> * to_encode){
+    Mat img_display;
+    searchingArea.copyTo( img_display );
+
+    cv::Mat result;
+
+    int result_cols =  searchingArea.cols - macroblock.cols + 1;
+    int result_rows = searchingArea.rows - macroblock.rows + 1;
+
+    result.create( result_rows, result_cols, CV_32FC1 );
+
+
+    cv::matchTemplate( searchingArea, macroblock, result, TM_SQDIFF );
+
+    normalize( result, result, 0, 1, NORM_MINMAX, -1, Mat() );
+
+    double minVal; double maxVal; Point minLoc; Point maxLoc;
+    Point matchLoc;
+    minMaxLoc( result, &minVal, &maxVal, &minLoc, &maxLoc, Mat() );
+
+    matchLoc = minLoc;
+
+    //macroblock.convertTo(macroblock, CV_8U);
+    //searchingArea.convertTo(searchingArea, CV_8U);
+
+    rectangle(img_display, matchLoc, Point( matchLoc.x + macroblock.cols , matchLoc.y + macroblock.rows ), Scalar::all(0), 1, 8, 0 );
+    //rectangle( result, matchLoc, Point( matchLoc.x + searchingArea.cols , matchLoc.y + searchingArea.rows ), Scalar::all(0), 2, 8, 0 );
+    imshow( "Pequeno", macroblock );
+    imshow( "Area to search", img_display );
+    imshow( "Grande", result );
+
+    cv::waitKey(0);
+};
+
+void Encoder::encode_and_write_frame_inter(Frame * frame, Frame * previous_frame,int f_counter, Golomb * g){
+
+    int y_curr_frame = 0;
+    int x_curr_frame = 0;
+    int x_searching_area_top_left = 0;
+    int x_searching_area_bot_right = 0;
+    int y_searching_area_top_left = 0;
+    int y_searching_area_bot_right = 0;
+    cv::Mat macroblock;
+    cv::Mat searching_area;
+
+    cv::Mat y = frame->get_y();
+    int height = y.rows;
+    int width = y.cols;
+
+    vector<int> to_encode = {};
+
+    for( y_curr_frame = 0; y_curr_frame < height- this->block_size; y_curr_frame +=this->block_size ){
+
+        for( x_curr_frame = 0; x_curr_frame < width-this->block_size; x_curr_frame +=this->block_size ){
+
+            printf("x %d y %d\n", x_curr_frame, y_curr_frame);
+
+            macroblock = y(cv::Rect(x_curr_frame, y_curr_frame, this->block_size, this->block_size));
+
+            x_searching_area_top_left = std::max(0, x_curr_frame - this->search_area);
+            y_searching_area_top_left = std::max(0, y_curr_frame - this->search_area);
+
+            x_searching_area_bot_right = std::min(width,
+                    x_curr_frame + this->block_size + this->search_area);
+            y_searching_area_bot_right = std::min(width,
+                    y_curr_frame + this->block_size + this->search_area);
+
+            int area = ( y_searching_area_bot_right - y_searching_area_top_left ) * (x_searching_area_bot_right - x_searching_area_top_left);
+            printf("Search Area: %d\n", area);
+
+            searching_area = y(cv::Rect(cv::Point(x_searching_area_top_left, y_searching_area_top_left),
+                        cv::Point(x_searching_area_bot_right,y_searching_area_bot_right)));
+
+            get_best_fit( macroblock, searching_area, & to_encode );
+
+            //codificar_macro_bloco( vector, residuais , golomb)
+
+        }
+    }
+};
+
 /* TODO melhorar isto; Branco*/
 
-void Encoder::encode_and_write_frame(Frame * frame, int f_counter, Golomb * g){
+void Encoder::encode_and_write_frame_intra(Frame * frame, int f_counter, Golomb * g){
 
     vector<int> residuals = {};
     cv::Mat matrix = frame->get_y();
@@ -246,6 +331,7 @@ void Encoder::encode_and_write(){
     int cols, rows,frame_counter =0;
     vector<unsigned char> imgData;
     Frame * f;
+    Frame * previous_frame;
 
     getline(this->infile, line);
 
@@ -280,22 +366,43 @@ void Encoder::encode_and_write(){
             exit(1);
     }
 
-    f->print_type();
+    //f->print_type();
 
-    while(1){
-        getline (this->infile,line); // Skipping word FRAME
-        this->infile.read((char *) imgData.data(), imgData.size());
-        f->set_frame_data(imgData.data());
-        if(this->infile.gcount() == 0){
-            break;
-        }
-        encode_and_write_frame(f, frame_counter, & g);
-        frame_counter +=1;
+    if ( this->profile == 0){
+      while(1){
+          getline (this->infile,line); // Skipping word FRAME
+          this->infile.read((char *) imgData.data(), imgData.size());
+          f->set_frame_data(imgData.data());
+          if(this->infile.gcount() == 0){
+              break;
+          }
+          encode_and_write_frame_intra(f, frame_counter, & g);
+          frame_counter +=1;
+      }
+    }else{
+      while(1){
+          getline (this->infile,line); // Skipping word FRAME
+          this->infile.read((char *) imgData.data(), imgData.size());
+          f->set_frame_data(imgData.data());
+          if(this->infile.gcount() == 0){
+              break;
+          }
+          Mat y = f->get_y();
+          printf("rows: %d, cols: %d\n", y.rows, y.cols);
+
+          if( frame_counter % this->periodicity == 0){
+              //encode_and_write_frame_intra(f, frame_counter, & g);
+              encode_and_write_frame_inter(f, previous_frame, frame_counter, & g);
+          }else{
+              encode_and_write_frame_inter(f, previous_frame, frame_counter, & g);
+          }
+
+          frame_counter +=1;
+          previous_frame = f;
+      }
     }
 
     this->w.flush();
 
     delete f;
 };
-
-

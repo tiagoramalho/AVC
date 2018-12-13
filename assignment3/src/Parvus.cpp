@@ -9,16 +9,32 @@ using namespace std;
 int main(int argc, char** argv)
 {
     bool mode_decode = false;
+
+
+    /* Profiles:
+     * 0 - All Intra
+     * 1 - Intra and Inter
+     */
+    int profile = 0;
+    int block_size = 0;
+    int periodicity = 0;
+    int search_area = 0;
+
     /* store the filename */
     string file;
 
     /* parse arguments */
     try{
+        printf("FUCK");
         cxxopts::Options options("Parvus", "Video Compressor");
 
         options.add_options()
             ("h,help", "Print help")
             ("d,decode", "Decode Mode")
+            ("m,mode", "Mode", cxxopts::value<int>())
+            ("p,periodicity", "Periodicity", cxxopts::value<int>())
+            ("b,blocksize", "Block Size", cxxopts::value<int>())
+            ("s,searcharea", "Search Area Size", cxxopts::value<int>())
             ("f,file", "File (obrigatory)", cxxopts::value<std::string>())
             ;
 
@@ -37,6 +53,17 @@ int main(int argc, char** argv)
             file = result["f"].as<string>();
         }
 
+        if (result.count("m") != 1){
+            cout << endl << "You always need to specify a mode" << endl << endl;
+            cout << options.help() << endl;
+            exit(1);
+        }
+
+        profile = result["m"].as<int>();
+        periodicity = result["p"].as<int>();
+        block_size = result["b"].as<int>();
+        search_area = result["s"].as<int>();
+
         if (result.count("d")){
             mode_decode = true;
         }
@@ -50,7 +77,7 @@ int main(int argc, char** argv)
 
     if(!mode_decode){
         string out_file = file + ".pv";
-        Encoder enc (file, out_file);
+        Encoder enc (file, out_file, profile, periodicity, block_size, search_area);
         enc.encode_and_write();
     }else{
         /* TODO: see again out_file and such */

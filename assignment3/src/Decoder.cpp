@@ -136,23 +136,13 @@ void Decoder::read_and_decode(){
     vector<int> h (2,0);
     while(1){
 
-
-        /*
-         * Decode Matrix Y
-         */
-        //cout << "line" << line << endl;
-        if(line.size() == 0){
-            printf("break\n");
-            break;
-        }
-        // printf("Entrad5\n");
-
-        /* Decode Matrix Y */
         h = this->r.readHeaderNoLine();
         if(this->r.gcount() == 0){
             break;
         }
-        /* Write Frame Header */
+
+        /* Decode Matrix Y */
+       /* Write Frame Header */
         this->write_header_frame();
         //this->r.parse_header_pv(header, line);
         read_and_decode_and_write_n(f, h.at(0), h.at(1), g, 0);
