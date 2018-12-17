@@ -186,7 +186,7 @@ int Encoder::get_residuals_from_matrix(cv::Mat * matrix, vector<int> * residuals
     return to_calculate_k;
 }
 
-void Encoder::get_best_fit( cv::Mat macroblock, cv::Mat searchingArea, vector<int> * to_encode){
+void Encoder::get_best_fit( cv::Mat macroblock, cv::Mat searchingArea, vector<int> & to_encode){
     Mat img_display;
     searchingArea.copyTo( img_display );
 
@@ -216,7 +216,34 @@ void Encoder::get_best_fit( cv::Mat macroblock, cv::Mat searchingArea, vector<in
     imshow( "Area to search", img_display );
     imshow( "Grande", result );
 
-    cv::waitKey(10);
+    to_encode.push_back(matchLoc.x);
+    to_encode.push_back(matchLoc.y);
+
+    cv::Mat residuals(macroblock.cols, macroblock.rows, CV_32S);
+
+    cv::Mat cona = searchingArea(cv::Rect(Point(matchLoc.x, matchLoc.y), Point(matchLoc.x + macroblock.cols , matchLoc.y + macroblock.rows)));
+    // printf("%d %d %d %d %d %d\n", cona.cols, cona.rows, macroblock.cols, macroblock.rows, residuals.cols, residuals.rows);
+
+    cona.convertTo(cona, CV_32S);
+    macroblock.convertTo(macroblock, CV_32S);
+
+    subtract(
+        cona,
+        macroblock,
+        residuals
+    );
+    
+    for (int x = 0; x < macroblock.cols; ++x)
+    {
+        for (int y = 0; y < macroblock.rows; ++y)
+        {
+            printf("%d, %d, %d, %d, %d\n", x, y, macroblock.at<int32_t>(y,x), cona.at<int32_t>(y,x), residuals.at<int32_t>(y,x));
+            if(residuals.at<int32_t>(y,x) != 0)
+            printf("%d, %d, %d, %d, %d\n", x, y, macroblock.at<int32_t>(y,x), cona.at<int32_t>(y,x), residuals.at<int32_t>(y,x));
+        }
+    }
+    
+    // cv::waitKey(5);
 };
 
 void Encoder::encode_and_write_frame_inter(Frame * frame, Frame * previous_frame,int f_counter, Golomb * g){
@@ -263,7 +290,7 @@ void Encoder::encode_and_write_frame_inter(Frame * frame, Frame * previous_frame
             searching_area = y_previous(cv::Rect(cv::Point(x_searching_area_top_left, y_searching_area_top_left),
                         cv::Point(x_searching_area_bot_right,y_searching_area_bot_right)));
 
-            get_best_fit( macroblock, searching_area, & to_encode );
+            get_best_fit( macroblock, searching_area, to_encode );
 
             //codificar_macro_bloco( vector, residuais , golomb)
 

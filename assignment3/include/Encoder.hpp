@@ -15,7 +15,7 @@ class Encoder {
 
         void parse_header(map<char,string> & header, string header_line, int delimiter(int) = ::isspace);
 
-        void get_best_fit( cv::Mat macroblock, cv::Mat searchingArea, vector<int> * to_encode);
+        void get_best_fit( cv::Mat macroblock, cv::Mat searchingArea, vector<int> & to_encode);
 
         int get_residuals_from_matrix(cv::Mat * matrix, vector<int> * residuals);
         int get_residual_uniform( uint8_t pixel_value, uint8_t real_pixel_value);
