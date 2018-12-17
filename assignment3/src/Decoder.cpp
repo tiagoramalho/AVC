@@ -1,4 +1,4 @@
-#include "Decoder.hpp"
+#include "../include/Decoder.hpp"
 
 Decoder::Decoder(const string & in_file, const string & out_file):
     outfile(out_file.c_str()),r(in_file.c_str()){}
@@ -27,7 +27,7 @@ uint8_t Decoder::get_real_value_LOCO( uint8_t pixel_A, uint8_t pixel_B, uint8_t 
     return get_real_value_uniform( pixel_prevision, residual);
 }
 
-void Decoder::read_and_decode_and_write_n(Frame * frame, uint8_t seed,int k, Golomb & g, uint8_t type){
+void Decoder::decode_intra(Frame * frame, uint8_t seed,int k, Golomb & g, uint8_t type){
     cv::Mat mat;
     int residual;
     int m = pow(2,k);
@@ -52,8 +52,6 @@ void Decoder::read_and_decode_and_write_n(Frame * frame, uint8_t seed,int k, Gol
         
     }
 
-    //uint8_t * line = mat.ptr(0);
-    //this->outfile.write( (char*) line, mat.cols);
 
     /* Iterate over the lines. Start at j=1 */
     for (int y = 1; y < mat.rows; y++)
@@ -74,22 +72,37 @@ void Decoder::read_and_decode_and_write_n(Frame * frame, uint8_t seed,int k, Gol
                 residual);
         }
 
-        //uint8_t * line = mat.ptr(y);
-        //this->outfile.write( (char*) line, mat.cols);
-
     }
     uint8_t * line = mat.ptr(0);
     this->outfile.write( (char*) line, mat.cols * mat.rows);
 
 }
 
+void Decoder::decode_inter(Frame * current_frame, Frame * last_frame,int k, Golomb & g, uint8_t type){
+    cv::Mat mat;
+    int residual;
+    int m = pow(2,k);
+    g.set_m(m);
+
+    if(type == 0){
+        mat = current_frame->get_y();
+    } else if (type == 1) {
+        mat = current_frame->get_u();
+    } else{
+        mat = current_frame->get_v();
+    }
+
+    uint8_t * line = mat.ptr(0);
+    this->outfile.write( (char*) line, mat.cols * mat.rows);
+
+}
 
 
 void Decoder::read_and_decode(){
-    //printf("Entrada\n");
 
     int frame_counter =0;
     int color_space;
+    int block_size;
 
     Golomb g;
 
@@ -99,74 +112,85 @@ void Decoder::read_and_decode(){
 
     line = this->r.readHeader();
     this->r.parse_header_pv(header, line);
-    // cout << "line" << line << endl;
 
-    /* TODO meter width e height */
     this->height = stoi(header['H']);
     this->width = stoi(header['W']);
     color_space = stoi(header['C']);
+    block_size = stoi(header['B']);
 
-    Frame * f;
-    //printf("color_space: %d\n", color_space);
+    Frame * current_frame;
+    Frame * last_frame;
 
 
     switch(color_space){
         case 444:{
-            f = new Frame444 (this->height, this->width);
+            current_frame = new Frame444 (this->height, this->width);
+            last_frame = new Frame444 (this->height, this->width);
             break;
         }
         case 422:{
-            f = new Frame422 (this->height, this->width);
+            current_frame = new Frame422 (this->height, this->width);
+            last_frame = new Frame444 (this->height, this->width);
             break;
         }
         case 420:{
-            f = new Frame420 (this->height, this->width);
+            current_frame = new Frame420 (this->height, this->width);
+            last_frame = new Frame444 (this->height, this->width);
             break;
         }
         default:
             exit(1);
     }
 
-    //printf("Entrada3\n");
 
     /* Write File Header */
     /* TODO corrigir o 50 hardcoded abaixo. Mudar para FPS */
     this->write_header_y4m(stoi(header['W']), stoi(header['H']), "50:1", stoi(header['C']));
 
-    vector<int> h (2,0);
+    int type;
+    int k;
+    int seed;
     while(1){
 
-        h = this->r.readHeaderNoLine();
+        type = this->r.read_type();
         if(this->r.gcount() == 0){
             break;
         }
 
-        /* Decode Matrix Y */
-       /* Write Frame Header */
-        this->write_header_frame();
-        //this->r.parse_header_pv(header, line);
-        read_and_decode_and_write_n(f, h.at(0), h.at(1), g, 0);
+        if(type == 0){
 
-        /* Decode Matrix U */
-        h = this->r.readHeaderNoLine();
-        //this->r.parse_header_pv(header, line);
-        read_and_decode_and_write_n(f, h.at(0), h.at(1), g, 1);
+            /* Write Frame Header */
+            this->write_header_frame();
 
-        /* Decode Matrix V */
-        h = this->r.readHeaderNoLine();
-        //this->r.parse_header_pv(header, line);
-        read_and_decode_and_write_n(f, h.at(0), h.at(1), g, 2);
+            /* Decode Matrix Y */
+            seed = this->r.read_seed();
+            k = this->r.read_k();
+            decode_intra(current_frame, seed, k, g, 0);
 
-        // break;
+            /* Decode Matrix U */
+            seed = this->r.read_seed();
+            k = this->r.read_k();
+            decode_intra(current_frame, seed, k, g, 1);
+
+            /* Decode Matrix V */
+            seed = this->r.read_seed();
+            k = this->r.read_k();
+            decode_intra(current_frame, seed, k, g, 2);
+
+        }else if(type == 2){
+        
+            /* Write Frame Header */
+            this->write_header_frame();
+
+            /* Decode Matrix Y */
+            k = this->r.read_k();
+            decode_inter(current_frame, last_frame, k, g, 0);
+        }
+
+
+        last_frame = current_frame;
         printf("Done %d\n", frame_counter);
         frame_counter++;
     }
 
 };
-
-
-/*
-TODO
-Estás a fazer merda no width e height tamanho das matrizes
-Quando for 422/420
-*/

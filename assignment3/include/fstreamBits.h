@@ -72,6 +72,25 @@ class READBits: public Stream {
             return header;
 
         }
+        int read_type(){
+            int type;
+            unsigned short  t = readItem(2) >> 14;
+            type = t;
+            return type;
+        }
+        int read_k(){
+            int k;
+            unsigned short  kr = readItem(8) >> 8;
+            k = kr;
+            return k;
+        }
+
+        int read_seed(){
+            int seed;
+            unsigned short s = readItem(8) >> 8;
+            seed = s;
+            return s;
+        }
 
         vector<int> readHeaderNoLine(){
             vector<int> header (2,0);

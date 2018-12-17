@@ -33,8 +33,11 @@ class Decoder {
 
         Decoder(const string & in_file, const string & out_file);
 
-        /*  Function used to encode and write N Frames ( used for easy debug ) */
-        void read_and_decode_and_write_n(Frame * frame, uint8_t seed,int k, Golomb & g, uint8_t type);
+        /*  Function used to encode and write N Frames intra-mode  */
+        void decode_intra(Frame * frame, uint8_t seed,int k, Golomb & g, uint8_t type);
+
+        /*  Function used to encode and write N Frames  inter-mode  */
+        void decode_inter(Frame * current_frame , Frame * last_frame,int k, Golomb & g, uint8_t type);
 
         /* Function used to encode and write */
         void read_and_decode();
