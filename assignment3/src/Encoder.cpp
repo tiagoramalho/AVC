@@ -211,17 +211,15 @@ void Encoder::get_best_fit( cv::Mat macroblock, cv::Mat searchingArea, vector<in
     //macroblock.convertTo(macroblock, CV_8U);
     //searchingArea.convertTo(searchingArea, CV_8U);
 
-    rectangle(img_display, matchLoc, Point( matchLoc.x + macroblock.cols , matchLoc.y + macroblock.rows ), Scalar::all(0), 1, 8, 0 );
-    //rectangle( result, matchLoc, Point( matchLoc.x + searchingArea.cols , matchLoc.y + searchingArea.rows ), Scalar::all(0), 2, 8, 0 );
+    rectangle(img_display, matchLoc, Point( matchLoc.x + macroblock.cols , matchLoc.y + macroblock.rows ), Scalar::all(0), 1, 8, 0 ); //rectangle( result, matchLoc, Point( matchLoc.x + searchingArea.cols , matchLoc.y + searchingArea.rows ), Scalar::all(0), 2, 8, 0 );
     imshow( "Pequeno", macroblock );
     imshow( "Area to search", img_display );
     imshow( "Grande", result );
 
-    cv::waitKey(0);
+    cv::waitKey(10);
 };
 
 void Encoder::encode_and_write_frame_inter(Frame * frame, Frame * previous_frame,int f_counter, Golomb * g){
-
     int y_curr_frame = 0;
     int x_curr_frame = 0;
     int x_searching_area_top_left = 0;
@@ -231,32 +229,38 @@ void Encoder::encode_and_write_frame_inter(Frame * frame, Frame * previous_frame
     cv::Mat macroblock;
     cv::Mat searching_area;
 
-    cv::Mat y = frame->get_y();
-    int height = y.rows;
-    int width = y.cols;
+    cv::Mat y_previous = previous_frame->get_y();
+    cv::Mat y_frame = frame->get_y();
+
+    imshow( "Previous Frame", y_previous );
+    cv::waitKey(100);
+    int height = y_frame.rows;
+    int width = y_frame.cols;
 
     vector<int> to_encode = {};
 
-    for( y_curr_frame = 0; y_curr_frame < height- this->block_size; y_curr_frame +=this->block_size ){
+    for( y_curr_frame = 0; y_curr_frame < height; y_curr_frame +=this->block_size ){
 
-        for( x_curr_frame = 0; x_curr_frame < width-this->block_size; x_curr_frame +=this->block_size ){
+        for( x_curr_frame = 0; x_curr_frame < width; x_curr_frame +=this->block_size ){
 
-            printf("x %d y %d\n", x_curr_frame, y_curr_frame);
+            //printf("x %d y %d\n", x_curr_frame, y_curr_frame);
 
-            macroblock = y(cv::Rect(x_curr_frame, y_curr_frame, this->block_size, this->block_size));
+            macroblock = y_frame(cv::Rect(x_curr_frame, y_curr_frame, this->block_size, this->block_size));
 
             x_searching_area_top_left = std::max(0, x_curr_frame - this->search_area);
             y_searching_area_top_left = std::max(0, y_curr_frame - this->search_area);
 
             x_searching_area_bot_right = std::min(width,
                     x_curr_frame + this->block_size + this->search_area);
-            y_searching_area_bot_right = std::min(width,
+            y_searching_area_bot_right = std::min(height,
                     y_curr_frame + this->block_size + this->search_area);
 
             int area = ( y_searching_area_bot_right - y_searching_area_top_left ) * (x_searching_area_bot_right - x_searching_area_top_left);
-            printf("Search Area: %d\n", area);
+            //printf("Search Area: %d\n", area);
 
-            searching_area = y(cv::Rect(cv::Point(x_searching_area_top_left, y_searching_area_top_left),
+            //printf("%d, %d | %d, %d\n", x_searching_area_top_left, y_searching_area_top_left,x_searching_area_bot_right,y_searching_area_bot_right);
+
+            searching_area = y_previous(cv::Rect(cv::Point(x_searching_area_top_left, y_searching_area_top_left),
                         cv::Point(x_searching_area_bot_right,y_searching_area_bot_right)));
 
             get_best_fit( macroblock, searching_area, & to_encode );
@@ -265,6 +269,8 @@ void Encoder::encode_and_write_frame_inter(Frame * frame, Frame * previous_frame
 
         }
     }
+
+    printf("Done %d\n", f_counter);
 };
 
 /* TODO melhorar isto; Branco*/
@@ -330,6 +336,7 @@ void Encoder::encode_and_write(){
     string line;
     int cols, rows,frame_counter =0;
     vector<unsigned char> imgData;
+    vector<unsigned char> previous_imgData;
     Frame * f;
     Frame * previous_frame;
 
@@ -349,16 +356,19 @@ void Encoder::encode_and_write(){
     switch(stoi(header['C'])){
         case 444:{
             f = new Frame444 (rows, cols);
+            previous_frame = new Frame444 (rows, cols); 
             imgData.resize(cols * rows * 3);
             break;
         }
         case 422:{
             f = new Frame422 (rows, cols);
+            previous_frame = new Frame422 (rows, cols); 
             imgData.resize(cols * rows * 2);
             break;
         }
         case 420:{
             f = new Frame420 (rows, cols);
+            previous_frame = new Frame420 (rows, cols); 
             imgData.resize(cols * rows * 3/2);
             break;
         }
@@ -381,24 +391,30 @@ void Encoder::encode_and_write(){
       }
     }else{
       while(1){
+          f = new Frame444 (rows, cols);
           getline (this->infile,line); // Skipping word FRAME
           this->infile.read((char *) imgData.data(), imgData.size());
           f->set_frame_data(imgData.data());
+
           if(this->infile.gcount() == 0){
               break;
           }
           Mat y = f->get_y();
-          printf("rows: %d, cols: %d\n", y.rows, y.cols);
+          //printf("rows: %d, cols: %d\n", y.rows, y.cols);
 
           if( frame_counter % this->periodicity == 0){
-              //encode_and_write_frame_intra(f, frame_counter, & g);
-              encode_and_write_frame_inter(f, previous_frame, frame_counter, & g);
+              encode_and_write_frame_intra(f, frame_counter, & g);
+              //encode_and_write_frame_inter(f, previous_frame, frame_counter, & g);
+              //printf("=============================================================\n\n\n\n\nPILAAAAAAAAAAAAAAAAA");
+              //previous_imgData = imgData;
+              //previous_frame->set_frame_data(previous_imgData.data());
+              previous_frame = f ;
           }else{
               encode_and_write_frame_inter(f, previous_frame, frame_counter, & g);
           }
 
-          frame_counter +=1;
-          previous_frame = f;
+          frame_counter += 1 ;
+          //previous_frame = f ;
       }
     }
 
