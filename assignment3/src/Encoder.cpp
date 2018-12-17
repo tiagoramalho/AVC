@@ -238,8 +238,6 @@ void Encoder::get_best_fit( cv::Mat macroblock, cv::Mat searchingArea, vector<in
         for (int y = 0; y < macroblock.rows; ++y)
         {
             printf("%d, %d, %d, %d, %d\n", x, y, macroblock.at<int32_t>(y,x), cona.at<int32_t>(y,x), residuals.at<int32_t>(y,x));
-            if(residuals.at<int32_t>(y,x) != 0)
-            printf("%d, %d, %d, %d, %d\n", x, y, macroblock.at<int32_t>(y,x), cona.at<int32_t>(y,x), residuals.at<int32_t>(y,x));
         }
     }
     
@@ -433,12 +431,12 @@ void Encoder::encode_and_write(){
               encode_and_write_frame_intra(f, frame_counter, & g);
               //encode_and_write_frame_inter(f, previous_frame, frame_counter, & g);
               //printf("=============================================================\n\n\n\n\nPILAAAAAAAAAAAAAAAAA");
-              //previous_imgData = imgData;
-              //previous_frame->set_frame_data(previous_imgData.data());
-              previous_frame = f ;
+              //previous_frame = f ;
           }else{
               encode_and_write_frame_inter(f, previous_frame, frame_counter, & g);
           }
+          previous_imgData = imgData;
+          previous_frame->set_frame_data(previous_imgData.data());
 
           frame_counter += 1 ;
           //previous_frame = f ;
