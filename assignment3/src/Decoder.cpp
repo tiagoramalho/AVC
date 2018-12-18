@@ -145,6 +145,7 @@ void Decoder::read_and_decode(){
 
     /* Write File Header */
     /* TODO corrigir o 50 hardcoded abaixo. Mudar para FPS */
+
     this->write_header_y4m(stoi(header['W']), stoi(header['H']), "50:1", stoi(header['C']));
 
     int type;
@@ -158,6 +159,7 @@ void Decoder::read_and_decode(){
         }
 
         if(type == 0){
+            printf("decode intra");
 
             /* Write Frame Header */
             this->write_header_frame();
@@ -177,7 +179,7 @@ void Decoder::read_and_decode(){
             k = this->r.read_k();
             decode_intra(current_frame, seed, k, g, 2);
 
-        }else if(type == 2){
+        }else if(type == 1){
         
             /* Write Frame Header */
             this->write_header_frame();

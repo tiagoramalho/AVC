@@ -30,32 +30,10 @@ int WriteFile(std::string fname, std::map<int,int> *m) {
     return count;
 }
 
-int Encoder::get_best_k( vector<int> * residuals , int frame, int tck){
-
-    /* This Function can be reworked */
-
+int Encoder::get_best_k( int size, int tck ){
     int k = 0;
-    //double average = std::accumulate( residuals->begin(), residuals->end(), 0.0)/residuals->size();
-
-    //double E=0;
-    //double inverse = 1.0 / static_cast<double>(residuals->size());
-
-    //std::map<int, int> freq;
-
-    //for(unsigned int i=0;i<residuals->size();i++){
-    //  freq[residuals->at(i)]++;
-    //  E+=pow(static_cast<double>(residuals->at(i)) - average, 2);
-    //}
-
-    //printf("%d", frame);
-    //string fname = "./histograms/rawdata/hist"+ to_string(frame);
-    //printf("%s\n", fname.c_str());
-    //WriteFile( fname, &freq);
-
-    double tck_a = tck/residuals->size();
+    double tck_a = tck/size;
     k = std::ceil(std::log2(tck_a));
-    //printf("K used-> %d \n", k);
-    //printf("Average -> %f | Deviation-> %f | K-> %f\n", average, sqrt(inverse*E), k );
     return k;
 }
 
@@ -186,7 +164,7 @@ int Encoder::get_residuals_from_matrix(cv::Mat * matrix, vector<int> * residuals
     return to_calculate_k;
 }
 
-void Encoder::get_best_fit( cv::Mat macroblock, cv::Mat searchingArea, vector<int> & to_encode){
+void Encoder::get_best_fit( cv::Mat macroblock, cv::Mat searchingArea, vector<Point> & to_encode){
     Mat img_display;
     searchingArea.copyTo( img_display );
 
@@ -216,32 +194,7 @@ void Encoder::get_best_fit( cv::Mat macroblock, cv::Mat searchingArea, vector<in
     imshow( "Area to search", img_display );
     imshow( "Grande", result );
 
-    to_encode.push_back(matchLoc.x);
-    to_encode.push_back(matchLoc.y);
-
-    cv::Mat residuals(macroblock.cols, macroblock.rows, CV_32S);
-
-    cv::Mat cona = searchingArea(cv::Rect(Point(matchLoc.x, matchLoc.y), Point(matchLoc.x + macroblock.cols , matchLoc.y + macroblock.rows)));
-    // printf("%d %d %d %d %d %d\n", cona.cols, cona.rows, macroblock.cols, macroblock.rows, residuals.cols, residuals.rows);
-
-    cona.convertTo(cona, CV_32S);
-    macroblock.convertTo(macroblock, CV_32S);
-
-    subtract(
-        cona,
-        macroblock,
-        residuals
-    );
-    
-    for (int x = 0; x < macroblock.cols; ++x)
-    {
-        for (int y = 0; y < macroblock.rows; ++y)
-        {
-            printf("%d, %d, %d, %d, %d\n", x, y, macroblock.at<int32_t>(y,x), cona.at<int32_t>(y,x), residuals.at<int32_t>(y,x));
-        }
-    }
-    
-    // cv::waitKey(5);
+    to_encode.push_back(matchLoc);
 };
 
 void Encoder::encode_and_write_frame_inter(Frame * frame, Frame * previous_frame,int f_counter, Golomb * g){
@@ -262,8 +215,9 @@ void Encoder::encode_and_write_frame_inter(Frame * frame, Frame * previous_frame
     int height = y_frame.rows;
     int width = y_frame.cols;
 
-    vector<int> to_encode = {};
-
+    vector<Point> to_encode_vector = {};
+    int to_calculate_k = 0;
+    int index = 0;
     for( y_curr_frame = 0; y_curr_frame < height; y_curr_frame +=this->block_size ){
 
         for( x_curr_frame = 0; x_curr_frame < width; x_curr_frame +=this->block_size ){
@@ -280,24 +234,259 @@ void Encoder::encode_and_write_frame_inter(Frame * frame, Frame * previous_frame
             y_searching_area_bot_right = std::min(height,
                     y_curr_frame + this->block_size + this->search_area);
 
-            int area = ( y_searching_area_bot_right - y_searching_area_top_left ) * (x_searching_area_bot_right - x_searching_area_top_left);
-            //printf("Search Area: %d\n", area);
-
             //printf("%d, %d | %d, %d\n", x_searching_area_top_left, y_searching_area_top_left,x_searching_area_bot_right,y_searching_area_bot_right);
 
             searching_area = y_previous(cv::Rect(cv::Point(x_searching_area_top_left, y_searching_area_top_left),
                         cv::Point(x_searching_area_bot_right,y_searching_area_bot_right)));
 
-            get_best_fit( macroblock, searching_area, to_encode );
+            get_best_fit( macroblock, searching_area, to_encode_vector );
 
-            //codificar_macro_bloco( vector, residuais , golomb)
+            //save list of point = motion vectors
+            to_encode_vector.at(index)+=Point(x_searching_area_top_left, y_searching_area_top_left);
 
+            Point tmp = to_encode_vector.at(index);
+            if(tmp.x >= 0)
+                to_calculate_k += tmp.x * 2;
+            else
+                to_calculate_k += -2* tmp.x -1;
+if(tmp.y >= 0)
+                to_calculate_k += tmp.y * 2;
+            else
+                to_calculate_k += -2* tmp.y -1;
+
+            index+=1;
         }
     }
+    // escrever vetores na bitstream
+    int k = get_best_k(to_encode_vector.size()*2, to_calculate_k);
+    int m = pow(2,k);
+    g->set_m(m);
+    for(unsigned int i = 0; i < to_encode_vector.size(); i++){
+        g->encode_and_write(to_encode_vector.at(i).x, w);
+        g->encode_and_write(to_encode_vector.at(i).y, w);
+    }
+
+    cv::Mat u_previous = previous_frame->get_u();
+    cv::Mat u_frame = frame->get_u();
+
+    // code v
+    cv::Mat v_previous = previous_frame->get_v();
+    cv::Mat v_frame = frame->get_v();
+    if(frame->print_type() == 444){
+        // code y
+        intra_encode_write_4(y_frame, g, to_encode_vector, y_previous);
+
+        // code u
+        intra_encode_write_4(u_frame, g, to_encode_vector, u_previous);
+    
+        // code v
+        intra_encode_write_4(v_frame, g, to_encode_vector, v_previous);
+
+    }else if(frame->print_type() == 422){
+        // code y
+        intra_encode_write_4(y_frame, g, to_encode_vector, y_previous);
+
+        // code u
+        intra_encode_write_2(u_frame, g, to_encode_vector, u_previous);
+    
+        // code v
+        intra_encode_write_2(v_frame, g, to_encode_vector, v_previous);
+    
+    }else if(frame->print_type() == 420){
+        // code y
+        intra_encode_write_4(y_frame, g, to_encode_vector, y_previous);
+        
+        // code u
+        intra_encode_write_0(u_frame, g, to_encode_vector, u_previous);
+    
+        // code v
+        intra_encode_write_0(v_frame, g, to_encode_vector, v_previous);
+    
+    }
+
 
     printf("Done %d\n", f_counter);
 };
+void Encoder::intra_encode_write_4(Mat frame, Golomb * g, vector<Point> to_encode_vector, Mat previous){
 
+    vector<int> to_encode_residuals = {};
+    int to_calculate_k = 0;
+    int y_curr_frame = 0;
+    int x_curr_frame = 0;
+
+    cv::Mat macroblock;
+    cv::Mat match_area;
+    int index = 0;
+    for( y_curr_frame = 0; y_curr_frame < frame.rows; y_curr_frame +=this->block_size ){
+
+        for( x_curr_frame = 0; x_curr_frame < frame.cols; x_curr_frame +=this->block_size ){
+
+
+            printf("P: x %d y %d\n", x_curr_frame, y_curr_frame);
+
+            macroblock = frame(cv::Rect(x_curr_frame, y_curr_frame, this->block_size, this->block_size));
+
+            Point tmp = to_encode_vector.at(index);
+            printf("V: x %d y %d\n", tmp.x, tmp.y);
+            //printf("NP: x %d y %d\n", tmp.x, tmp.y);
+            //match_area = previous(cv::Rect(x_curr_frame-tmp.x, y_curr_frame-tmp.y,this->block_size, this->block_size));
+            match_area = previous(cv::Rect(tmp.x, tmp.y,this->block_size, this->block_size));
+
+            macroblock.convertTo(macroblock, CV_32S);
+            match_area.convertTo(match_area, CV_32S);
+
+            cv::Mat residuals(macroblock.cols, macroblock.rows, CV_32S);
+
+            //frame anterior - atual 
+            subtract(
+                match_area,
+                macroblock,
+                residuals
+            );
+
+            for (int x = 0; x < macroblock.cols; ++x)
+            {
+                for (int y = 0; y < macroblock.rows; ++y)
+                {
+                    to_encode_residuals.push_back(residuals.at<int32_t>(y,x));
+                    if(residuals.at<int32_t>(y,x) >= 0)
+                        to_calculate_k += residuals.at<int32_t>(y,x) * 2;
+                    else
+                        to_calculate_k += -2* residuals.at<int32_t>(y,x) -1;
+                }
+            }
+            index+=1;
+        }
+    }
+
+    int k = get_best_k(to_encode_residuals.size(), to_calculate_k);
+    int m = pow(2,k);
+    g->set_m(m);
+    this->w.write_k(k);
+    for(unsigned int i = 0; i < to_encode_residuals.size(); i++){
+        g->encode_and_write(to_encode_residuals.at(i), w);
+    }
+
+}
+
+void Encoder::intra_encode_write_2(Mat frame, Golomb * g, vector<Point> to_encode_vector, Mat previous){
+
+    vector<int> to_encode_residuals = {};
+    int to_calculate_k = 0;
+    int y_curr_frame = 0;
+    int x_curr_frame = 0;
+
+    cv::Mat macroblock;
+    cv::Mat match_area;
+    int adjusted_size = this->block_size / 2;
+    int index = 0;
+    for( y_curr_frame = 0; y_curr_frame < frame.rows; y_curr_frame +=this->block_size ){
+
+        for( x_curr_frame = 0; x_curr_frame < frame.cols; x_curr_frame +=adjusted_size ){
+
+            //printf("x %d y %d\n", x_curr_frame, y_curr_frame);
+
+            macroblock = frame(cv::Rect(x_curr_frame, y_curr_frame, adjusted_size, this->block_size));
+
+            Point tmp = to_encode_vector.at(index);
+
+            match_area = previous(cv::Rect(x_curr_frame-tmp.x/2, y_curr_frame-tmp.y,adjusted_size, this->block_size));
+
+            macroblock.convertTo(macroblock, CV_32S);
+            match_area.convertTo(match_area, CV_32S);
+
+            cv::Mat residuals(macroblock.cols, macroblock.rows, CV_32S);
+
+            //frame anterior - atual 
+            subtract(
+                match_area,
+                macroblock,
+                residuals
+            );
+
+            for (int x = 0; x < macroblock.cols; ++x)
+            {
+                for (int y = 0; y < macroblock.rows; ++y)
+                {
+                    to_encode_residuals.push_back(residuals.at<int32_t>(y,x));
+                    if(residuals.at<int32_t>(y,x) >= 0)
+                        to_calculate_k += residuals.at<int32_t>(y,x) * 2;
+                    else
+                        to_calculate_k += -2* residuals.at<int32_t>(y,x) -1;
+                }
+            }
+            index +=1;
+        }
+    }
+
+    int k = get_best_k(to_encode_residuals.size(), to_calculate_k);
+    int m = pow(2,k);
+    g->set_m(m);
+    this->w.write_k(k);
+    for(unsigned int i = 0; i < to_encode_residuals.size(); i++){
+        g->encode_and_write(to_encode_residuals.at(i), w);
+    }
+
+}
+void Encoder::intra_encode_write_0(Mat frame, Golomb * g, vector<Point> to_encode_vector, Mat previous){
+
+    vector<int> to_encode_residuals = {};
+    int to_calculate_k = 0;
+    int y_curr_frame = 0;
+    int x_curr_frame = 0;
+
+    cv::Mat macroblock;
+    cv::Mat match_area;
+    int adjusted_size = this->block_size / 2;
+    int index = 0;
+    for( y_curr_frame = 0; y_curr_frame < frame.rows; y_curr_frame +=adjusted_size ){
+
+        for( x_curr_frame = 0; x_curr_frame < frame.cols; x_curr_frame +=adjusted_size ){
+
+            //printf("x %d y %d\n", x_curr_frame, y_curr_frame);
+
+            macroblock = frame(cv::Rect(x_curr_frame, y_curr_frame, adjusted_size, adjusted_size));
+
+            Point tmp = to_encode_vector.at(index);
+            match_area = previous(cv::Rect(x_curr_frame-tmp.x/2, y_curr_frame-tmp.y/2,adjusted_size, adjusted_size));
+
+            macroblock.convertTo(macroblock, CV_32S);
+            match_area.convertTo(match_area, CV_32S);
+
+            cv::Mat residuals(macroblock.cols, macroblock.rows, CV_32S);
+
+            //frame anterior - atual 
+            subtract(
+                match_area,
+                macroblock,
+                residuals
+            );
+
+            for (int x = 0; x < macroblock.cols; ++x)
+            {
+                for (int y = 0; y < macroblock.rows; ++y)
+                {
+                    to_encode_residuals.push_back(residuals.at<int32_t>(y,x));
+                    if(residuals.at<int32_t>(y,x) >= 0)
+                        to_calculate_k += residuals.at<int32_t>(y,x) * 2;
+                    else
+                        to_calculate_k += -2* residuals.at<int32_t>(y,x) -1;
+                }
+            }
+
+            index+=1;
+        }
+    }
+
+    int k = get_best_k(to_encode_residuals.size(), to_calculate_k);
+    int m = pow(2,k);
+    g->set_m(m);
+    this->w.write_k(k);
+    for(unsigned int i = 0; i < to_encode_residuals.size(); i++){
+        g->encode_and_write(to_encode_residuals.at(i), w);
+    }
+
+}
 /* TODO melhorar isto; Branco*/
 
 void Encoder::encode_and_write_frame_intra(Frame * frame, int f_counter, Golomb * g){
@@ -309,7 +498,7 @@ void Encoder::encode_and_write_frame_intra(Frame * frame, int f_counter, Golomb 
     /* encode the Luminance Matrix */
     uint8_t seed = frame->get_y().at<uint8_t>(0,0);
     to_calculate_k = get_residuals_from_matrix( & matrix , & residuals);
-    int k = get_best_k(&residuals, f_counter, to_calculate_k);
+    int k = get_best_k(residuals.size(), to_calculate_k);
 
     /* Write Frame Header */
     this->w.writeFrameHeader(k, seed);
@@ -328,7 +517,7 @@ void Encoder::encode_and_write_frame_intra(Frame * frame, int f_counter, Golomb 
     matrix = frame->get_u();
     seed = matrix.at<uint8_t>(0,0);
     to_calculate_k = get_residuals_from_matrix( & matrix , & residuals);
-    k = get_best_k(&residuals, f_counter, to_calculate_k);
+    k = get_best_k(residuals.size(), to_calculate_k);
 
     this->w.writeFrameHeader(k, seed);
     m = pow(2,k);
@@ -342,7 +531,7 @@ void Encoder::encode_and_write_frame_intra(Frame * frame, int f_counter, Golomb 
     matrix = frame->get_v();
     seed = matrix.at<uint8_t>(0,0);
     to_calculate_k = get_residuals_from_matrix( & matrix , & residuals);
-    k = get_best_k(&residuals, f_counter, to_calculate_k);
+    k = get_best_k(residuals.size(), to_calculate_k);
 
     this->w.writeFrameHeader(k, seed);
     m = pow(2,k);
@@ -374,8 +563,6 @@ void Encoder::encode_and_write(){
     cols = stoi(header['W']);
     rows = stoi(header['H']);
 
-
-    // printf("Writing Header To Compressed File...");
     this->w.writeHeader(cols,rows,stoi(header['C']));
 
     switch(stoi(header['C'])){

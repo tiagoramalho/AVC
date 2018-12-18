@@ -89,7 +89,7 @@ class READBits: public Stream {
             int seed;
             unsigned short s = readItem(8) >> 8;
             seed = s;
-            return s;
+            return seed;
         }
 
         vector<int> readHeaderNoLine(){
@@ -265,6 +265,9 @@ class WRITEBits: public Stream {
             preWrite(k,8);
             //f << seed; 
             //f << k;
+        }
+        void write_k(uint8_t k){
+            preWrite(k,8);
         }
 
         void flush(){
