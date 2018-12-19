@@ -126,20 +126,28 @@ class READBits: public Stream {
                     header['W'] = token.substr(1);
                 }
                 else if(token.at(0) == 'H'){
-                    //cout << "Height " << token.substr(1) <<endl;
                     header['H'] = token.substr(1);
                 }
                 else if(token.at(0) == 'K'){
-                    //printf("K %02x\n", stoi(convertToASCII(token.substr(1))));
                     header['K'] = convertToASCII(token.substr(1));
                 }
                 else if(token.at(0) == 'S'){
-                    //printf("S %02x\n", stoi(convertToASCII(token.substr(1))));
                     header['S'] = convertToASCII(token.substr(1));
                 }
                 else if(token.at(0) == 'C'){
-                    //cout << "Colour Space " << token.substr(1) << endl;
                     header['C'] = token.substr(1);
+                }
+                else if(token.at(0) == 'B'){
+                    header['B'] = token.substr(1);
+                }
+                else if(token.at(0) == 'P'){
+                    header['P'] = token.substr(1);
+                }
+                else if(token.at(0) == 'S'){
+                    header['S'] = token.substr(1);
+                }
+                else if(token.at(0) == 'R'){
+                    header['R'] = token.substr(1);
                 }
                 i=j;
             }
@@ -255,8 +263,18 @@ class WRITEBits: public Stream {
          * Função que escreve o header no ficheiro
          *
          * */
-        void writeHeader(uint32_t width, uint32_t height, uint32_t colorspace){
-            f << "PARVUS" << " W" << width << " H" << height << " C" << colorspace << endl;
+        void writeHeader(uint32_t width, uint32_t height,
+            uint32_t colorspace, uint32_t block_size,
+            uint32_t periodicity, uint32_t search_area, uint32_t profile){
+            f << "PARVUS" <<
+                " W" << width <<
+                " H" << height <<
+                " C" << colorspace <<
+                " B" << block_size <<
+                " P" << periodicity <<
+                " S" << search_area <<
+                " R" << profile << endl; // Profile
+
         }
 
         void writeFrameHeader(uint8_t k, uint8_t seed){

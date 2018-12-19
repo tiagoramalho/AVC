@@ -25,7 +25,6 @@ int main(int argc, char** argv)
 
     /* parse arguments */
     try{
-        printf("FUCK");
         cxxopts::Options options("Parvus", "Video Compressor");
 
         options.add_options()
@@ -60,9 +59,17 @@ int main(int argc, char** argv)
         }
 
         profile = result["m"].as<int>();
-        periodicity = result["p"].as<int>();
-        block_size = result["b"].as<int>();
-        search_area = result["s"].as<int>();
+        if (profile == 1)
+        {
+            periodicity = result["p"].as<int>();
+            search_area = result["s"].as<int>();
+            block_size = result["b"].as<int>();
+        }
+        else{
+            periodicity = 0;
+            search_area = 0;
+            block_size = 0;
+        }
 
         if (result.count("d")){
             mode_decode = true;

@@ -102,7 +102,6 @@ void Decoder::read_and_decode(){
 
     int frame_counter =0;
     int color_space;
-    int block_size;
 
     Golomb g;
 
@@ -115,8 +114,11 @@ void Decoder::read_and_decode(){
 
     this->height = stoi(header['H']);
     this->width = stoi(header['W']);
-    color_space = stoi(header['C']);
-    block_size = stoi(header['B']);
+
+    this->profile = stoi(header['R']);
+    this->block_size = stoi(header['B']);
+    this->search_area = stoi(header['S']);
+    this->periodicity = stoi(header['P']);
 
     Frame * current_frame;
     Frame * last_frame;

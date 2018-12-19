@@ -10,6 +10,8 @@ class Decoder {
         int height, width;
         ofstream outfile;
         READBits r;
+        int profile, periodicity, block_size, search_area;
+        
 
         // void parse_header_pv(map<char,string> & header, string header_line, int delimiter(int) = ::isspace);
         

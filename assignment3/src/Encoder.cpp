@@ -563,7 +563,8 @@ void Encoder::encode_and_write(){
     cols = stoi(header['W']);
     rows = stoi(header['H']);
 
-    this->w.writeHeader(cols,rows,stoi(header['C']));
+    this->w.writeHeader(cols,rows,stoi(header['C']),
+        this->block_size, this->periodicity, this->search_area, this->profile);
 
     switch(stoi(header['C'])){
         case 444:{
