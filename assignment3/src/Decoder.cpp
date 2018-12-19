@@ -82,22 +82,115 @@ void Decoder::decode_intra(Frame * frame, uint8_t seed,int k, Golomb & g, uint8_
 void Decoder::decode_inter(Frame * current_frame, Frame * last_frame, 
         int k, Golomb & g, uint8_t type, vector<Point> & vectors){
 
-    cv::Mat mat;
+    int adjusted_size_x = this->block_size;
+    int adjusted_size_y = this->block_size;
+    cv::Mat mat, previous_mat;
     int residual;
     int m = pow(2,k);
     g.set_m(m);
 
+
     if(type == 0){
+
+        adjusted_size_x = this->block_size;
+        adjusted_size_y = this->block_size;
         mat = current_frame->get_y();
+        previous_mat = last_frame->get_y();
+
     } else if (type == 1) {
+
+        if (color_space == 422) {
+            adjusted_size_x = this->block_size / 2;
+            adjusted_size_y = this->block_size;
+        } else if (color_space == 420) {
+            adjusted_size_x = this->block_size / 2;
+            adjusted_size_y = this->block_size / 2;
+        }
+
         mat = current_frame->get_u();
+        previous_mat = last_frame->get_u();
+
     } else{
+
+        if (color_space == 422) {
+            adjusted_size_x = this->block_size / 2;
+            adjusted_size_y = this->block_size;
+        } else if (color_space == 420) {
+            adjusted_size_x = this->block_size / 2;
+            adjusted_size_y = this->block_size / 2;
+        }
+
         mat = current_frame->get_v();
+        previous_mat = last_frame->get_v();
+
     }
+
+
+    cv::Mat macroblock;
+    cv::Mat match_area;
+    int index = 0;
+    for( int y_curr_frame = 0; y_curr_frame < mat.rows; y_curr_frame += adjusted_size_y ){
+
+        for( int x_curr_frame = 0; x_curr_frame < mat.cols; x_curr_frame += adjusted_size_x ){
+
+            macroblock = mat(cv::Rect(x_curr_frame, y_curr_frame, adjusted_size_x, adjusted_size_y));
+
+            for (int x = 0; x < macroblock.cols; ++x)
+            {
+                for (int y = 0; y < macroblock.rows; ++y)
+                {
+                    macroblock.at<int32_t>(y,x) = g.read_and_decode(this->r);
+                    if(x == y){
+                        printf("(%d,%d): %d;\n", x, y,
+                            macroblock.at<int32_t>(x,y));
+                    }
+                }
+            }
+
+            Point tmp = vectors.at(index);
+            match_area = previous_mat(cv::Rect(x_curr_frame + tmp.x, y_curr_frame + tmp.y, adjusted_size_x, adjusted_size_y));
+
+            /*macroblock.convertTo(macroblock, CV_32S);
+            match_area.convertTo(match_area, CV_32S);
+            */
+
+            printf("(0,0): %d; (1,1): %d; (2,2): %d; (3,3): %d;\n",
+                macroblock.at<int32_t>(0,0),
+                macroblock.at<int32_t>(1,1),
+                macroblock.at<int32_t>(2,2),
+                macroblock.at<int32_t>(3,3));
+
+            printf("(0,0): %d; (1,1): %d; (2,2): %d; (3,3): %d;\n",
+                match_area.at<int32_t>(0,0),
+                match_area.at<int32_t>(1,1),
+                match_area.at<int32_t>(2,2),
+                match_area.at<int32_t>(3,3));
+
+            //frame anterior - atual 
+            macroblock = match_area + macroblock;
+
+            printf("(0,0): %d; (1,1): %d; (2,2): %d; (3,3): %d;\n",
+                macroblock.at<int32_t>(0,0),
+                macroblock.at<int32_t>(1,1),
+                macroblock.at<int32_t>(2,2),
+                macroblock.at<int32_t>(3,3));
+            
+            printf("(0,0): %d; (1,1): %d; (2,2): %d; (3,3): %d;\n",
+                current_frame->get_y().at<int32_t>(0,0),
+                current_frame->get_y().at<int32_t>(1,1),
+                current_frame->get_y().at<int32_t>(2,2),
+                current_frame->get_y().at<int32_t>(3,3));
+
+            exit(1);
+            index+=1;
+        }
+    }
+
 
 
     uint8_t * line = mat.ptr(0);
     this->outfile.write( (char*) line, mat.cols * mat.rows);
+
 
 }
 
@@ -114,11 +207,7 @@ vector<Point> Decoder::get_vectors(int k, Golomb & g){
         int y = g.read_and_decode(this->r);
         vectors.push_back(Point(x,y));
         printf("Vectors(%d, %d)\n", x, y);
-        if(i==5){
-            break;
-        }
     }
-    exit(1);
     return vectors;
 }
 
@@ -126,7 +215,6 @@ vector<Point> Decoder::get_vectors(int k, Golomb & g){
 void Decoder::read_and_decode(){
 
     int frame_counter =0;
-    int color_space;
 
     Golomb g;
 
@@ -136,18 +224,18 @@ void Decoder::read_and_decode(){
 
     line = this->r.readHeader();
     this->r.parse_header_pv(header, line);
-    
+
     this->height = stoi(header['H']);
     this->width = stoi(header['W']);
     this->block_size = stoi(header['B']);
-    color_space = stoi(header['C']);
+    this->color_space = stoi(header['C']);
 
 
     Frame * current_frame;
     Frame * last_frame;
 
 
-    switch(color_space){
+    switch(this->color_space){
         case 444:{
             current_frame = new Frame444 (this->height, this->width);
             last_frame = new Frame444 (this->height, this->width);

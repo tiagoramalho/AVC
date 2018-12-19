@@ -9,7 +9,7 @@ using namespace cv;
 class Decoder {
 
     private:
-        int height, width;
+        int height, width, color_space;
         ofstream outfile;
         READBits r;
         int profile, periodicity, block_size, search_area;
