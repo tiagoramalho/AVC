@@ -113,7 +113,10 @@ vector<Point> Decoder::get_vectors(int k, Golomb & g){
         int x = g.read_and_decode(this->r);
         int y = g.read_and_decode(this->r);
         vectors.push_back(Point(x,y));
-        // printf("Vectors(%d, %d)\n", x, y);
+        printf("Vectors(%d, %d)\n", x, y);
+        if(i==5){
+            break;
+        }
     }
     exit(1);
     return vectors;
@@ -133,7 +136,7 @@ void Decoder::read_and_decode(){
 
     line = this->r.readHeader();
     this->r.parse_header_pv(header, line);
-
+    
     this->height = stoi(header['H']);
     this->width = stoi(header['W']);
     this->block_size = stoi(header['B']);
@@ -181,28 +184,28 @@ void Decoder::read_and_decode(){
         }
 
         if(type == 0){
-            printf("decode intra");
+            printf("decode intra\n");
 
             /* Write Frame Header */
             this->write_header_frame();
 
             /* Decode Matrix Y */
-            seed = this->r.read_seed();
             k = this->r.read_k();
+            seed = this->r.read_seed();
             decode_intra(current_frame, seed, k, g, 0);
 
             /* Decode Matrix U */
-            seed = this->r.read_seed();
             k = this->r.read_k();
+            seed = this->r.read_seed();
             decode_intra(current_frame, seed, k, g, 1);
 
             /* Decode Matrix V */
-            seed = this->r.read_seed();
             k = this->r.read_k();
+            seed = this->r.read_seed();
             decode_intra(current_frame, seed, k, g, 2);
 
         }else if(type == 1){
-            printf("decode inter");
+            printf("decode inter\n");
         
             /* Write Frame Header */
             this->write_header_frame();

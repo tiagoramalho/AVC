@@ -246,6 +246,7 @@ void Encoder::encode_and_write_frame_inter(Frame * frame, Frame * previous_frame
             to_encode_vector.at(index)-=Point(x_curr_frame, y_curr_frame);
 
             Point tmp = to_encode_vector.at(index);
+
             if(tmp.x >= 0)
                 to_calculate_k += tmp.x * 2;
             else
@@ -263,6 +264,7 @@ if(tmp.y >= 0)
     int m = pow(2,k);
     g->set_m(m);
     this->w.write_header_type(1);
+    printf("K: %d\n", k);
     this->w.write_header_k(k);
     for(unsigned int i = 0; i < to_encode_vector.size(); i++){
         printf("Vector(%d, %d)\n", to_encode_vector.at(i).x, to_encode_vector.at(i).y);
@@ -334,7 +336,7 @@ void Encoder::inter_encode_write_4(Mat frame, Golomb * g, vector<Point> to_encod
             // printf("V: x %d y %d\n", tmp.x, tmp.y);
             //printf("NP: x %d y %d\n", tmp.x, tmp.y);
             //match_area = previous(cv::Rect(x_curr_frame-tmp.x, y_curr_frame-tmp.y,this->block_size, this->block_size));
-            match_area = previous(cv::Rect(tmp.x, tmp.y,this->block_size, this->block_size));
+            match_area = previous(cv::Rect(x_curr_frame + tmp.x, y_curr_frame + tmp.y,this->block_size, this->block_size));
 
             macroblock.convertTo(macroblock, CV_32S);
             match_area.convertTo(match_area, CV_32S);
@@ -394,8 +396,7 @@ void Encoder::inter_encode_write_2(Mat frame, Golomb * g, vector<Point> to_encod
 
             Point tmp = to_encode_vector.at(index);
 
-            match_area = previous(cv::Rect(x_curr_frame-tmp.x/2, y_curr_frame-tmp.y,adjusted_size, this->block_size));
-
+            match_area = previous(cv::Rect(x_curr_frame + tmp.x/2, y_curr_frame + tmp.y,adjusted_size, this->block_size));
             macroblock.convertTo(macroblock, CV_32S);
             match_area.convertTo(match_area, CV_32S);
 
@@ -452,7 +453,7 @@ void Encoder::inter_encode_write_0(Mat frame, Golomb * g, vector<Point> to_encod
             macroblock = frame(cv::Rect(x_curr_frame, y_curr_frame, adjusted_size, adjusted_size));
 
             Point tmp = to_encode_vector.at(index);
-            match_area = previous(cv::Rect(x_curr_frame-tmp.x/2, y_curr_frame-tmp.y/2,adjusted_size, adjusted_size));
+            match_area = previous(cv::Rect(x_curr_frame + tmp.x/2, y_curr_frame + tmp.y/2,adjusted_size, adjusted_size));
 
             macroblock.convertTo(macroblock, CV_32S);
             match_area.convertTo(match_area, CV_32S);
