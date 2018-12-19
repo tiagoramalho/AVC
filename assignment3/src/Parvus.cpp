@@ -59,20 +59,17 @@ int main(int argc, char** argv)
         }
 
         profile = result["m"].as<int>();
-        if (profile == 1)
+
+
+        if (result.count("d")){
+            mode_decode = true;
+        }
+
+        if (profile == 1 && mode_decode==false)
         {
             periodicity = result["p"].as<int>();
             search_area = result["s"].as<int>();
             block_size = result["b"].as<int>();
-        }
-        else{
-            periodicity = 0;
-            search_area = 0;
-            block_size = 0;
-        }
-
-        if (result.count("d")){
-            mode_decode = true;
         }
 
     }catch(const cxxopts::OptionException& e){

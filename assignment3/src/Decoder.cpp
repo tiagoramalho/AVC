@@ -115,10 +115,7 @@ void Decoder::read_and_decode(){
     this->height = stoi(header['H']);
     this->width = stoi(header['W']);
 
-    this->profile = stoi(header['R']);
     this->block_size = stoi(header['B']);
-    this->search_area = stoi(header['S']);
-    this->periodicity = stoi(header['P']);
 
     Frame * current_frame;
     Frame * last_frame;

@@ -21,9 +21,9 @@ class Encoder {
         int get_residual_uniform( uint8_t pixel_value, uint8_t real_pixel_value);
         int get_residual_LOCO( uint8_t pixel_A, uint8_t pixel_B, uint8_t pixel_C,uint8_t real_pixel_value);
 
-        void intra_encode_write_4(cv::Mat y_frame, Golomb * g, vector<cv::Point> to_encode_vector, cv::Mat y_previous);
-        void intra_encode_write_2(cv::Mat y_frame, Golomb * g, vector<cv::Point> to_encode_vector, cv::Mat y_previous);
-        void intra_encode_write_0(cv::Mat y_frame, Golomb * g, vector<cv::Point> to_encode_vector, cv::Mat y_previous);
+        void inter_encode_write_4(cv::Mat y_frame, Golomb * g, vector<cv::Point> to_encode_vector, cv::Mat y_previous);
+        void inter_encode_write_2(cv::Mat y_frame, Golomb * g, vector<cv::Point> to_encode_vector, cv::Mat y_previous);
+        void inter_encode_write_0(cv::Mat y_frame, Golomb * g, vector<cv::Point> to_encode_vector, cv::Mat y_previous);
 
     public:
 

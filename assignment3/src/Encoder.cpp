@@ -274,40 +274,40 @@ if(tmp.y >= 0)
     cv::Mat v_frame = frame->get_v();
     if(frame->print_type() == 444){
         // code y
-        intra_encode_write_4(y_frame, g, to_encode_vector, y_previous);
+        inter_encode_write_4(y_frame, g, to_encode_vector, y_previous);
 
         // code u
-        intra_encode_write_4(u_frame, g, to_encode_vector, u_previous);
+        inter_encode_write_4(u_frame, g, to_encode_vector, u_previous);
     
         // code v
-        intra_encode_write_4(v_frame, g, to_encode_vector, v_previous);
+        inter_encode_write_4(v_frame, g, to_encode_vector, v_previous);
 
     }else if(frame->print_type() == 422){
         // code y
-        intra_encode_write_4(y_frame, g, to_encode_vector, y_previous);
+        inter_encode_write_4(y_frame, g, to_encode_vector, y_previous);
 
         // code u
-        intra_encode_write_2(u_frame, g, to_encode_vector, u_previous);
+        inter_encode_write_2(u_frame, g, to_encode_vector, u_previous);
     
         // code v
-        intra_encode_write_2(v_frame, g, to_encode_vector, v_previous);
+        inter_encode_write_2(v_frame, g, to_encode_vector, v_previous);
     
     }else if(frame->print_type() == 420){
         // code y
-        intra_encode_write_4(y_frame, g, to_encode_vector, y_previous);
+        inter_encode_write_4(y_frame, g, to_encode_vector, y_previous);
         
         // code u
-        intra_encode_write_0(u_frame, g, to_encode_vector, u_previous);
+        inter_encode_write_0(u_frame, g, to_encode_vector, u_previous);
     
         // code v
-        intra_encode_write_0(v_frame, g, to_encode_vector, v_previous);
+        inter_encode_write_0(v_frame, g, to_encode_vector, v_previous);
     
     }
 
 
     printf("Done %d\n", f_counter);
 };
-void Encoder::intra_encode_write_4(Mat frame, Golomb * g, vector<Point> to_encode_vector, Mat previous){
+void Encoder::inter_encode_write_4(Mat frame, Golomb * g, vector<Point> to_encode_vector, Mat previous){
 
     vector<int> to_encode_residuals = {};
     int to_calculate_k = 0;
@@ -362,14 +362,15 @@ void Encoder::intra_encode_write_4(Mat frame, Golomb * g, vector<Point> to_encod
     int k = get_best_k(to_encode_residuals.size(), to_calculate_k);
     int m = pow(2,k);
     g->set_m(m);
-    this->w.write_k(k);
+    this->w.write_header_type(1);
+    this->w.write_header_k(k);
     for(unsigned int i = 0; i < to_encode_residuals.size(); i++){
         g->encode_and_write(to_encode_residuals.at(i), w);
     }
 
 }
 
-void Encoder::intra_encode_write_2(Mat frame, Golomb * g, vector<Point> to_encode_vector, Mat previous){
+void Encoder::inter_encode_write_2(Mat frame, Golomb * g, vector<Point> to_encode_vector, Mat previous){
 
     vector<int> to_encode_residuals = {};
     int to_calculate_k = 0;
@@ -422,13 +423,14 @@ void Encoder::intra_encode_write_2(Mat frame, Golomb * g, vector<Point> to_encod
     int k = get_best_k(to_encode_residuals.size(), to_calculate_k);
     int m = pow(2,k);
     g->set_m(m);
-    this->w.write_k(k);
+    this->w.write_header_type(1);
+    this->w.write_header_k(k);
     for(unsigned int i = 0; i < to_encode_residuals.size(); i++){
         g->encode_and_write(to_encode_residuals.at(i), w);
     }
 
 }
-void Encoder::intra_encode_write_0(Mat frame, Golomb * g, vector<Point> to_encode_vector, Mat previous){
+void Encoder::inter_encode_write_0(Mat frame, Golomb * g, vector<Point> to_encode_vector, Mat previous){
 
     vector<int> to_encode_residuals = {};
     int to_calculate_k = 0;
@@ -481,7 +483,8 @@ void Encoder::intra_encode_write_0(Mat frame, Golomb * g, vector<Point> to_encod
     int k = get_best_k(to_encode_residuals.size(), to_calculate_k);
     int m = pow(2,k);
     g->set_m(m);
-    this->w.write_k(k);
+    this->w.write_header_type(1);
+    this->w.write_header_k(k);
     for(unsigned int i = 0; i < to_encode_residuals.size(); i++){
         g->encode_and_write(to_encode_residuals.at(i), w);
     }
@@ -501,7 +504,9 @@ void Encoder::encode_and_write_frame_intra(Frame * frame, int f_counter, Golomb 
     int k = get_best_k(residuals.size(), to_calculate_k);
 
     /* Write Frame Header */
-    this->w.writeFrameHeader(k, seed);
+    this->w.write_header_type(0);
+    this->w.write_header_k(k);
+    this->w.write_header_seed(seed);
     /* Encode Residuals */
 
     int m = pow(2,k);
@@ -519,7 +524,9 @@ void Encoder::encode_and_write_frame_intra(Frame * frame, int f_counter, Golomb 
     to_calculate_k = get_residuals_from_matrix( & matrix , & residuals);
     k = get_best_k(residuals.size(), to_calculate_k);
 
-    this->w.writeFrameHeader(k, seed);
+    this->w.write_header_type(0);
+    this->w.write_header_k(k);
+    this->w.write_header_seed(seed);
     m = pow(2,k);
     g->set_m(m);
     for(unsigned int i = 0; i < residuals.size(); i++){
@@ -533,7 +540,9 @@ void Encoder::encode_and_write_frame_intra(Frame * frame, int f_counter, Golomb 
     to_calculate_k = get_residuals_from_matrix( & matrix , & residuals);
     k = get_best_k(residuals.size(), to_calculate_k);
 
-    this->w.writeFrameHeader(k, seed);
+    this->w.write_header_type(0);
+    this->w.write_header_k(k);
+    this->w.write_header_seed(seed);
     m = pow(2,k);
     g->set_m(m);
     for(unsigned int i = 0; i < residuals.size(); i++){
@@ -563,8 +572,7 @@ void Encoder::encode_and_write(){
     cols = stoi(header['W']);
     rows = stoi(header['H']);
 
-    this->w.writeHeader(cols,rows,stoi(header['C']),
-        this->block_size, this->periodicity, this->search_area, this->profile);
+    this->w.writeHeader(cols,rows,stoi(header['C']), this->block_size);
 
     switch(stoi(header['C'])){
         case 444:{

@@ -85,6 +85,7 @@ class READBits: public Stream {
             return k;
         }
 
+        /* Todo mudar entropia abaixo e acima */
         int read_seed(){
             int seed;
             unsigned short s = readItem(8) >> 8;
@@ -128,26 +129,11 @@ class READBits: public Stream {
                 else if(token.at(0) == 'H'){
                     header['H'] = token.substr(1);
                 }
-                else if(token.at(0) == 'K'){
-                    header['K'] = convertToASCII(token.substr(1));
-                }
-                else if(token.at(0) == 'S'){
-                    header['S'] = convertToASCII(token.substr(1));
-                }
                 else if(token.at(0) == 'C'){
                     header['C'] = token.substr(1);
                 }
                 else if(token.at(0) == 'B'){
                     header['B'] = token.substr(1);
-                }
-                else if(token.at(0) == 'P'){
-                    header['P'] = token.substr(1);
-                }
-                else if(token.at(0) == 'S'){
-                    header['S'] = token.substr(1);
-                }
-                else if(token.at(0) == 'R'){
-                    header['R'] = token.substr(1);
                 }
                 i=j;
             }
@@ -264,27 +250,24 @@ class WRITEBits: public Stream {
          *
          * */
         void writeHeader(uint32_t width, uint32_t height,
-            uint32_t colorspace, uint32_t block_size,
-            uint32_t periodicity, uint32_t search_area, uint32_t profile){
+            uint32_t colorspace, uint32_t block_size){
             f << "PARVUS" <<
                 " W" << width <<
                 " H" << height <<
                 " C" << colorspace <<
-                " B" << block_size <<
-                " P" << periodicity <<
-                " S" << search_area <<
-                " R" << profile << endl; // Profile
-
+                " B" << block_size << endl;
         }
 
-        void writeFrameHeader(uint8_t k, uint8_t seed){
-            //printf("%02x\n", seed);
+        void write_header_seed(uint8_t seed){
             preWrite(seed,8);
-            preWrite(k,8);
-            //f << seed; 
-            //f << k;
         }
-        void write_k(uint8_t k){
+
+        /* Cuidado função de leitura */
+        void write_header_type(uint8_t type){
+            preWrite(type,2);
+        }
+
+        void write_header_k(uint8_t k){
             preWrite(k,8);
         }
 
