@@ -1,5 +1,8 @@
 #include "../include/Decoder.hpp"
 
+using namespace cv;
+
+
 Decoder::Decoder(const string & in_file, const string & out_file):
     outfile(out_file.c_str()),r(in_file.c_str()){}
 
@@ -52,11 +55,9 @@ void Decoder::decode_intra(Frame * frame, uint8_t seed,int k, Golomb & g, uint8_
         
     }
 
-
     /* Iterate over the lines. Start at j=1 */
     for (int y = 1; y < mat.rows; y++)
     {
-
         /* Specific for the first col */
         residual = g.read_and_decode(this->r);
         mat.at<uint8_t>(y,0) = get_real_value_uniform(mat.at<uint8_t>(y-1, 0), residual);
@@ -78,7 +79,9 @@ void Decoder::decode_intra(Frame * frame, uint8_t seed,int k, Golomb & g, uint8_
 
 }
 
-void Decoder::decode_inter(Frame * current_frame, Frame * last_frame,int k, Golomb & g, uint8_t type){
+void Decoder::decode_inter(Frame * current_frame, Frame * last_frame, 
+        int k, Golomb & g, uint8_t type, vector<Point> & vectors){
+
     cv::Mat mat;
     int residual;
     int m = pow(2,k);
@@ -92,9 +95,24 @@ void Decoder::decode_inter(Frame * current_frame, Frame * last_frame,int k, Golo
         mat = current_frame->get_v();
     }
 
+
     uint8_t * line = mat.ptr(0);
     this->outfile.write( (char*) line, mat.cols * mat.rows);
 
+}
+
+vector<Point> Decoder::get_vectors(int k, Golomb & g){
+    vector<Point> vectors = {};
+    int total = this->height * this->width / (this->block_size*this->block_size);
+    printf("Total: %d\n", total);
+    for (int i = 0; i < total; ++i)
+    {
+        int x = g.read_and_decode(this->r);
+        int y = g.read_and_decode(this->r);
+        vectors.push_back(Point(x,y));
+        printf("Vectors(%d, %d)\n", x, y);
+    }
+    return vectors;
 }
 
 
@@ -113,6 +131,7 @@ void Decoder::read_and_decode(){
     this->r.parse_header_pv(header, line);
 
     this->height = stoi(header['H']);
+
     this->width = stoi(header['W']);
 
     this->block_size = stoi(header['B']);
@@ -179,13 +198,26 @@ void Decoder::read_and_decode(){
             decode_intra(current_frame, seed, k, g, 2);
 
         }else if(type == 1){
+            printf("decode inter");
         
             /* Write Frame Header */
             this->write_header_frame();
 
             /* Decode Matrix Y */
             k = this->r.read_k();
-            decode_inter(current_frame, last_frame, k, g, 0);
+
+            vector<Point> vectors = get_vectors(k, g);
+
+
+            k = this->r.read_k();
+            decode_inter(current_frame, last_frame, k, g, 0, vectors);
+
+            /* Decode Matrix Y */
+            k = this->r.read_k();
+            decode_inter(current_frame, last_frame, k, g, 0, vectors);
+
+            k = this->r.read_k();
+            decode_inter(current_frame, last_frame, k, g, 0, vectors);
         }
 
 

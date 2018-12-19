@@ -261,7 +261,10 @@ if(tmp.y >= 0)
     int k = get_best_k(to_encode_vector.size()*2, to_calculate_k);
     int m = pow(2,k);
     g->set_m(m);
+    this->w.write_header_type(1);
+    this->w.write_header_k(k);
     for(unsigned int i = 0; i < to_encode_vector.size(); i++){
+        printf("Vector(%d, %d)\n", to_encode_vector.at(i).x, to_encode_vector.at(i).y);
         g->encode_and_write(to_encode_vector.at(i).x, w);
         g->encode_and_write(to_encode_vector.at(i).y, w);
     }
@@ -322,12 +325,12 @@ void Encoder::inter_encode_write_4(Mat frame, Golomb * g, vector<Point> to_encod
         for( x_curr_frame = 0; x_curr_frame < frame.cols; x_curr_frame +=this->block_size ){
 
 
-            printf("P: x %d y %d\n", x_curr_frame, y_curr_frame);
+            // printf("P: x %d y %d\n", x_curr_frame, y_curr_frame);
 
             macroblock = frame(cv::Rect(x_curr_frame, y_curr_frame, this->block_size, this->block_size));
 
             Point tmp = to_encode_vector.at(index);
-            printf("V: x %d y %d\n", tmp.x, tmp.y);
+            // printf("V: x %d y %d\n", tmp.x, tmp.y);
             //printf("NP: x %d y %d\n", tmp.x, tmp.y);
             //match_area = previous(cv::Rect(x_curr_frame-tmp.x, y_curr_frame-tmp.y,this->block_size, this->block_size));
             match_area = previous(cv::Rect(tmp.x, tmp.y,this->block_size, this->block_size));
@@ -362,7 +365,6 @@ void Encoder::inter_encode_write_4(Mat frame, Golomb * g, vector<Point> to_encod
     int k = get_best_k(to_encode_residuals.size(), to_calculate_k);
     int m = pow(2,k);
     g->set_m(m);
-    this->w.write_header_type(1);
     this->w.write_header_k(k);
     for(unsigned int i = 0; i < to_encode_residuals.size(); i++){
         g->encode_and_write(to_encode_residuals.at(i), w);
@@ -423,7 +425,6 @@ void Encoder::inter_encode_write_2(Mat frame, Golomb * g, vector<Point> to_encod
     int k = get_best_k(to_encode_residuals.size(), to_calculate_k);
     int m = pow(2,k);
     g->set_m(m);
-    this->w.write_header_type(1);
     this->w.write_header_k(k);
     for(unsigned int i = 0; i < to_encode_residuals.size(); i++){
         g->encode_and_write(to_encode_residuals.at(i), w);
@@ -483,7 +484,6 @@ void Encoder::inter_encode_write_0(Mat frame, Golomb * g, vector<Point> to_encod
     int k = get_best_k(to_encode_residuals.size(), to_calculate_k);
     int m = pow(2,k);
     g->set_m(m);
-    this->w.write_header_type(1);
     this->w.write_header_k(k);
     for(unsigned int i = 0; i < to_encode_residuals.size(); i++){
         g->encode_and_write(to_encode_residuals.at(i), w);
@@ -524,7 +524,6 @@ void Encoder::encode_and_write_frame_intra(Frame * frame, int f_counter, Golomb 
     to_calculate_k = get_residuals_from_matrix( & matrix , & residuals);
     k = get_best_k(residuals.size(), to_calculate_k);
 
-    this->w.write_header_type(0);
     this->w.write_header_k(k);
     this->w.write_header_seed(seed);
     m = pow(2,k);
@@ -540,7 +539,6 @@ void Encoder::encode_and_write_frame_intra(Frame * frame, int f_counter, Golomb 
     to_calculate_k = get_residuals_from_matrix( & matrix , & residuals);
     k = get_best_k(residuals.size(), to_calculate_k);
 
-    this->w.write_header_type(0);
     this->w.write_header_k(k);
     this->w.write_header_seed(seed);
     m = pow(2,k);
