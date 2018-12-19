@@ -103,6 +103,9 @@ void Decoder::decode_inter(Frame * current_frame, Frame * last_frame,
 
 vector<Point> Decoder::get_vectors(int k, Golomb & g){
     vector<Point> vectors = {};
+    int m = pow(2,k);
+    printf("k: %d\n", k);
+    g.set_m(m);
     int total = this->height * this->width / (this->block_size*this->block_size);
     printf("Total: %d\n", total);
     for (int i = 0; i < total; ++i)
@@ -110,8 +113,9 @@ vector<Point> Decoder::get_vectors(int k, Golomb & g){
         int x = g.read_and_decode(this->r);
         int y = g.read_and_decode(this->r);
         vectors.push_back(Point(x,y));
-        printf("Vectors(%d, %d)\n", x, y);
+        // printf("Vectors(%d, %d)\n", x, y);
     }
+    exit(1);
     return vectors;
 }
 
@@ -131,10 +135,10 @@ void Decoder::read_and_decode(){
     this->r.parse_header_pv(header, line);
 
     this->height = stoi(header['H']);
-
     this->width = stoi(header['W']);
-
     this->block_size = stoi(header['B']);
+    color_space = stoi(header['C']);
+
 
     Frame * current_frame;
     Frame * last_frame;

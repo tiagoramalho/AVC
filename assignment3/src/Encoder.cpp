@@ -243,6 +243,7 @@ void Encoder::encode_and_write_frame_inter(Frame * frame, Frame * previous_frame
 
             //save list of point = motion vectors
             to_encode_vector.at(index)+=Point(x_searching_area_top_left, y_searching_area_top_left);
+            to_encode_vector.at(index)-=Point(x_curr_frame, y_curr_frame);
 
             Point tmp = to_encode_vector.at(index);
             if(tmp.x >= 0)
