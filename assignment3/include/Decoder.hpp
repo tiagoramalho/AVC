@@ -4,6 +4,8 @@
 #include "Golomb.hpp"
 #include "Frame.hpp"
 
+using namespace cv;
+
 class Decoder {
 
     private:
@@ -11,7 +13,7 @@ class Decoder {
         ofstream outfile;
         READBits r;
         int profile, periodicity, block_size, search_area;
-        
+
 
         // void parse_header_pv(map<char,string> & header, string header_line, int delimiter(int) = ::isspace);
         
@@ -27,6 +29,10 @@ class Decoder {
             }
         }
 
+
+        vector<Point> get_vectors(int k, Golomb & g);
+
+
         void write_header_frame(){
             outfile << "FRAME" << endl;
         }
@@ -35,11 +41,13 @@ class Decoder {
 
         Decoder(const string & in_file, const string & out_file);
 
+
         /*  Function used to encode and write N Frames intra-mode  */
         void decode_intra(Frame * frame, uint8_t seed,int k, Golomb & g, uint8_t type);
 
         /*  Function used to encode and write N Frames  inter-mode  */
-        void decode_inter(Frame * current_frame , Frame * last_frame,int k, Golomb & g, uint8_t type);
+        void decode_inter(Frame * current_frame , Frame * last_frame,
+            int k, Golomb & g, uint8_t type, vector<Point> & vectors);
 
         /* Function used to encode and write */
         void read_and_decode();

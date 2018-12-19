@@ -70,7 +70,6 @@ class READBits: public Stream {
             string header;
             getline(f, header);
             return header;
-
         }
         int read_type(){
             int type;
@@ -121,7 +120,7 @@ class READBits: public Stream {
                 if(i==e) break;
                 auto j=find_if(i,e, delimiter);
                 token = string(i,j);
-                //cout << token << endl;
+                // cout << "key " << token.substr(0) << " value " << token.substr(1) << endl;
                 if(token.at(0) == 'W'){
                     //cout << "Width " << token.substr(1) << endl;
                     header['W'] = token.substr(1);
@@ -137,6 +136,7 @@ class READBits: public Stream {
                 }
                 i=j;
             }
+
             if (header.find('C') == header.end()){
                 //cout << "Colour Space " << token.substr(1) << endl;
                 header['C'] = "420";
