@@ -1,0 +1,18 @@
+./bin/parvus_old -f samples/in_to_tree_420_720p50.y4m  79.74s user 1.52s system 99% cpu 1:21.46 total
+
+./bin/parvus_old -f samples/in_to_tree_420_720p50.y4m.pv -d  52.79s user 0.48s system 99% cpu 53.386 total
+
+1.54
+
+
+./bin/parvus_old -f samples/ducks_take_off_444_720p50.y4m  160.11s user 2.24s system 98% cpu 2:44.81 total
+
+./bin/parvus_old -f samples/ducks_take_off_444_720p50.y4m.pv -d  101.28s user 0.78s system 99% cpu 1:42.09 total
+
+1.57
+
+
+
+
+
+
