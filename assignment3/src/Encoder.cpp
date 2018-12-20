@@ -22,7 +22,6 @@ int WriteFile(std::string fname, std::map<int,int> *m) {
         return -errno;
 
     for(std::map<int, int>::iterator it = m->begin(); it != m->end(); it++) {
-        //fprintf(fp, "%d %d\n", it->first, it->second);
         count++;
     }
 
@@ -33,6 +32,9 @@ int WriteFile(std::string fname, std::map<int,int> *m) {
 int Encoder::get_best_k( int size, int tck ){
     int k = 0;
     double tck_a = tck/size;
+    if(tck_a < 1){
+        tck_a = 1;
+    }
     k = std::ceil(std::log2(tck_a));
     return k;
 }
@@ -77,7 +79,6 @@ void Encoder::parse_header(  map<char,string> & header,
         if(i==e) break;
         auto j=find_if(i,e, delimiter);
         token = string(i,j);
-        cout << token << endl;
         if(token.at(0) == 'W'){
             cout << "Width " << token.substr(1) << endl;
             header['W'] = token.substr(1);
@@ -113,9 +114,7 @@ int Encoder::get_residuals_from_matrix(cv::Mat * matrix, vector<int> * residuals
 
     int x = 0, y=0,residual = 0,to_calculate_k = 0;
     int width = matrix->cols;
-    printf("----width %d\n", width);
     int height= matrix->rows;
-    printf("----height %d\n", height);
     uint8_t last_real = matrix->at<uint8_t>(0,0);
 
     for( y = 0; y < height; y++){
@@ -123,7 +122,6 @@ int Encoder::get_residuals_from_matrix(cv::Mat * matrix, vector<int> * residuals
             // First row
             for( x = 1; x < width; x++){
                 residual = get_residual_uniform(last_real, matrix->at<uint8_t>(y,x));
-                // printf("%02x -> %02x, %d\n",last_real, matrix->at<uint8_t>(y,x), residual);
                 residuals->push_back(residual);
                 //to_calculate_k += std::abs(residual);
                 if(residual >= 0)
@@ -222,7 +220,6 @@ void Encoder::encode_and_write_frame_inter(Frame * frame, Frame * previous_frame
 
         for( x_curr_frame = 0; x_curr_frame < width; x_curr_frame +=this->block_size ){
 
-            //printf("x %d y %d\n", x_curr_frame, y_curr_frame);
 
             macroblock = y_frame(cv::Rect(x_curr_frame, y_curr_frame, this->block_size, this->block_size));
 
@@ -234,7 +231,6 @@ void Encoder::encode_and_write_frame_inter(Frame * frame, Frame * previous_frame
             y_searching_area_bot_right = std::min(height,
                     y_curr_frame + this->block_size + this->search_area);
 
-            //printf("%d, %d | %d, %d\n", x_searching_area_top_left, y_searching_area_top_left,x_searching_area_bot_right,y_searching_area_bot_right);
 
             searching_area = y_previous(cv::Rect(cv::Point(x_searching_area_top_left, y_searching_area_top_left),
                         cv::Point(x_searching_area_bot_right,y_searching_area_bot_right)));
@@ -260,14 +256,13 @@ if(tmp.y >= 0)
         }
     }
     // escrever vetores na bitstream
+
     int k = get_best_k(to_encode_vector.size()*2, to_calculate_k);
     int m = pow(2,k);
     g->set_m(m);
     this->w.write_header_type(1);
-    printf("K: %d\n", k);
     this->w.write_header_k(k);
     for(unsigned int i = 0; i < to_encode_vector.size(); i++){
-        //printf("Vector(%d, %d)\n", to_encode_vector.at(i).x, to_encode_vector.at(i).y);
         g->encode_and_write(to_encode_vector.at(i).x, w);
         g->encode_and_write(to_encode_vector.at(i).y, w);
     }
@@ -328,14 +323,9 @@ void Encoder::inter_encode_write_4(Mat frame, Golomb * g, vector<Point> to_encod
         for( x_curr_frame = 0; x_curr_frame < frame.cols; x_curr_frame +=this->block_size ){
 
 
-            // printf("P: x %d y %d\n", x_curr_frame, y_curr_frame);
-
             macroblock = frame(cv::Rect(x_curr_frame, y_curr_frame, this->block_size, this->block_size));
 
             Point tmp = to_encode_vector.at(index);
-            // printf("V: x %d y %d\n", tmp.x, tmp.y);
-            //printf("NP: x %d y %d\n", tmp.x, tmp.y);
-            //match_area = previous(cv::Rect(x_curr_frame-tmp.x, y_curr_frame-tmp.y,this->block_size, this->block_size));
             match_area = previous(cv::Rect(x_curr_frame + tmp.x, y_curr_frame + tmp.y,this->block_size, this->block_size));
 
             macroblock.convertTo(macroblock, CV_32S);
@@ -390,7 +380,6 @@ void Encoder::inter_encode_write_2(Mat frame, Golomb * g, vector<Point> to_encod
 
         for( x_curr_frame = 0; x_curr_frame < frame.cols; x_curr_frame +=adjusted_size ){
 
-            //printf("x %d y %d\n", x_curr_frame, y_curr_frame);
 
             macroblock = frame(cv::Rect(x_curr_frame, y_curr_frame, adjusted_size, this->block_size));
 
@@ -448,7 +437,6 @@ void Encoder::inter_encode_write_0(Mat frame, Golomb * g, vector<Point> to_encod
 
         for( x_curr_frame = 0; x_curr_frame < frame.cols; x_curr_frame +=adjusted_size ){
 
-            //printf("x %d y %d\n", x_curr_frame, y_curr_frame);
 
             macroblock = frame(cv::Rect(x_curr_frame, y_curr_frame, adjusted_size, adjusted_size));
 
@@ -514,7 +502,6 @@ void Encoder::encode_and_write_frame_intra(Frame * frame, int f_counter, Golomb 
     int m = pow(2,k);
     g->set_m(m);
     for(unsigned int i = 0; i < residuals.size(); i++){
-        // printf("%d -> %02x\n",i, residuals.at(i));
         g->encode_and_write(residuals.at(i), w);
     }
 
@@ -547,7 +534,6 @@ void Encoder::encode_and_write_frame_intra(Frame * frame, int f_counter, Golomb 
     g->set_m(m);
     for(unsigned int i = 0; i < residuals.size(); i++){
         g->encode_and_write(residuals.at(i), w);
-        //printf("%d, %d\n", i, residuals.at(i));
     }
 
     printf("Done %d\n", f_counter);
@@ -623,22 +609,13 @@ void Encoder::encode_and_write(){
 
           if( frame_counter % this->periodicity == 0){
               encode_and_write_frame_intra(f, frame_counter, & g);
-              //encode_and_write_frame_inter(f, previous_frame, frame_counter, & g);
-              //printf("=============================================================\n\n\n\n\nPILAAAAAAAAAAAAAAAAA");
-              //previous_frame = f ;
           }else{
               encode_and_write_frame_inter(f, previous_frame, frame_counter, & g);
           }
           previous_imgData = imgData;
           previous_frame->set_frame_data(previous_imgData.data());
 
-          /*printf("%p\n", previous_frame);
-          printf("%p\n", f);
-          std::swap(previous_frame, f);
-          printf("%p\n", previous_frame);
-          printf("%p\n", f);*/
           frame_counter += 1 ;
-          //previous_frame = f ;
       }
     }
 
