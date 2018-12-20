@@ -45,6 +45,7 @@ void Decoder::decode_intra(Frame * frame, uint8_t seed,int k, Golomb & g, uint8_
     }
 
     mat.at<uint8_t>(0,0) = seed;
+    printf("%d\n", seed);
 
     /* Iteratiting over firstline's cols */
 
@@ -85,17 +86,24 @@ void Decoder::decode_inter(Frame * current_frame, Frame * last_frame,
     int adjusted_size_x = this->block_size;
     int adjusted_size_y = this->block_size;
     cv::Mat mat, previous_mat;
-    int residual;
     int m = pow(2,k);
     g.set_m(m);
+    int count_read = 0;
 
 
     if(type == 0){
 
         adjusted_size_x = this->block_size;
         adjusted_size_y = this->block_size;
+        cout << "SIZES" << endl;
+        //printf("%d\n", this->block_size);
+        //printf("%d\n", adjusted_size_x);
+        //printf("%d\n", adjusted_size_y);
+
         mat = current_frame->get_y();
         previous_mat = last_frame->get_y();
+        cout << "INTER 444 type 0" << endl;
+        //printf("%d\n", previous_mat.at<uint8_t>(0,0));
 
     } else if (type == 1) {
 
@@ -127,67 +135,116 @@ void Decoder::decode_inter(Frame * current_frame, Frame * last_frame,
 
 
     cv::Mat macroblock;
+    cv::Mat my_macroblock = Mat(adjusted_size_y, adjusted_size_x, CV_32S);
     cv::Mat match_area;
+    cv::Mat my_match_area;
     int index = 0;
     for( int y_curr_frame = 0; y_curr_frame < mat.rows; y_curr_frame += adjusted_size_y ){
 
         for( int x_curr_frame = 0; x_curr_frame < mat.cols; x_curr_frame += adjusted_size_x ){
+            //cout << "start for" << endl;
+            //macroblock = mat(cv::Rect(x_curr_frame, y_curr_frame, adjusted_size_x, adjusted_size_y));
 
-            macroblock = mat(cv::Rect(x_curr_frame, y_curr_frame, adjusted_size_x, adjusted_size_y));
-
-            for (int x = 0; x < macroblock.cols; ++x)
+            for (int x = 0; x < adjusted_size_x; x++)
             {
-                for (int y = 0; y < macroblock.rows; ++y)
+                for (int y = 0; y < adjusted_size_y; y++)
                 {
-                    macroblock.at<int32_t>(y,x) = g.read_and_decode(this->r);
-                    if(x == y){
-                        printf("(%d,%d): %d;\n", x, y,
-                            macroblock.at<int32_t>(x,y));
-                    }
+                    my_macroblock.at<int32_t>(y,x) = g.read_and_decode(this->r);
+                    count_read++;
+                    //printf("(%d,%d): %d;\n", x, y, my_macroblock.at<int32_t>(y,x));
                 }
             }
+            //cout << "second for" << endl;
 
             Point tmp = vectors.at(index);
-            match_area = previous_mat(cv::Rect(x_curr_frame + tmp.x, y_curr_frame + tmp.y, adjusted_size_x, adjusted_size_y));
+            //cout << "pim" << endl;
+            my_match_area = previous_mat(cv::Rect(x_curr_frame + tmp.x, y_curr_frame + tmp.y, adjusted_size_x, adjusted_size_y));
+            //cout << "pam" << endl;
 
             /*macroblock.convertTo(macroblock, CV_32S);
             match_area.convertTo(match_area, CV_32S);
             */
-
-            printf("(0,0): %d; (1,1): %d; (2,2): %d; (3,3): %d;\n",
+            /*printf("(0,0): %d; (1,1): %d; (2,2): %d; (3,3): %d;\n",
                 macroblock.at<int32_t>(0,0),
                 macroblock.at<int32_t>(1,1),
                 macroblock.at<int32_t>(2,2),
                 macroblock.at<int32_t>(3,3));
 
-            printf("(0,0): %d; (1,1): %d; (2,2): %d; (3,3): %d;\n",
+            macroblock.convertTo(macroblock, CV_32S);
+            match_area.convertTo(match_area, CV_32S);
+            */
+            //printf("%d\n", my_match_area.type());
+            if(my_match_area.type() == CV_32S){
+
+                cout << "merda?" << endl;
+            
+            }
+
+            my_match_area.convertTo(match_area, CV_32S);
+
+            //cout << "pum" << endl;
+            /*printf("(0,0): %d; (1,1): %d; (2,2): %d; (3,3): %d;\n",
+                macroblock.at<int32_t>(0,0),
+                macroblock.at<int32_t>(1,1),
+                macroblock.at<int32_t>(2,2),
+                macroblock.at<int32_t>(3,3));*/
+
+            /*printf("(0,0): %d; (1,1): %d; (2,2): %d; (3,3): %d;\n",
                 match_area.at<int32_t>(0,0),
                 match_area.at<int32_t>(1,1),
                 match_area.at<int32_t>(2,2),
-                match_area.at<int32_t>(3,3));
+                match_area.at<int32_t>(3,3));*/
 
             //frame anterior - atual 
-            macroblock = match_area + macroblock;
+            //cout << "pim" << endl;
+            my_macroblock = my_macroblock + match_area;
+            //cout << "pom" << endl;
+            //cout << "pom" << endl;
 
-            printf("(0,0): %d; (1,1): %d; (2,2): %d; (3,3): %d;\n",
+            /*printf("(0,0): %d; (1,1): %d; (2,2): %d; (3,3): %d;\n",
                 macroblock.at<int32_t>(0,0),
                 macroblock.at<int32_t>(1,1),
                 macroblock.at<int32_t>(2,2),
-                macroblock.at<int32_t>(3,3));
+                macroblock.at<int32_t>(3,3));*/
             
-            printf("(0,0): %d; (1,1): %d; (2,2): %d; (3,3): %d;\n",
-                current_frame->get_y().at<int32_t>(0,0),
-                current_frame->get_y().at<int32_t>(1,1),
-                current_frame->get_y().at<int32_t>(2,2),
-                current_frame->get_y().at<int32_t>(3,3));
+            my_macroblock.convertTo(macroblock, CV_8U);
 
-            exit(1);
+            /*printf("(0,0): %d; (1,1): %d; (2,2): %d; (3,3): %d;\n",
+                macroblock.at<uint8_t>(0,0),
+                macroblock.at<uint8_t>(1,1),
+                macroblock.at<uint8_t>(2,2),
+                macroblock.at<uint8_t>(3,3));*/
+
+
+            //mat(cv::Rect(x_curr_frame, y_curr_frame, adjusted_size_x, adjusted_size_y)) = macroblock;
+            //cout << "pre for" << endl;
+            for (int x = x_curr_frame; x < x_curr_frame+adjusted_size_x; ++x)
+            {
+                for (int y = y_curr_frame; y < y_curr_frame+adjusted_size_y; ++y)
+                {
+                    mat.at<uint8_t>(y,x) = macroblock.at<uint8_t>(y-y_curr_frame,x-x_curr_frame); 
+                }
+            }
+            //cout << "pos for" << endl;
+
+            /*printf("(0,0): %d; (1,1): %d; (2,2): %d; (3,3): %d;\n",
+                current_frame->get_y().at<uint8_t>(0,0),
+                current_frame->get_y().at<uint8_t>(1,1),
+                current_frame->get_y().at<uint8_t>(2,2),
+                current_frame->get_y().at<uint8_t>(3,3));*/
+
             index+=1;
+            //cout << index << endl;
         }
     }
+    cout << "acabou os fors" << endl;
 
+    //printf("%d\n", mat.rows);
+    //printf("%d\n", mat.cols);
+    //printf("%d\n", mat.at<uint8_t>(719,1279));
 
-
+    cout << "count read" << endl;
+    //printf("%d\n", count_read);
     uint8_t * line = mat.ptr(0);
     this->outfile.write( (char*) line, mat.cols * mat.rows);
 
@@ -200,13 +257,13 @@ vector<Point> Decoder::get_vectors(int k, Golomb & g){
     printf("k: %d\n", k);
     g.set_m(m);
     int total = this->height * this->width / (this->block_size*this->block_size);
-    printf("Total: %d\n", total);
+    //printf("Total: %d\n", total);
     for (int i = 0; i < total; ++i)
     {
         int x = g.read_and_decode(this->r);
         int y = g.read_and_decode(this->r);
         vectors.push_back(Point(x,y));
-        printf("Vectors(%d, %d)\n", x, y);
+        //printf("Vectors(%d, %d)\n", x, y);
     }
     return vectors;
 }
@@ -243,12 +300,12 @@ void Decoder::read_and_decode(){
         }
         case 422:{
             current_frame = new Frame422 (this->height, this->width);
-            last_frame = new Frame444 (this->height, this->width);
+            last_frame = new Frame422 (this->height, this->width);
             break;
         }
         case 420:{
             current_frame = new Frame420 (this->height, this->width);
-            last_frame = new Frame444 (this->height, this->width);
+            last_frame = new Frame420 (this->height, this->width);
             break;
         }
         default:
@@ -298,25 +355,27 @@ void Decoder::read_and_decode(){
             /* Write Frame Header */
             this->write_header_frame();
 
-            /* Decode Matrix Y */
             k = this->r.read_k();
-
             vector<Point> vectors = get_vectors(k, g);
 
 
-            k = this->r.read_k();
-            decode_inter(current_frame, last_frame, k, g, 0, vectors);
-
             /* Decode Matrix Y */
             k = this->r.read_k();
             decode_inter(current_frame, last_frame, k, g, 0, vectors);
 
+            cout << "decode u " << endl;
+
+            /* Decode Matrix U */
             k = this->r.read_k();
-            decode_inter(current_frame, last_frame, k, g, 0, vectors);
+            decode_inter(current_frame, last_frame, k, g, 1, vectors);
+
+            /* Decode Matrix V */
+            k = this->r.read_k();
+            decode_inter(current_frame, last_frame, k, g, 2, vectors);
         }
 
 
-        last_frame = current_frame;
+        std::swap(last_frame, current_frame);
         printf("Done %d\n", frame_counter);
         frame_counter++;
     }

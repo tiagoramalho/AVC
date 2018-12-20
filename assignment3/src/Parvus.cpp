@@ -70,6 +70,10 @@ int main(int argc, char** argv)
             periodicity = result["p"].as<int>();
             search_area = result["s"].as<int>();
             block_size = result["b"].as<int>();
+        }else{
+            periodicity = 0;
+            search_area = 0;
+            block_size = 0;
         }
 
     }catch(const cxxopts::OptionException& e){

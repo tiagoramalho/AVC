@@ -267,7 +267,7 @@ if(tmp.y >= 0)
     printf("K: %d\n", k);
     this->w.write_header_k(k);
     for(unsigned int i = 0; i < to_encode_vector.size(); i++){
-        printf("Vector(%d, %d)\n", to_encode_vector.at(i).x, to_encode_vector.at(i).y);
+        //printf("Vector(%d, %d)\n", to_encode_vector.at(i).x, to_encode_vector.at(i).y);
         g->encode_and_write(to_encode_vector.at(i).x, w);
         g->encode_and_write(to_encode_vector.at(i).y, w);
     }
@@ -620,8 +620,6 @@ void Encoder::encode_and_write(){
           if(this->infile.gcount() == 0){
               break;
           }
-          Mat y = f->get_y();
-          //printf("rows: %d, cols: %d\n", y.rows, y.cols);
 
           if( frame_counter % this->periodicity == 0){
               encode_and_write_frame_intra(f, frame_counter, & g);
@@ -634,6 +632,11 @@ void Encoder::encode_and_write(){
           previous_imgData = imgData;
           previous_frame->set_frame_data(previous_imgData.data());
 
+          /*printf("%p\n", previous_frame);
+          printf("%p\n", f);
+          std::swap(previous_frame, f);
+          printf("%p\n", previous_frame);
+          printf("%p\n", f);*/
           frame_counter += 1 ;
           //previous_frame = f ;
       }
