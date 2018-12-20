@@ -9,7 +9,7 @@ class Encoder {
     private:
         ifstream infile;
         WRITEBits w;
-        int profile, periodicity, block_size, search_area;
+        int profile, periodicity, block_size, search_area, color_space;
 
         int get_best_k( int size, int tck );
 
