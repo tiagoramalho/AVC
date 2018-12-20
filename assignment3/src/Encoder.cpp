@@ -302,6 +302,7 @@ if(tmp.y >= 0)
     
         // code v
         inter_encode_write_0(v_frame, g, to_encode_vector, v_previous);
+        //exit(1);
     
     }
 
@@ -454,6 +455,12 @@ void Encoder::inter_encode_write_0(Mat frame, Golomb * g, vector<Point> to_encod
                 macroblock,
                 residuals
             );
+            
+            /*if(y_curr_frame == x_curr_frame && y_curr_frame == 0){
+                cout << "macroblock" << endl;
+                cout << macroblock << endl;
+            
+            }*/
 
             for (int x = 0; x < macroblock.cols; ++x)
             {
@@ -559,8 +566,9 @@ void Encoder::encode_and_write(){
     rows = stoi(header['H']);
 
     this->w.writeHeader(cols,rows,stoi(header['C']), this->block_size);
+    this->color_space = stoi(header['C']);
 
-    switch(stoi(header['C'])){
+    switch(this->color_space){
         case 444:{
             f = new Frame444 (rows, cols);
             previous_frame = new Frame444 (rows, cols); 
@@ -598,7 +606,20 @@ void Encoder::encode_and_write(){
       }
     }else{
       while(1){
-          f = new Frame444 (rows, cols);
+          switch(this->color_space){
+              case 444:{
+                           f = new Frame444 (rows, cols);
+                           break;
+                       }
+              case 422:{
+                           f = new Frame422 (rows, cols);
+                           break;
+                       }
+              case 420:{
+                           f = new Frame420 (rows, cols);
+                           break;
+                       }
+          }
           getline (this->infile,line); // Skipping word FRAME
           this->infile.read((char *) imgData.data(), imgData.size());
           f->set_frame_data(imgData.data());

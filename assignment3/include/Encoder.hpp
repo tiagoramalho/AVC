@@ -10,9 +10,8 @@ class Encoder {
         ifstream infile;
         WRITEBits w;
 
-        int cols, rows, color_space;
-
-        int profile, periodicity, block_size, search_area;
+        int cols, rows;
+        int profile, periodicity, block_size, search_area, color_space;
 
         int get_best_k( int size, int tck );
 

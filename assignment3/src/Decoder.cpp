@@ -8,9 +8,7 @@ Decoder::Decoder(const string & in_file, const string & out_file):
 
 uint8_t Decoder::get_real_value_uniform(uint8_t prevision, int residual){
     uint8_t pixel_value = prevision + residual;
-    return pixel_value;
-}
-
+    return pixel_value; } 
 
 uint8_t Decoder::get_real_value_LOCO( uint8_t pixel_A, uint8_t pixel_B, uint8_t pixel_C, int residual){
 
@@ -125,6 +123,8 @@ void Decoder::decode_inter(Frame * current_frame, Frame * last_frame,
         previous_mat = last_frame->get_v();
 
     }
+    int ratiox = this->block_size / adjusted_size_x;
+    int ratioy = this->block_size / adjusted_size_y;
 
 
     cv::Mat macroblock;
@@ -145,14 +145,20 @@ void Decoder::decode_inter(Frame * current_frame, Frame * last_frame,
                 }
             }
 
+
             Point tmp = vectors.at(index);
 
-            my_match_area = previous_mat(cv::Rect(x_curr_frame + tmp.x, y_curr_frame + tmp.y, adjusted_size_x, adjusted_size_y));
-
+            my_match_area = previous_mat(cv::Rect(x_curr_frame + tmp.x/ratiox, y_curr_frame + tmp.y/ratioy, adjusted_size_x, adjusted_size_y));
             my_match_area.convertTo(match_area, CV_32S);
 
             my_macroblock =  match_area - my_macroblock;
-            
+
+            //if(type==2){
+                //cout << "my macro" << endl;
+                //cout << my_macroblock << endl;
+                //exit(1);
+            //}
+
             my_macroblock.convertTo(macroblock, CV_8U);
 
             for (int x = x_curr_frame; x < x_curr_frame+adjusted_size_x; ++x)
