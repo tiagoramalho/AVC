@@ -47,7 +47,7 @@ class Decoder {
 
         /*  Function used to encode and write N Frames  inter-mode  */
         void decode_inter(Frame * current_frame , Frame * last_frame,
-            int k, Golomb & g, uint8_t type, vector<Point> & vectors);
+            int k, Golomb & g, uint8_t type, vector<Point> & vectors, int shamnt);
 
         /* Function used to encode and write */
         void read_and_decode();

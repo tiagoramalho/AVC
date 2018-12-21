@@ -77,8 +77,7 @@ void Decoder::decode_intra(Frame * frame, uint8_t seed,int k, Golomb & g, uint8_
 
 }
 
-void Decoder::decode_inter(Frame * current_frame, Frame * last_frame, 
-        int k, Golomb & g, uint8_t type, vector<Point> & vectors){
+void Decoder::decode_inter(Frame * current_frame, Frame * last_frame, int k, Golomb & g, uint8_t type, vector<Point> & vectors, int shamnt){
 
     int adjusted_size_x = this->block_size;
     int adjusted_size_y = this->block_size;
@@ -139,7 +138,7 @@ void Decoder::decode_inter(Frame * current_frame, Frame * last_frame,
             {
                 for (int y = 0; y < adjusted_size_y; y++)
                 {
-                    my_macroblock.at<int32_t>(y,x) = g.read_and_decode(this->r);
+                    my_macroblock.at<int32_t>(y,x) = g.read_and_decode(this->r) << shamnt;
                     count_read++;
                 }
             }
@@ -239,6 +238,7 @@ void Decoder::read_and_decode(){
 
     int type;
     int k;
+    int shamnt;
     int seed;
     while(1){
 
@@ -280,16 +280,41 @@ void Decoder::read_and_decode(){
 
             /* Decode Matrix Y */
             k = this->r.read_k();
-            decode_inter(current_frame, last_frame, k, g, 0, vectors);
+            decode_inter(current_frame, last_frame, k, g, 0, vectors, 0);
 
             /* Decode Matrix U */
             k = this->r.read_k();
-            decode_inter(current_frame, last_frame, k, g, 1, vectors);
+            decode_inter(current_frame, last_frame, k, g, 1, vectors, 0);
 
             /* Decode Matrix V */
             k = this->r.read_k();
-            decode_inter(current_frame, last_frame, k, g, 2, vectors);
+            decode_inter(current_frame, last_frame, k, g, 2, vectors, 0);
+        }else if(type == 2){
+            printf("decode inter quant\n");
+        
+            /* Write Frame Header */
+            this->write_header_frame();
+
+            k = this->r.read_k();
+            vector<Point> vectors = get_vectors(k, g);
+
+
+            /* Decode Matrix Y */
+            k = this->r.read_k();
+            shamnt = this->r.read_shamnt();
+            decode_inter(current_frame, last_frame, k, g, 0, vectors, shamnt);
+
+            /* Decode Matrix U */
+            k = this->r.read_k();
+            shamnt = this->r.read_shamnt();
+            decode_inter(current_frame, last_frame, k, g, 1, vectors, shamnt);
+
+            /* Decode Matrix V */
+            k = this->r.read_k();
+            shamnt = this->r.read_shamnt();
+            decode_inter(current_frame, last_frame, k, g, 2, vectors, shamnt);
         }
+
 
 
         std::swap(last_frame, current_frame);

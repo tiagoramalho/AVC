@@ -9,7 +9,7 @@ class Encoder {
     private:
         ifstream infile;
         WRITEBits w;
-        int profile, periodicity, block_size, search_area, color_space;
+        int profile, periodicity, block_size, search_area, color_space, shamnt_y, shamnt_u, shamnt_v;
 
         int get_best_k( int size, int tck );
 
@@ -21,17 +21,20 @@ class Encoder {
         int get_residual_uniform( uint8_t pixel_value, uint8_t real_pixel_value);
         int get_residual_LOCO( uint8_t pixel_A, uint8_t pixel_B, uint8_t pixel_C,uint8_t real_pixel_value);
 
-        void inter_encode_write_4(cv::Mat y_frame, Golomb * g, vector<cv::Point> to_encode_vector, cv::Mat y_previous);
-        void inter_encode_write_2(cv::Mat y_frame, Golomb * g, vector<cv::Point> to_encode_vector, cv::Mat y_previous);
-        void inter_encode_write_0(cv::Mat y_frame, Golomb * g, vector<cv::Point> to_encode_vector, cv::Mat y_previous);
+        void inter_encode_write_4(cv::Mat y_frame, Golomb * g, vector<cv::Point> to_encode_vector, cv::Mat y_previous, int shamnt, int shamnt_sum);
 
+        void inter_encode_write_2(cv::Mat y_frame, Golomb * g, vector<cv::Point> to_encode_vector, cv::Mat y_previous, int shamnt, int shamnt_sum);
+
+        void inter_encode_write_0(cv::Mat y_frame, Golomb * g, vector<cv::Point> to_encode_vector, cv::Mat y_previous, int shamnt, int shamnt_sum);
+
+        void write_residuals(vector<int> to_encode_residuals, Golomb * g, int shamnt, int shamnt_sum );
     public:
 
-        Encoder(const string & in_file, const string & out_file, int profile, int periodicity, int block_size, int search_area);
+        Encoder(const string & in_file, const string & out_file, int profile, int periodicity, int block_size, int search_area, int shamnt_y, int shamnt_u, int shamnt_v);
 
         void encode_and_write_frame_intra( Frame * frame , int f_counter , Golomb * g);
 
-        void encode_and_write_frame_inter( Frame * frame , Frame * previous_frame, int f_counter , Golomb * g);
+        void encode_and_write_frame_inter( Frame * frame , Frame * previous_frame, int f_counter , Golomb * g, int shamnt_y, int shamnt_u, int shamnt_v);
 
         /* Function used to encode and write */
         void encode_and_write();
