@@ -73,7 +73,7 @@ class READBits: public Stream {
         }
         int read_type(){
             int type;
-            unsigned short  t = readItem(2) >> 14;
+            unsigned short  t = readItem(3) >> 13;
             type = t;
             return type;
         }
@@ -264,7 +264,7 @@ class WRITEBits: public Stream {
 
         /* Cuidado função de leitura */
         void write_header_type(uint8_t type){
-            preWrite(type,2);
+            preWrite(type,3);
         }
 
         void write_header_k(uint8_t k){

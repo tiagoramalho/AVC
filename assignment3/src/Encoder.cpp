@@ -456,11 +456,6 @@ void Encoder::inter_encode_write_0(Mat frame, Golomb * g, vector<Point> to_encod
                 residuals
             );
             
-            /*if(y_curr_frame == x_curr_frame && y_curr_frame == 0){
-                cout << "macroblock" << endl;
-                cout << macroblock << endl;
-            
-            }*/
 
             for (int x = 0; x < macroblock.cols; ++x)
             {
@@ -640,6 +635,8 @@ void Encoder::encode_and_write(){
       }
     }
 
+
+    this->w.write_header_type(7);
     this->w.flush();
 
     delete f;

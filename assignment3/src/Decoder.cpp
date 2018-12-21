@@ -118,7 +118,6 @@ void Decoder::decode_inter(Frame * current_frame, Frame * last_frame,
             adjusted_size_x = this->block_size / 2;
             adjusted_size_y = this->block_size / 2;
         }
-
         mat = current_frame->get_v();
         previous_mat = last_frame->get_v();
 
@@ -153,11 +152,6 @@ void Decoder::decode_inter(Frame * current_frame, Frame * last_frame,
 
             my_macroblock =  match_area - my_macroblock;
 
-            //if(type==2){
-                //cout << "my macro" << endl;
-                //cout << my_macroblock << endl;
-                //exit(1);
-            //}
 
             my_macroblock.convertTo(macroblock, CV_8U);
 
@@ -249,7 +243,7 @@ void Decoder::read_and_decode(){
     while(1){
 
         type = this->r.read_type();
-        if(this->r.gcount() == 0){
+        if(type == 7){
             break;
         }
 
