@@ -187,6 +187,10 @@ void Decoder::read_and_decode_lossy(){
             exit(1);
     }
 
+
+    this->write_header_y4m(stoi(header['W']), stoi(header['H']), "50:1", stoi(header['C']));
+    
+
     while(1){
 
         type = this->r.read_type();
