@@ -24,8 +24,8 @@ INCLUDE_DIRECTORIES(
 add_executable( psrb ${BASE_DIR}/src/player/Player.cpp  ${BASE_DIR}/src/Frame.cpp)
 target_link_libraries( psrb ${OpenCV_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
-add_executable( parvus ${BASE_DIR}/src/Parvus.cpp ${BASE_DIR}/src/Golomb.cpp ${BASE_DIR}/src/Decoder.cpp ${BASE_DIR}/src/Encoder.cpp ${BASE_DIR}/src/Frame.cpp)
+add_executable( parvus ${BASE_DIR}/src/Parvus.cpp ${BASE_DIR}/src/Golomb.cpp ${BASE_DIR}/src/Decoder.cpp ${BASE_DIR}/src/Encoder.cpp ${BASE_DIR}/src/Frame.cpp ${BASE_DIR}/src/EncoderLossy.cpp ${BASE_DIR}/src/DecoderLossy.cpp)
 target_link_libraries( parvus ${OpenCV_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
-add_executable( VideoCmp ${BASE_DIR}/src/videocmp/VideoCmp.cpp ${BASE_DIR}/src/Frame.cpp)
-target_link_libraries( VideoCmp ${OpenCV_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+add_executable( videoCmp ${BASE_DIR}/src/videocmp/VideoCmp.cpp  ${BASE_DIR}/src/Frame.cpp)
+target_link_libraries( videoCmp ${OpenCV_LIBS})

@@ -9,6 +9,7 @@ class Frame{
     public:
         cv::Mat y,u,v;
         virtual void set_frame_data( uint8_t * frameData) = 0;
+        virtual void clear() = 0;
         virtual int print_type() = 0;
         virtual cv::Mat get_y() = 0;
         virtual cv::Mat get_u() = 0;
@@ -32,6 +33,7 @@ class Frame444: public Frame {
         };
 
         void set_frame_data( uint8_t * frameData);
+        void clear();
 
         void get_rgb( uchar *buffer );
 
@@ -56,6 +58,7 @@ class Frame422: public Frame {
         };
 
         void set_frame_data( uint8_t * frameData);
+        void clear();
 
         void get_rgb( uchar *buffer );
 
@@ -81,6 +84,7 @@ class Frame420: public Frame {
         };
 
         void set_frame_data( uint8_t * frameData);
+        void clear();
 
         void get_rgb( uchar *buffer );
 

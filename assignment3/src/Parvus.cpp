@@ -8,7 +8,7 @@
 using namespace std;
 int main(int argc, char** argv)
 {
-    bool mode_decode = false;
+    bool mode_decode = false, lossy=false;
 
 
     /* Profiles:
@@ -33,6 +33,7 @@ int main(int argc, char** argv)
         options.add_options()
             ("h,help", "Print help")
             ("d,decode", "Decode Mode")
+            ("l,lossy_dct", "Lossy Mode")
             ("m,mode", "Mode", cxxopts::value<int>())
             ("p,periodicity", "Periodicity", cxxopts::value<int>())
             ("b,blocksize", "Block Size", cxxopts::value<int>())
@@ -69,6 +70,10 @@ int main(int argc, char** argv)
 
         if (result.count("d")){
             mode_decode = true;
+        }
+
+        if (result.count("l")){
+            lossy = true;
         }
 
         if (profile == 1 && mode_decode==false)
@@ -110,18 +115,31 @@ int main(int argc, char** argv)
         std::cout << "error parsing options: " << e.what() << std::endl;
         exit(1);
     }
-
     /* Rest of the Code */
-
-    if(!mode_decode){
+    if (!mode_decode)
+    {
         string out_file = file + ".pv";
-        Encoder enc (file, out_file, profile, periodicity, block_size, search_area, shamnt_y, shamnt_u, shamnt_v);
-        enc.encode_and_write();
+
+
+        if(lossy){
+            Encoder enc (file, out_file, profile, periodicity, block_size, search_area);
+            enc.encode_and_write_lossy();
+        } else {
+            Encoder enc (file, out_file, profile, periodicity, block_size, search_area, shamnt_y, shamnt_u, shamnt_v);
+            enc.encode_and_write();
+        }
+
     }else{
         /* TODO: see again out_file and such */
         string out_file = file + ".y4m";
         Decoder dec ( file, out_file );
-        dec.read_and_decode();
+
+        if(lossy){
+            dec.read_and_decode_lossy();
+        } else {
+            dec.read_and_decode();
+        }
+
     }
 
     return 0;

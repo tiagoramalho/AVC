@@ -9,6 +9,12 @@ void Frame444::set_frame_data(uint8_t * frameData){
     this->v = cv::Mat(this->height, this->width, CV_8UC1,frameData);
 }
 
+void Frame444::clear(){
+    this->y = cv::Mat(this->height, this->width, CV_8UC1);
+    this->u = cv::Mat(this->height, this->width, CV_8UC1);
+    this->v = cv::Mat(this->height, this->width, CV_8UC1);
+}
+
 void Frame444::get_rgb( uchar * buffer){
     uint8_t y,u,v;
     int b,g,r, indexer, lines, cols;
@@ -56,6 +62,12 @@ void Frame422::set_frame_data(uint8_t * frameData){
     this->v = cv::Mat(this->height, this->width/2, CV_8UC1,frameData);
 }
 
+void Frame422::clear(){
+    this->y = cv::Mat(this->height, this->width, CV_8UC1);
+    this->u = cv::Mat(this->height, this->width/2, CV_8UC1);
+    this->v = cv::Mat(this->height, this->width/2, CV_8UC1);
+}
+
 void Frame422::get_rgb( uchar * buffer){
     uint8_t y,u,v;
     int b,g,r, indexer, lines, cols;
@@ -100,6 +112,12 @@ void Frame420::set_frame_data(uint8_t * frameData){
     this->u = cv::Mat(this->height/2, this->width/2, CV_8UC1,frameData);
     frameData = frameData + (this->height/2 * this->width/2);
     this->v = cv::Mat(this->height/2, this->width/2, CV_8UC1,frameData);
+}
+
+void Frame420::clear(){
+    this->y = cv::Mat(this->height, this->width, CV_8UC1);
+    this->u = cv::Mat(this->height/2, this->width/2, CV_8UC1);
+    this->v = cv::Mat(this->height/2, this->width/2, CV_8UC1);
 }
 
 void Frame420::get_rgb( uchar * buffer){
