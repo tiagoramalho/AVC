@@ -17,7 +17,7 @@ class Golomb {
 
         void set_m( uint32_t m);
 
-        void encode_and_write( int number, WRITEBits & w);
+        int encode_and_write( int number, WRITEBits & w, bool dry_run = false);
 
         int read_and_decode(READBits & r);
 };

@@ -17,7 +17,10 @@ void Golomb::set_m(uint32_t m){
     t = std::pow(2,b) - m;
 }
 
-void Golomb::encode_and_write(int number, WRITEBits & w){
+int Golomb::encode_and_write(int number, WRITEBits & w, bool dry_run){
+
+    int number_of_bits_written;
+
     uint32_t new_number = 0;
     uint32_t shift = log2(this->m);
     if(number >= 0)
@@ -25,12 +28,19 @@ void Golomb::encode_and_write(int number, WRITEBits & w){
     else
         new_number = -2*number-1;
     uint32_t q = (uint32_t) floor( (float) new_number/(float) this->m );
-    for( uint32_t i = 0; i < q; i++){
-        w.writeBits(1);
-    }
-    w.writeBits(0);
     uint32_t r = new_number - q*this->m;
-    w.preWrite(r, shift);
+
+    number_of_bits_written = q + shift;
+
+    if(!dry_run){
+        for( uint32_t i = 0; i < q; i++){
+            w.writeBits(1);
+        }
+        w.writeBits(0);
+        w.preWrite(r, shift);
+    }
+
+    return number_of_bits_written;
 }
 
 int Golomb::read_and_decode(READBits & r){
