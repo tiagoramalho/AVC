@@ -138,7 +138,11 @@ void Decoder::decode_inter(Frame * current_frame, Frame * last_frame, int k, Gol
             {
                 for (int y = 0; y < adjusted_size_y; y++)
                 {
-                    my_macroblock.at<int32_t>(y,x) = ((g.read_and_decode(this->r)<< 1) | 1U ) << (shamnt-1);
+                    if(shamnt > 0){
+                        my_macroblock.at<int32_t>(y,x) = ((g.read_and_decode(this->r)<< 1) | 1U ) << (shamnt-1);
+                    }else{
+                        my_macroblock.at<int32_t>(y,x) = g.read_and_decode(this->r);
+                    }
                     count_read++;
                 }
             }
