@@ -144,15 +144,15 @@ int main(int argc, char** argv)
         case 422:{
             og_f = new Frame422 (rows, cols);
             cp_f = new Frame422 (rows, cols);
-            og_imgData.resize(cols * rows * 3);
-            cp_imgData.resize(cols * rows * 3);
+            og_imgData.resize(cols * rows * 2);
+            cp_imgData.resize(cols * rows * 2);
             break;
         }
         case 420:{
             og_f = new Frame420 (rows, cols);
             cp_f = new Frame420 (rows, cols);
-            og_imgData.resize(cols * rows * 3);
-            cp_imgData.resize(cols * rows * 3);
+            og_imgData.resize(cols * rows * 3/2);
+            cp_imgData.resize(cols * rows * 3/2);
             break;
         }
         default:
