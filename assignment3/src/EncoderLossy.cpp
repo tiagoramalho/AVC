@@ -6,153 +6,57 @@
 #include <cmath>
 #include "Frame.hpp"
 
+
 using namespace cv;
 using namespace std;
 
 Encoder::Encoder(const string & in_file, const string & out_file, int p, int peri, int blocksize, int searcharea):
     infile(in_file.c_str()),w(out_file.c_str()),profile(p), periodicity(peri), block_size(blocksize), search_area(searcharea){} 
 
-double dataLuminance[8][8] = {
-    {16, 11, 10, 16, 24, 40, 51, 61},
-    {12, 12, 14, 19, 26, 58, 60, 55},
-    {14, 13, 16, 24, 40, 57, 69, 56},
-    {14, 17, 22, 29, 51, 87, 80, 62},
-    {18, 22, 37, 56, 68, 109, 103, 77},
-    {24, 35, 55, 64, 81, 104, 113, 92},
-    {49, 64, 78, 87, 103, 121, 120, 101},
-    {72, 92, 95, 98, 112, 100, 103, 99}
-};
 
-Mat mat_luminance = Mat(8, 8, CV_64FC1, &dataLuminance);
-
-double dataChrominance[8][8] = {
-    {17, 18, 24, 27, 99, 99, 99, 99},
-    {18, 21, 26, 66, 99, 99, 99, 99},
-    {24, 26, 56, 99, 99, 99, 99, 99},
-    {47, 66, 99, 99, 99, 99, 99, 99},
-    {99, 99, 99, 99, 99, 99, 99, 99},
-    {99, 99, 99, 99, 99, 99, 99, 99},
-    {99, 99, 99, 99, 99, 99, 99, 99},
-    {99, 99, 99, 99, 99, 99, 99, 99}
-};
-
-Mat mat_chrominance = Mat(8, 8, CV_64FC1, &dataChrominance);
 
 bool buble (std::vector<int> i, std::vector<int> j) { return  (i[0] == j[0]) ? (i[1] < j[1]) : (i[0] < j[0]); }
 
+void zig_zag(Mat & arr, vector<int> & v)
+{
+    int x,y ,z;
+    for(z = 0 ; z <arr.cols ; z++)
+    {
+        x = 0;
+        y = z;
+        while(x<=z && y>=0)
+        {
+            if(z%2)
+                v.push_back(arr.at<int>(x++,y--));
+            else
+            	v.push_back(arr.at<int>(y--,x++));
+        }
+    }
+    for(z = 1 ; z<arr.cols ; z++)
+    {
+        x = z;
+        y = arr.cols -1;
+        while(x<arr.cols && y>=z)
+        {
+            if((arr.cols+z)%2)
+            	v.push_back(arr.at<int>(y--,x++));
+            else
+            	v.push_back(arr.at<int>(x++,y--));
+        }
+    }
+}
 
-// void zigZagMatrix(int arr[][C], int n, int m) 
-void zigZagMatrix(Mat & arr, vector<int> & v)
-{ 
-	int n = arr.cols;
-	int m = arr.rows;
-
-    int row = 0, col = 0; 
-  
-    // Boolean variable that will true if we 
-    // need to increment 'row' value otherwise 
-    // false- if increment 'col' value 
-    bool row_inc = 0; 
-  
-    // Print matrix of lower half zig-zag pattern 
-    int mn = min(m, n); 
-    for (int len = 1; len <= mn; ++len) { 
-        for (int i = 0; i < len; ++i) {
-        	v.push_back(arr.at<int>(row,col));
-  
-            if (i + 1 == len) 
-                break; 
-            // If row_increment value is true 
-            // increment row and decrement col 
-            // else decrement row and increment 
-            // col 
-            if (row_inc) 
-                ++row, --col; 
-            else
-                --row, ++col; 
-        } 
-  
-        if (len == mn) 
-            break; 
-  
-        // Update row or col vlaue according 
-        // to the last increment 
-        if (row_inc) 
-            ++row, row_inc = false; 
-        else
-            ++col, row_inc = true; 
-    } 
-  
-    // Update the indexes of row and col variable 
-    if (row == 0) { 
-        if (col == m - 1) 
-            ++row; 
-        else
-            ++col; 
-        row_inc = 1; 
-    } 
-    else { 
-        if (row == n - 1) 
-            ++col; 
-        else
-            ++row; 
-        row_inc = 0; 
-    } 
-  
-    // Print the next half zig-zag pattern 
-    int MAX = max(m, n) - 1; 
-    for (int len, diag = MAX; diag > 0; --diag) { 
-  
-        if (diag > mn) 
-            len = mn; 
-        else
-            len = diag; 
-  
-        for (int i = 0; i < len; ++i) { 
-        	v.push_back(arr.at<int>(row,col));
-
-            if (i + 1 == len) 
-                break; 
-  
-            // Update row or col vlaue according 
-            // to the last increment 
-            if (row_inc) 
-                ++row, --col; 
-            else
-                ++col, --row; 
-        } 
-  
-        // Update the indexes of row and col variable 
-        if (row == 0 || col == m - 1) { 
-            if (col == m - 1) 
-                ++row; 
-            else
-                ++col; 
-  
-            row_inc = true; 
-        } 
-  
-        else if (col == 0 || row == n - 1) { 
-            if (row == n - 1) 
-                ++col; 
-            else
-                ++row; 
-  
-            row_inc = false; 
-        } 
-    } 
-} 
 
 int pow_my_k(int val){
 	int val_to_return;
 	if(val >= 0) 	val_to_return = val * 2;
-	else			val_to_return -2* val -1;
+	else			val_to_return = -2* val -1;
 	return val_to_return;
 }
 
-void Encoder::write_frame_component_lossless(Golomb & g, Golomb & g_zeros, vector<tuple<int, uint8_t>> & write_vector){
+void Encoder::write_frame_component_lossy(Golomb & g, Golomb & g_zeros, vector<tuple<int, uint8_t>> & write_vector){
 	tuple<int, uint8_t> x;
-	for (int i = 0; i < write_vector.size(); ++i)
+	for (uint32_t i = 0; i < write_vector.size(); ++i)
 	{
 		x = write_vector.at(i);
 
@@ -191,6 +95,13 @@ void Encoder::encode_and_write_frame_intra_lossy(Frame * frame, Golomb & g, Golo
             macroblock = matrix(cv::Rect(x_curr_frame, y_curr_frame, this->block_size, this->block_size));
             macroblock.convertTo(tmp_matrix, CV_64FC1);
 
+            /*
+			if (y_curr_frame == 0 && x_curr_frame == 0)
+			{
+				cout << "macroblock = "<< endl << " "  << macroblock << endl << endl;
+			}
+			*/
+
 			dct(tmp_matrix, tmp_matrix);
 			
 			/*
@@ -222,17 +133,23 @@ void Encoder::encode_and_write_frame_intra_lossy(Frame * frame, Golomb & g, Golo
                 	macroblock.at<int32_t>(y,x) = cvRound(tmp_matrix.at<double>(y,x));
                 }
             }
+            
             /*
 			if (y_curr_frame == 0 && x_curr_frame == 0)
 			{
 				cout << "macroblock = "<< endl << " "  << macroblock << endl << endl;
 			}
 			*/
+
             vector<int> v = {};
-			zigZagMatrix(macroblock, v);
+			zig_zag(macroblock, v);
 
+			/*
+			for (auto i = v.begin(); i != v.end(); ++i)
+    			cout << *i << ' ';
+			*/
 
-			for (int i = 0; i < v.size(); ++i)
+			for (uint32_t i = 0; i < v.size(); ++i)
 			{
 				value = v.at(i);
 
@@ -287,7 +204,7 @@ void Encoder::encode_and_write_frame_intra_lossy(Frame * frame, Golomb & g, Golo
     this->w.write_header_k(k);
     this->w.write_header_k(k0);
 
-    write_frame_component_lossless(g, g_zeros, write_vector);
+    write_frame_component_lossy(g, g_zeros, write_vector);
 
 
 }
@@ -352,10 +269,13 @@ void Encoder::encode_and_write_lossy(){
 		}
 
 		if( this->periodicity == 0 || frame_counter % this->periodicity == 0){
+			this->w.write_header_type(0);
 			encode_and_write_frame_intra_lossy(current_frame, g, g_zeros, 0);
 			encode_and_write_frame_intra_lossy(current_frame, g, g_zeros, 1);
 			encode_and_write_frame_intra_lossy(current_frame, g, g_zeros, 2);
 		}else{
+			this->w.write_header_type(0);
+			/* Todo Fazer o inter. Não é complicado. */
 			// encode_and_write_frame_inter(current_frame, previous_frame, frame_counter, g, g_zeros );
 		}
 
@@ -368,6 +288,7 @@ void Encoder::encode_and_write_lossy(){
 	}
     
 
+    this->w.write_header_type(7);
     this->w.flush();
 
     delete current_frame;

@@ -133,7 +133,13 @@ int main(int argc, char** argv)
         /* TODO: see again out_file and such */
         string out_file = file + ".y4m";
         Decoder dec ( file, out_file );
-        dec.read_and_decode();
+
+        if(lossy){
+            dec.read_and_decode_lossy();
+        } else {
+            dec.read_and_decode();
+        }
+
     }
 
     return 0;
