@@ -19,6 +19,9 @@ int main(int argc, char** argv)
     int block_size = 0;
     int periodicity = 0;
     int search_area = 0;
+    int shamnt_y = 0;
+    int shamnt_u = 0;
+    int shamnt_v = 0;
 
     /* store the filename */
     string file;
@@ -35,6 +38,9 @@ int main(int argc, char** argv)
             ("p,periodicity", "Periodicity", cxxopts::value<int>())
             ("b,blocksize", "Block Size", cxxopts::value<int>())
             ("s,searcharea", "Search Area Size", cxxopts::value<int>())
+            ("y,shamntY", "shamnt Y", cxxopts::value<int>())
+            ("u,shamntU", "shamnt U", cxxopts::value<int>())
+            ("v,shamntV", "shamnt V", cxxopts::value<int>())
             ("f,file", "File (obrigatory)", cxxopts::value<std::string>())
             ;
 
@@ -75,6 +81,30 @@ int main(int argc, char** argv)
             periodicity = result["p"].as<int>();
             search_area = result["s"].as<int>();
             block_size = result["b"].as<int>();
+            if (result.count("y") != 0){
+                shamnt_y = result["y"].as<int>();
+                if (shamnt_y >= 8){
+                    cout << endl << "You need to specify a -y lesser than 8" << endl << endl;
+                    cout << options.help() << endl;
+                    exit(1);
+                }
+            }
+            if (result.count("u") != 0){
+                shamnt_u = result["u"].as<int>();
+                if (shamnt_u >= 8){
+                    cout << endl << "You need to specify a -u lesser than 8" << endl << endl;
+                    cout << options.help() << endl;
+                    exit(1);
+                }
+            }
+            if (result.count("v") != 0){
+                shamnt_v = result["v"].as<int>();
+                if (shamnt_v >= 8){
+                    cout << endl << "You need to specify a -v lesser than 8" << endl << endl;
+                    cout << options.help() << endl;
+                    exit(1);
+                }
+            }
         }else{
             periodicity = 0;
             search_area = 0;
@@ -89,17 +119,17 @@ int main(int argc, char** argv)
     if (!mode_decode)
     {
         string out_file = file + ".pv";
-        Encoder enc (file, out_file, profile, periodicity, block_size, search_area);
 
 
         if(lossy){
+            Encoder enc (file, out_file, profile, periodicity, block_size, search_area);
             enc.encode_and_write_lossy();
         } else {
+            Encoder enc (file, out_file, profile, periodicity, block_size, search_area, shamnt_y, shamnt_u, shamnt_v);
             enc.encode_and_write();
         }
 
-    }
-     else {
+    }else{
         /* TODO: see again out_file and such */
         string out_file = file + ".y4m";
         Decoder dec ( file, out_file );

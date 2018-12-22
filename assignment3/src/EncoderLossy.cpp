@@ -9,6 +9,8 @@
 using namespace cv;
 using namespace std;
 
+Encoder::Encoder(const string & in_file, const string & out_file, int p, int peri, int blocksize, int searcharea):
+    infile(in_file.c_str()),w(out_file.c_str()),profile(p), periodicity(peri), block_size(blocksize), search_area(searcharea){} 
 
 double dataLuminance[8][8] = {
     {16, 11, 10, 16, 24, 40, 51, 61},

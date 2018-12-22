@@ -92,7 +92,7 @@ void frame_decoding444(ifstream const & file, int const & end, int loop, int yCo
         myfile.read((char *)imgData, yCols * yRows * 3);
 
         /* data structure to handle frames */
-        Frame444 f(yCols, yRows);
+        Frame444 f( yRows,yCols);
         f.set_frame_data(imgData);
 
         if(myfile.gcount() == 0) {
@@ -144,7 +144,7 @@ void frame_decoding422(ifstream const & file, int const & end, int loop, int yCo
         myfile.read((char *)imgData, yCols * yRows * 2);
 
         /* data structure to handle frames */
-        Frame422 f(yCols, yRows);
+        Frame422 f(yRows, yCols);
         f.set_frame_data(imgData);
 
         if(myfile.gcount() == 0)
@@ -204,7 +204,7 @@ void frame_decoding420(ifstream const & file, int const & end, int loop, int yCo
         myfile.read((char *)imgData, yCols * yRows + (yCols * yRows)/2);
 
         /* data structure to handle frames */
-        Frame420 f(yCols, yRows);
+        Frame420 f(yRows, yCols);
         f.set_frame_data(imgData);
 
         if(myfile.gcount() == 0)

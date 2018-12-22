@@ -71,9 +71,17 @@ class READBits: public Stream {
             getline(f, header);
             return header;
         }
+
+        int read_shamnt(){
+            int shamnt;
+            unsigned short  s = readItem(3) >> 13;
+            shamnt = s;
+            return shamnt;
+        }
+
         int read_type(){
             int type;
-            unsigned short  t = readItem(2) >> 14;
+            unsigned short  t = readItem(3) >> 13;
             type = t;
             return type;
         }
@@ -258,13 +266,17 @@ class WRITEBits: public Stream {
                 " B" << block_size << endl;
         }
 
+        void write_header_shamnt(uint8_t shamnt){
+            preWrite(shamnt,3);
+        }
+
         void write_header_seed(uint8_t seed){
             preWrite(seed,8);
         }
 
         /* Cuidado função de leitura */
         void write_header_type(uint8_t type){
-            preWrite(type,2);
+            preWrite(type,3);
         }
 
         void write_header_k(uint8_t k){
