@@ -8,7 +8,7 @@
 using namespace std;
 int main(int argc, char** argv)
 {
-    bool mode_decode = false, lossy=false;
+    bool mode_decode = false;
 
 
     /* Profiles:
@@ -33,7 +33,6 @@ int main(int argc, char** argv)
         options.add_options()
             ("h,help", "Print help")
             ("d,decode", "Decode Mode")
-            ("l,lossy_dct", "Lossy Mode")
             ("m,mode", "Mode", cxxopts::value<int>())
             ("p,periodicity", "Periodicity", cxxopts::value<int>())
             ("b,blocksize", "Block Size", cxxopts::value<int>())
@@ -72,11 +71,8 @@ int main(int argc, char** argv)
             mode_decode = true;
         }
 
-        if (result.count("l")){
-            lossy = true;
-        }
 
-        if (profile == 1 && mode_decode==false)
+        if ((profile == 1 ||  profile == 2) && mode_decode==false)
         {
             periodicity = result["p"].as<int>();
             search_area = result["s"].as<int>();
@@ -121,7 +117,7 @@ int main(int argc, char** argv)
         string out_file = file + ".pv";
 
 
-        if(lossy){
+        if(profile == 2){
             Encoder enc (file, out_file, profile, periodicity, block_size, search_area);
             enc.encode_and_write_lossy();
         } else {
@@ -134,7 +130,7 @@ int main(int argc, char** argv)
         string out_file = file + ".y4m";
         Decoder dec ( file, out_file );
 
-        if(lossy){
+        if(profile == 2){
             dec.read_and_decode_lossy();
         } else {
             dec.read_and_decode();
