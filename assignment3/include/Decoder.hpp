@@ -74,7 +74,9 @@ class Decoder {
         Decoder(const string & in_file, const string & out_file);
 
         void read_and_decode_lossy();
+        Mat decode_lossy(Frame * frame, Golomb & g, Golomb & g_zeros, int frame_matrix);
         void decode_intra_lossy(Frame * frame, Golomb & g, Golomb & g_zeros, int frame_matrix);
+        void decode_non_intra_lossy(Frame * frame, Frame * previous_frame, Golomb & g, Golomb & g_zeros, int frame_matrix);
 
         /*  Function used to encode and write N Frames intra-mode  */
         void decode_intra(Frame * frame, uint8_t seed,int k, Golomb & g, uint8_t type);

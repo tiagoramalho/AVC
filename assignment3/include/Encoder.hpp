@@ -67,11 +67,12 @@ class Encoder {
         Encoder(const string & in_file, const string & out_file, int profile, int periodicity, int block_size, int search_area);
 
 
+        void write_frame_component_lossy(Golomb & g, Golomb & g_zeros, vector<tuple<int, int16_t>> & write_vector);
+        void encode_lossy(Mat & matrix, Golomb & g, Golomb & g_zeros, int frame_matrix);
+        void encode_intra_lossy(Frame * frame, Golomb & g, Golomb & g_zeros, int frame_matrix);
+        void encode_non_intra_lossy(Frame * frame, Frame * previous_frame, Golomb & g, Golomb & g_zeros, int frame_matrix);
+
         void encode_and_write_frame_intra( Frame * frame , int f_counter , Golomb * g);
-        void encode_and_write_frame_intra_lossy( Frame * frame, Golomb & g, Golomb & g_zeros, int frame_matrix );
-        void write_frame_component_lossy(Golomb & g, Golomb & g_zeros, vector<tuple<int, uint8_t>> & write_vector);
-
-
         void encode_and_write_frame_inter( Frame * frame , Frame * previous_frame, int f_counter , Golomb * g, int shamnt_y, int shamnt_u, int shamnt_v);
 
         /* Function used to encode and write */
