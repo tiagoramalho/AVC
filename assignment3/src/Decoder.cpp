@@ -208,6 +208,9 @@ void Decoder::read_and_decode(){
     this->width = stoi(header['W']);
     this->block_size = stoi(header['B']);
     this->color_space = stoi(header['C']);
+    string frameRate = header['F'];
+    string a = header['A'];
+    string interlance = header['I'];
 
 
     Frame * current_frame;
@@ -238,7 +241,7 @@ void Decoder::read_and_decode(){
     /* Write File Header */
     /* TODO corrigir o 50 hardcoded abaixo. Mudar para FPS */
 
-    this->write_header_y4m(stoi(header['W']), stoi(header['H']), "50:1", stoi(header['C']));
+    this->write_header_y4m(stoi(header['W']), stoi(header['H']), frameRate, stoi(header['C']), a, interlance);
 
     int type;
     int k;

@@ -53,11 +53,12 @@ class Decoder {
         uint8_t get_real_value_LOCO( uint8_t pixel_A, uint8_t pixel_B, uint8_t pixel_C, int residual);
 
 
-        void write_header_y4m(uint32_t width, uint32_t height, string fps, uint32_t colorspace){
+        void write_header_y4m(uint32_t width, uint32_t height, string fps, uint32_t colorspace, string a, string interlance){
             if(colorspace == 420){
-                outfile << "YUV4MPEG2" << " W" << width << " H" << height << " F" << fps << " Ip A1:1"<< endl;
+                outfile << "YUV4MPEG2" << " W" << width << " H" << height << " F" << fps << " I" << interlance << " A" << a << endl;
             }else{
-                outfile << "YUV4MPEG2" << " W" << width << " H" << height << " F" << fps << " Ip A1:1 C"<< colorspace << endl;
+                 
+                outfile << "YUV4MPEG2" << " W" << width << " H" << height << " F" << fps << " I" << interlance << " A" << a << " C"<< colorspace << endl;
             }
         }
 

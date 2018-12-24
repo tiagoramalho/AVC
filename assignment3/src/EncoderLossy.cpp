@@ -255,7 +255,7 @@ void Encoder::encode_and_write_lossy(){
             exit(1);
     }
 
-    this->w.writeHeader(this->cols, this->rows, this->color_space, this->block_size);
+    this->w.writeHeader(this->cols, this->rows, this->color_space, this->block_size, header['A'], header['F'], header['I']);
 
 
 	while(1){

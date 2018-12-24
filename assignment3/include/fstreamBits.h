@@ -142,6 +142,15 @@ class READBits: public Stream {
                 else if(token.at(0) == 'B'){
                     header['B'] = token.substr(1);
                 }
+                else if(token.at(0) == 'F'){
+                    header['F'] = token.substr(1);
+                }
+                else if(token.at(0) == 'I'){
+                    header['I'] = token.substr(1);
+                }
+                else if(token.at(0) == 'A'){
+                    header['A'] = token.substr(1);
+                }
                 i=j;
             }
 
@@ -258,11 +267,14 @@ class WRITEBits: public Stream {
          *
          * */
         void writeHeader(uint32_t width, uint32_t height,
-            uint32_t colorspace, uint32_t block_size){
+            uint32_t colorspace, uint32_t block_size, string a, string frameRate, string interlance){
             f << "PARVUS" <<
                 " W" << width <<
                 " H" << height <<
                 " C" << colorspace <<
+                " A" << a <<
+                " F" << frameRate << 
+                " I" << interlance <<
                 " B" << block_size << endl;
         }
 
