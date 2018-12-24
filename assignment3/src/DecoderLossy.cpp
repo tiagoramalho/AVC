@@ -177,7 +177,9 @@ void Decoder::read_and_decode_lossy(){
     this->width = stoi(header['W']);
     this->block_size = stoi(header['B']);
     this->color_space = stoi(header['C']);
-
+    string frameRate = header['F'];
+    string a = header['A'];
+    string interlance = header['I'];
 
     Frame * current_frame;
     Frame * previous_frame;
@@ -204,7 +206,7 @@ void Decoder::read_and_decode_lossy(){
     }
 
 
-    this->write_header_y4m(stoi(header['W']), stoi(header['H']), "50:1", stoi(header['C']));
+    this->write_header_y4m(stoi(header['W']), stoi(header['H']), frameRate, stoi(header['C']), a, interlance);
     
 
     while(1){

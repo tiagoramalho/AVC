@@ -92,10 +92,12 @@ void Encoder::parse_header(  map<char,string> & header,
             header['F'] = token.substr(1);
         }
         else if(token.at(0) == 'I'){
-            cout << "Interlacing not parsed" << endl;
+            cout << "Interlacing " << endl;
+            header['I'] = token.substr(1);
         }
         else if(token.at(0) == 'A'){
-            cout << "Aspect Ratio not parsed" << endl;
+            cout << "Aspect Ratio " << endl;
+            header['A'] = token.substr(1);
         }
         else if(token.at(0) == 'C'){
             cout << "Colour Space " << token.substr(1) << endl;
@@ -574,7 +576,7 @@ void Encoder::encode_and_write(){
     cols = stoi(header['W']);
     rows = stoi(header['H']);
 
-    this->w.writeHeader(cols,rows,stoi(header['C']), this->block_size);
+    this->w.writeHeader(cols,rows,stoi(header['C']), this->block_size, header['A'], header['F'], header['I']);
     this->color_space = stoi(header['C']);
 
     switch(this->color_space){
