@@ -80,14 +80,14 @@ Mat Decoder::decode_lossy(Frame * frame, Golomb & g, Golomb & g_zeros, int frame
 
 			/* passar de array para zigzaged matrix */
     		reverse_zig_zag(tmp_matrix, residuals);
-            if (y_curr_frame == 0 && x_curr_frame == 0)
-            {
-                for (auto i = residuals.begin(); i != residuals.end(); ++i)
-                    cout << (int16_t) *i << ' ';
-                cout <<endl;
-                printf("%d\n", matrix.at<int16_t>(1,0));
-                cout << "macroblock = "<< endl << " "  << tmp_matrix << endl << endl;
-            }
+            //if (y_curr_frame == 0 && x_curr_frame == 0)
+            //{
+            //    for (auto i = residuals.begin(); i != residuals.end(); ++i)
+            //        cout << (int16_t) *i << ' ';
+            //    cout <<endl;
+            //    //printf("%d\n", matrix.at<int16_t>(1,0));
+            //    //cout << "macroblock = "<< endl << " "  << tmp_matrix << endl << endl;
+            //}
 			/* multiplicar por matrizes constantes e inverse dct*/
             tmp_matrix.convertTo(macroblock, CV_64FC1);
     		macroblock = macroblock.mul(divisor);
@@ -126,8 +126,8 @@ Mat Decoder::decode_lossy(Frame * frame, Golomb & g, Golomb & g_zeros, int frame
     }
     */
     return matrix;
-    printf("This %d\n", frame->get_y().at<int16_t>(1,0));
-    printf("This %d\n", matrix.at<int16_t>(1,0));
+    //printf("This %d\n", frame->get_y().at<int16_t>(1,0));
+   // printf("This %d\n", matrix.at<int16_t>(1,0));
 
 }
 
@@ -253,7 +253,7 @@ void Decoder::read_and_decode_lossy(){
         }
         std::swap(current_frame, previous_frame);
 
-    	printf("done %d\n", frame_counter);
+    	//printf("done %d\n", frame_counter);
     	frame_counter++;
     }
 }
