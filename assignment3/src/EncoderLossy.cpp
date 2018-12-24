@@ -90,12 +90,12 @@ void Encoder::encode_lossy(Mat & matrix, Golomb & g, Golomb & g_zeros, int frame
             macroblock = matrix(cv::Rect(x_curr_frame, y_curr_frame, this->block_size, this->block_size));
             macroblock.convertTo(tmp_matrix, CV_64FC1);
 
-            
+            /*
 			if (y_curr_frame == 0 && x_curr_frame == 0)
 			{
 				cout << "macroblock = "<< endl << " "  << macroblock << endl << endl;
 			}
-			
+			*/
 
 			dct(tmp_matrix, tmp_matrix);
 			
@@ -117,7 +117,7 @@ void Encoder::encode_lossy(Mat & matrix, Golomb & g, Golomb & g_zeros, int frame
 			
 
 			macroblock = Mat(8, 8, CV_16SC1);
-			int value, n_zeros = 0;
+			int16_t value, n_zeros = 0;
 
             for (int y = 0; y < macroblock.rows; ++y)
             {
@@ -140,6 +140,7 @@ void Encoder::encode_lossy(Mat & matrix, Golomb & g, Golomb & g_zeros, int frame
 			/*
 			for (auto i = v.begin(); i != v.end(); ++i)
     			cout << *i << ' ';
+			cout <<endl;
 			*/
 			for (uint32_t i = 0; i < v.size(); ++i)
 			{

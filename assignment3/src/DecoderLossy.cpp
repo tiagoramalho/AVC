@@ -3,7 +3,7 @@
 using namespace cv;
 
 
-void reverse_zig_zag(Mat & arr, vector<int> & v)
+void reverse_zig_zag(Mat & arr, vector<int16_t> & v)
 {
 	int i = 0;
     int x,y ,z;
@@ -14,11 +14,11 @@ void reverse_zig_zag(Mat & arr, vector<int> & v)
         while(x<=z && y>=0)
         {
             if(z%2){
-            	arr.at<int>(x++,y--) = v.at(i);
+            	arr.at<int16_t>(x++,y--) = v.at(i);
                 i++;
             }
             else{
-            	arr.at<int>(y--,x++) = v.at(i);
+            	arr.at<int16_t>(y--,x++) = v.at(i);
                 i++;
             }
         }
@@ -30,11 +30,11 @@ void reverse_zig_zag(Mat & arr, vector<int> & v)
         while( x < 8 && y>=z)
         {
             if((8+z)%2){
-            	arr.at<int>(y--,x++) = v.at(i);
+            	arr.at<int16_t>(y--,x++) = v.at(i);
                 i++;
             }
             else{
-            	arr.at<int>(x++,y--) = v.at(i);
+            	arr.at<int16_t>(x++,y--) = v.at(i);
                 i++;
             }
         }
@@ -62,14 +62,14 @@ Mat Decoder::decode_lossy(Frame * frame, Golomb & g, Golomb & g_zeros, int frame
 
     for( int y_curr_frame = 0; y_curr_frame < matrix.rows; y_curr_frame +=this->block_size ){
         for( int x_curr_frame = 0; x_curr_frame < matrix.cols; x_curr_frame +=this->block_size ){
-			vector<int> residuals;
+			vector<int16_t> residuals;
 			
 			/* Ler para um array de tamanho  8*8 */
         	while(true){
         		residuals.push_back(g.read_and_decode(this->r));
         		if (residuals.size() == 64) break;
  
-        		int zeros = g_zeros.read_and_decode(this->r);
+        		int16_t zeros = g_zeros.read_and_decode(this->r);
         		while (zeros != 0){
         			residuals.push_back(0);
         			zeros--;
@@ -77,9 +77,17 @@ Mat Decoder::decode_lossy(Frame * frame, Golomb & g, Golomb & g_zeros, int frame
         		if (residuals.size() == 64) break;
         	}
 
+
 			/* passar de array para zigzaged matrix */
     		reverse_zig_zag(tmp_matrix, residuals);
-
+            if (y_curr_frame == 0 && x_curr_frame == 0)
+            {
+                for (auto i = residuals.begin(); i != residuals.end(); ++i)
+                    cout << (int16_t) *i << ' ';
+                cout <<endl;
+                printf("%d\n", matrix.at<int16_t>(1,0));
+                cout << "macroblock = "<< endl << " "  << tmp_matrix << endl << endl;
+            }
 			/* multiplicar por matrizes constantes e inverse dct*/
             tmp_matrix.convertTo(macroblock, CV_64FC1);
     		macroblock = macroblock.mul(divisor);
