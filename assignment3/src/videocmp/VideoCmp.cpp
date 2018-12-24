@@ -1,10 +1,11 @@
 #include "cxxopts.hpp"
 #include <fstream>
 #include "Frame.hpp"
+#include <math.h>
 
 using namespace std;
 
-void mean_squared_error( Frame * og_frame , Frame * cp_frame){
+double mean_squared_error( Frame * og_frame , Frame * cp_frame){
 
     double mse = 0.0;
     int difference;
@@ -21,8 +22,8 @@ void mean_squared_error( Frame * og_frame , Frame * cp_frame){
     }
 
     mse = mse /(og_matrix.rows*og_matrix.cols);
-    printf("The mean square error is %f\n",mse);
 
+    return mse;
 };
 
 // ReUsed Code
@@ -159,6 +160,7 @@ int main(int argc, char** argv)
             exit(1);
     }
 
+    double m = 0.0;
     while(1){
         // Read Original Frame
         getline (og_file,line); // Skipping word FRAME
@@ -179,11 +181,16 @@ int main(int argc, char** argv)
         }
         printf("Analysing frame %d\n", frame_counter);
 
-        mean_squared_error(og_f, cp_f);
+        m += mean_squared_error(og_f, cp_f);
 
 
         frame_counter +=1;
     }
+
+    m = m/frame_counter;
+    printf("Average MSE: %f\n", m);
+    double psnr = 10 * log10((255*255)/(m*m));
+    printf("PSNR : %f\n", psnr);
 
     /* Rest of the Code */
     return 0;
