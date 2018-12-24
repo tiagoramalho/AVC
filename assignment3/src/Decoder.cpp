@@ -252,7 +252,7 @@ void Decoder::read_and_decode(){
         }
 
         if(type == 0){
-            printf("decode intra\n");
+            //printf("decode intra\n");
 
             /* Write Frame Header */
             this->write_header_frame();
@@ -273,7 +273,7 @@ void Decoder::read_and_decode(){
             decode_intra(current_frame, seed, k, g, 2);
 
         }else if(type == 1){
-            printf("decode inter\n");
+            //printf("decode inter\n");
         
             /* Write Frame Header */
             this->write_header_frame();
@@ -294,7 +294,7 @@ void Decoder::read_and_decode(){
             k = this->r.read_k();
             decode_inter(current_frame, last_frame, k, g, 2, vectors, 0);
         }else if(type == 2){
-            printf("decode inter quant\n");
+            //printf("decode inter quant\n");
         
             /* Write Frame Header */
             this->write_header_frame();
@@ -322,7 +322,7 @@ void Decoder::read_and_decode(){
 
 
         std::swap(last_frame, current_frame);
-        printf("Done %d\n", frame_counter);
+        //printf("Done %d\n", frame_counter);
         frame_counter++;
     }
 

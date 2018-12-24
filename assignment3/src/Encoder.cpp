@@ -302,7 +302,8 @@ if(tmp.y >= 0)
     }
 
 
-    printf("Done %d\n", f_counter);
+    //
+    //printf("Done %d\n", f_counter);
 };
 void Encoder::inter_encode_write_4(Mat frame, Golomb * g, vector<Point> to_encode_vector, Mat previous, int shamnt, int shamnt_sum){
 
@@ -536,7 +537,7 @@ void Encoder::encode_and_write_frame_intra(Frame * frame, int f_counter, Golomb 
         g->encode_and_write(residuals.at(i), w);
     }
 
-    printf("Done %d\n", f_counter);
+    //printf("Done %d\n", f_counter);
 };
 
 void Encoder::write_residuals(vector<int> to_encode_residuals, Golomb * g, int shamnt, int shamnt_sum ){
