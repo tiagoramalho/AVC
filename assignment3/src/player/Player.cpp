@@ -48,10 +48,12 @@ map<char,string> parse_header(string line, int delimiter(int) = ::isspace )
             result['F'] = token.substr(1);
         }
         else if(token.at(0) == 'I'){
-            cout << "Interlacing not parsed" << endl;
+            cout << "Interlacing" << endl;
+            result['I'] = token.substr(1);
         }
         else if(token.at(0) == 'A'){
-            cout << "Aspect Ratio not parsed" << endl;
+            cout << "Aspect Ratio" << endl;
+            result['A'] = token.substr(1);
         }
         else if(token.at(0) == 'C'){
             cout << "Colour Space " << token.substr(1) << endl;
