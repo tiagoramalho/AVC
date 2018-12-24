@@ -15,9 +15,8 @@ Encoder::Encoder(const string & in_file, const string & out_file, int p, int per
 
 
 
-bool buble (std::vector<int> i, std::vector<int> j) { return  (i[0] == j[0]) ? (i[1] < j[1]) : (i[0] < j[0]); }
 
-void zig_zag(Mat & arr, vector<int> & v)
+void zig_zag(Mat & arr, vector<int16_t> & v)
 {
     int x,y ,z;
     for(z = 0 ; z <arr.cols ; z++)
@@ -27,9 +26,9 @@ void zig_zag(Mat & arr, vector<int> & v)
         while(x<=z && y>=0)
         {
             if(z%2)
-                v.push_back(arr.at<int>(x++,y--));
+                v.push_back(arr.at<int16_t>(x++,y--));
             else
-            	v.push_back(arr.at<int>(y--,x++));
+            	v.push_back(arr.at<int16_t>(y--,x++));
         }
     }
     for(z = 1 ; z<arr.cols ; z++)
@@ -39,9 +38,9 @@ void zig_zag(Mat & arr, vector<int> & v)
         while(x<arr.cols && y>=z)
         {
             if((arr.cols+z)%2)
-            	v.push_back(arr.at<int>(y--,x++));
+            	v.push_back(arr.at<int16_t>(y--,x++));
             else
-            	v.push_back(arr.at<int>(x++,y--));
+            	v.push_back(arr.at<int16_t>(x++,y--));
         }
     }
 }
@@ -54,8 +53,8 @@ int pow_my_k(int val){
 	return val_to_return;
 }
 
-void Encoder::write_frame_component_lossy(Golomb & g, Golomb & g_zeros, vector<tuple<int, uint8_t>> & write_vector){
-	tuple<int, uint8_t> x;
+void Encoder::write_frame_component_lossy(Golomb & g, Golomb & g_zeros, vector<tuple<int, int16_t>> & write_vector){
+	tuple<int, int16_t> x;
 	for (uint32_t i = 0; i < write_vector.size(); ++i)
 	{
 		x = write_vector.at(i);
@@ -69,22 +68,18 @@ void Encoder::write_frame_component_lossy(Golomb & g, Golomb & g_zeros, vector<t
 	}
 }
 
-void Encoder::encode_and_write_frame_intra_lossy(Frame * frame, Golomb & g, Golomb & g_zeros, int frame_matrix){
-	Mat matrix, divisor;
+void Encoder::encode_lossy(Mat & matrix, Golomb & g, Golomb & g_zeros, int frame_matrix){
+	Mat divisor;
 	vector<int> residuals = {}, zero_residuals = {};
     int to_calculate_k = 0, zero_to_calculate_k = 0 ;
-    vector<tuple<int, uint8_t>> write_vector;
+    vector<tuple<int, int16_t>> write_vector;
     int n_residuals = 0;
 
-
 	if(frame_matrix == 0){
-		matrix = frame->get_y();
 		divisor = mat_luminance;
 	} else if(frame_matrix == 1){
-		matrix = frame->get_u();
 		divisor = mat_chrominance;
 	} else if(frame_matrix == 2){
-		matrix = frame->get_v();
 		divisor = mat_chrominance;
 	}
 
@@ -95,12 +90,12 @@ void Encoder::encode_and_write_frame_intra_lossy(Frame * frame, Golomb & g, Golo
             macroblock = matrix(cv::Rect(x_curr_frame, y_curr_frame, this->block_size, this->block_size));
             macroblock.convertTo(tmp_matrix, CV_64FC1);
 
-            /*
+            
 			if (y_curr_frame == 0 && x_curr_frame == 0)
 			{
 				cout << "macroblock = "<< endl << " "  << macroblock << endl << endl;
 			}
-			*/
+			
 
 			dct(tmp_matrix, tmp_matrix);
 			
@@ -121,34 +116,31 @@ void Encoder::encode_and_write_frame_intra_lossy(Frame * frame, Golomb & g, Golo
 			*/
 			
 
-			macroblock = Mat(8, 8, CV_32SC1);
+			macroblock = Mat(8, 8, CV_16SC1);
 			int value, n_zeros = 0;
-
-
 
             for (int y = 0; y < macroblock.rows; ++y)
             {
             	for (int x = 0; x < macroblock.cols; ++x)
                 {	
-                	macroblock.at<int32_t>(y,x) = cvRound(tmp_matrix.at<double>(y,x));
+                	macroblock.at<int16_t>(y,x) = cvRound(tmp_matrix.at<double>(y,x));
                 }
             }
             
-            /*
+            
 			if (y_curr_frame == 0 && x_curr_frame == 0)
 			{
 				cout << "macroblock = "<< endl << " "  << macroblock << endl << endl;
 			}
-			*/
+			
 
-            vector<int> v = {};
+            vector<int16_t> v = {};
 			zig_zag(macroblock, v);
 
 			/*
 			for (auto i = v.begin(); i != v.end(); ++i)
     			cout << *i << ' ';
 			*/
-
 			for (uint32_t i = 0; i < v.size(); ++i)
 			{
 				value = v.at(i);
@@ -209,6 +201,66 @@ void Encoder::encode_and_write_frame_intra_lossy(Frame * frame, Golomb & g, Golo
 
 }
 
+void Encoder::encode_intra_lossy(Frame * frame, Golomb & g, Golomb & g_zeros, int frame_matrix){
+	Mat matrix;
+
+	if(frame_matrix == 0){
+		matrix = frame->get_y();
+	} else if(frame_matrix == 1){
+		matrix = frame->get_u();
+	} else if(frame_matrix == 2){
+		matrix = frame->get_v();
+	}
+
+	matrix.convertTo(matrix, CV_16SC1);
+
+	encode_lossy(matrix, g, g_zeros, frame_matrix);
+}
+
+
+void Encoder::encode_non_intra_lossy(Frame * frame, Frame * previous_frame, Golomb & g, Golomb & g_zeros, int frame_matrix){
+	Mat residuals, matrix, previous_matrix, macroblock, tmp_matrix;
+	
+	if(frame_matrix == 0){
+		matrix = frame->get_y();
+		previous_matrix = previous_frame->get_y();
+	} else if(frame_matrix == 1){
+		matrix = frame->get_u();
+		previous_matrix = previous_frame->get_u();
+	} else if(frame_matrix == 2){
+		matrix = frame->get_v();
+		previous_matrix = previous_frame->get_v();
+	}
+	/*
+	cv::Mat diff = frame->get_y() != previous_frame->get_y();
+	bool eq = cv::countNonZero(diff) == 0;
+	if (eq){
+		printf("Exited on 1\n");
+		exit(1);
+	}
+	*/
+	matrix.convertTo(matrix, CV_16SC1);
+	previous_matrix.convertTo(previous_matrix, CV_16SC1);
+	/*
+    macroblock = matrix(cv::Rect(80, 80, this->block_size, this->block_size));
+	cout << "matrix = "<< endl << " "  << macroblock << endl << endl;
+    macroblock = previous_matrix(cv::Rect(80, 80, this->block_size, this->block_size));
+	cout << "previous_matrix = "<< endl << " "  << macroblock << endl << endl;
+	
+	diff = matrix != previous_matrix;
+	eq = cv::countNonZero(diff) == 0;
+	if (eq){
+		printf("Exited on 2\n");
+		exit(1);
+	}
+	*/
+
+
+
+	residuals = previous_matrix - matrix;
+
+	encode_lossy(residuals, g, g_zeros, frame_matrix);
+}
 
 
 void Encoder::encode_and_write_lossy(){
@@ -227,7 +279,8 @@ void Encoder::encode_and_write_lossy(){
     Golomb g, g_zeros;
 
     int frame_counter =0;
-    Frame * current_frame, * previous_frame;
+    Frame * current_frame;
+    Frame * previous_frame;
 
     vector<unsigned char> imgData;
     vector<unsigned char> previous_imgData;
@@ -235,7 +288,7 @@ void Encoder::encode_and_write_lossy(){
     switch(this->color_space){
         case 444:{
             current_frame = new Frame444 (rows, cols);
-            previous_frame = new Frame444 (rows, cols); 
+            previous_frame = new Frame444 (rows, cols);
             imgData.resize(cols * rows * 3);
             break;
         }
@@ -259,9 +312,13 @@ void Encoder::encode_and_write_lossy(){
 
 
 	while(1){
+
 		current_frame->clear();
+
 		getline (this->infile,line); // Skipping word FRAME
+
 		this->infile.read((char *) imgData.data(), imgData.size());
+
 		current_frame->set_frame_data(imgData.data());
 
 		if(this->infile.gcount() == 0){
@@ -270,13 +327,15 @@ void Encoder::encode_and_write_lossy(){
 
 		if( this->periodicity == 0 || frame_counter % this->periodicity == 0){
 			this->w.write_header_type(0);
-			encode_and_write_frame_intra_lossy(current_frame, g, g_zeros, 0);
-			encode_and_write_frame_intra_lossy(current_frame, g, g_zeros, 1);
-			encode_and_write_frame_intra_lossy(current_frame, g, g_zeros, 2);
+			encode_intra_lossy(current_frame, g, g_zeros, 0);
+			encode_intra_lossy(current_frame, g, g_zeros, 1);
+			encode_intra_lossy(current_frame, g, g_zeros, 2);
 		}else{
-			this->w.write_header_type(0);
-			/* Todo Fazer o inter. Não é complicado. */
-			// encode_and_write_frame_inter(current_frame, previous_frame, frame_counter, g, g_zeros );
+			this->w.write_header_type(1);
+
+			encode_non_intra_lossy(current_frame, previous_frame, g, g_zeros, 0);
+			encode_non_intra_lossy(current_frame, previous_frame, g, g_zeros, 1);
+			encode_non_intra_lossy(current_frame, previous_frame, g, g_zeros, 2);
 		}
 
         std::swap(current_frame, previous_frame);

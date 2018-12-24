@@ -41,7 +41,7 @@ void reverse_zig_zag(Mat & arr, vector<int> & v)
     }
 }
 
-void Decoder::decode_intra_lossy(Frame * frame, Golomb & g, Golomb & g_zeros, int frame_matrix) {
+Mat Decoder::decode_lossy(Frame * frame, Golomb & g, Golomb & g_zeros, int frame_matrix) {
 	Mat matrix, divisor;
 
 	if(frame_matrix == 0){
@@ -55,10 +55,10 @@ void Decoder::decode_intra_lossy(Frame * frame, Golomb & g, Golomb & g_zeros, in
 		divisor = mat_chrominance;
 	}
 
-	Mat macroblock;
-	Mat tmp_matrix = Mat(8, 8, CV_32SC1);
-	Mat tmp_matrix2;
+    matrix.convertTo(matrix, CV_16SC1);
 
+	Mat macroblock;
+	Mat tmp_matrix = Mat(8, 8, CV_16SC1);
 
     for( int y_curr_frame = 0; y_curr_frame < matrix.rows; y_curr_frame +=this->block_size ){
         for( int x_curr_frame = 0; x_curr_frame < matrix.cols; x_curr_frame +=this->block_size ){
@@ -77,13 +77,7 @@ void Decoder::decode_intra_lossy(Frame * frame, Golomb & g, Golomb & g_zeros, in
         		if (residuals.size() == 64) break;
         	}
 
-        	/*
-			for (auto i = residuals.begin(); i != residuals.end(); ++i)
-    			cout << *i << ' ';
-    		cout << endl;
-			*/
-
-			/* passar de assaray para zigzaged matrix */
+			/* passar de array para zigzaged matrix */
     		reverse_zig_zag(tmp_matrix, residuals);
 
 			/* multiplicar por matrizes constantes e inverse dct*/
@@ -92,56 +86,78 @@ void Decoder::decode_intra_lossy(Frame * frame, Golomb & g, Golomb & g_zeros, in
 			/* Inverse dct */
     		dct(macroblock, macroblock, DCT_INVERSE);
 
-
-			/* back to 32 representation */
-			tmp_matrix2 = Mat(8, 8, CV_8UC1);
-            for (int y = 0; y < macroblock.rows; ++y)
-            {
-            	for (int x = 0; x < macroblock.cols; ++x)
-                {	
-                	tmp_matrix2.at<uint8_t>(y,x) = cvRound(macroblock.at<double>(y,x));
-                }
-            }
-            macroblock = tmp_matrix2;
-            //Rect srcRect = Rect(0, 0, this->block_size, this->block_size);
-            // Rect tmp_matrix(Point(0, 0), Size(this->block_size-1, this->block_size-1));
-
-            // matrix(Rect(x_curr_frame, y_curr_frame, this->block_size, this->block_size));
-            //Rect dstRect = Rect(x_curr_frame, y_curr_frame, this->block_size, this->block_size);
-            // tmp_matrix(srcRect).copyTo(matrix(dstRect));
-
-
+            // Store in matrix
             for (int x = x_curr_frame; x < x_curr_frame + this->block_size; ++x)
             {
                 for (int y = y_curr_frame; y < y_curr_frame + this->block_size; ++y)
                 {
-                    matrix.at<uint8_t>(y,x) = tmp_matrix2.at<uint8_t>(y-y_curr_frame,x-x_curr_frame); 
+                    matrix.at<int16_t>(y,x) = cvRound(macroblock.at<double>(y-y_curr_frame,x-x_curr_frame)); 
                 }
             }
-			// cout << "tmp_matrix = "<< endl << " "  << tmp_matrix << endl << endl;	        
+
             /*
-            printf("%d, %d\n", x_curr_frame, y_curr_frame);
-            printf("%d\n", matrix.at<uint8_t>(1,0));
-            
-			
+            macroblock = matrix(Rect(0, 0, this->block_size, this->block_size));
 			if (y_curr_frame == 0 && x_curr_frame == 0)
 			{
-	            printf("%d\n", matrix.at<uint8_t>(1,0));
+	            printf("%d\n", matrix.at<int16_t>(1,0));
 				cout << "macroblock = "<< endl << " "  << macroblock << endl << endl;
 			}
-			exit(1);
-			*/
 
-
+            */
 
 
     	}
 	}
-	uint8_t * line = matrix.ptr(0);
-    this->outfile.write( (char*) line, matrix.cols * matrix.rows);
+    /*
+    if(frame_matrix == 0){
+        frame->get_y() = matrix;
+    } else if(frame_matrix == 1){
+        frame->get_u() = matrix;
+    } else if(frame_matrix == 2){
+        frame->get_v() = matrix;
+    }
+    */
+    return matrix;
+    printf("This %d\n", frame->get_y().at<int16_t>(1,0));
+    printf("This %d\n", matrix.at<int16_t>(1,0));
 
 }
 
+void Decoder::decode_non_intra_lossy(Frame * frame, Frame * previous_frame, Golomb & g, Golomb & g_zeros, int frame_matrix) {
+    Mat matrix, tmp_matrix;
+    
+    tmp_matrix = decode_lossy(frame, g, g_zeros, frame_matrix);
+    tmp_matrix.convertTo(matrix, CV_8UC1);
+    
+    if(frame_matrix == 0){
+        frame->get_y() = previous_frame->get_y() - matrix;
+    } else if(frame_matrix == 1){
+        frame->get_u() = previous_frame->get_u() - matrix;
+    } else if(frame_matrix == 2){
+        frame->get_v() = previous_frame->get_v() - matrix;
+    }
+
+    uint8_t * line = matrix.ptr(0);
+    this->outfile.write( (char*) line, matrix.cols * matrix.rows);
+}
+
+void Decoder::decode_intra_lossy(Frame * frame, Golomb & g, Golomb & g_zeros, int frame_matrix) {
+    Mat matrix, tmp_matrix;
+    
+    tmp_matrix = decode_lossy(frame, g, g_zeros, frame_matrix);
+    tmp_matrix.convertTo(matrix, CV_8UC1);
+
+    if(frame_matrix == 0){
+        frame->get_y() = matrix;
+    } else if(frame_matrix == 1){
+        frame->get_u() = matrix;
+    } else if(frame_matrix == 2){
+        frame->get_v() = matrix;
+    }
+
+    uint8_t * line = matrix.ptr(0);
+    this->outfile.write( (char*) line, matrix.cols * matrix.rows);
+}
 
 void Decoder::read_and_decode_lossy(){
 
@@ -164,28 +180,32 @@ void Decoder::read_and_decode_lossy(){
 
 
     Frame * current_frame;
-    Frame * last_frame;
+    Frame * previous_frame;
 
 
     switch(this->color_space){
         case 444:{
             current_frame = new Frame444 (this->height, this->width);
-            last_frame = new Frame444 (this->height, this->width);
+            previous_frame = new Frame444 (this->height, this->width);
             break;
         }
         case 422:{
             current_frame = new Frame422 (this->height, this->width);
-            last_frame = new Frame422 (this->height, this->width);
+            previous_frame = new Frame422 (this->height, this->width);
             break;
         }
         case 420:{
             current_frame = new Frame420 (this->height, this->width);
-            last_frame = new Frame420 (this->height, this->width);
+            previous_frame = new Frame420 (this->height, this->width);
             break;
         }
         default:
             exit(1);
     }
+
+
+    this->write_header_y4m(stoi(header['W']), stoi(header['H']), "50:1", stoi(header['C']));
+    
 
     while(1){
 
@@ -193,6 +213,8 @@ void Decoder::read_and_decode_lossy(){
         if(type == 7){
             break;
         }
+
+        current_frame->clear();
 
         if(type == 0){
             this->write_header_frame();
@@ -205,8 +227,24 @@ void Decoder::read_and_decode_lossy(){
             	g_zeros.set_m(pow(2,k0));
             	decode_intra_lossy(current_frame, g, g_zeros, i);
             }
+        } else if(type == 1){
+            /* Write Frame Header */
+            this->write_header_frame();
+
+            for (int i = 0; i < 3; ++i)
+            {
+                k = this->r.read_k();
+                g.set_m(pow(2,k));
+                k0 = this->r.read_k();
+                g_zeros.set_m(pow(2,k0));
+                decode_non_intra_lossy(current_frame, previous_frame, g, g_zeros, i);
+            }
+
         }
+        std::swap(current_frame, previous_frame);
+
     	printf("done %d\n", frame_counter);
     	frame_counter++;
     }
 }
+
