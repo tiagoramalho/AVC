@@ -22,6 +22,7 @@ double mean_squared_error( Frame * og_frame , Frame * cp_frame){
     }
 
     mse = mse /(og_matrix.rows*og_matrix.cols);
+    printf("%f\n", mse);
 
     return mse;
 };
@@ -179,7 +180,7 @@ int main(int argc, char** argv)
             printf("Files have a different frame number");
             exit(1);
         }
-        printf("Analysing frame %d\n", frame_counter);
+        //printf("Analysing frame %d\n", frame_counter);
 
         m += mean_squared_error(og_f, cp_f);
 

@@ -50,7 +50,8 @@ int pow_my_k(int val){
     return val_to_return;
 }
 
-void Encoder::write_frame_component_lossy(Golomb & g, Golomb & g_zeros, vector<tuple<int, int16_t>> & write_vector){
+int Encoder::write_frame_component_lossy(Golomb & g, Golomb & g_zeros, vector<tuple<int, int16_t>> & write_vector){
+    int bitrate = 0;
     tuple<int, int16_t> x;
     for (uint32_t i = 0; i < write_vector.size(); ++i)
     {
@@ -58,14 +59,16 @@ void Encoder::write_frame_component_lossy(Golomb & g, Golomb & g_zeros, vector<t
 
         /* if golomb do tipo 0 */
         if(get<1>(x) == 0){
-            g_zeros.encode_and_write(get<0>(x), w);
+            bitrate += g_zeros.encode_and_write(get<0>(x), w);
         } else{ /* if golomb do tipo 1 */
-            g.encode_and_write(get<0>(x), w);
+            bitrate += g.encode_and_write(get<0>(x), w);
         }
     }
+
+    return bitrate;
 }
 
-void Encoder::encode_lossy(Mat & matrix, Golomb & g, Golomb & g_zeros, int frame_matrix){
+int Encoder::encode_lossy(Mat & matrix, Golomb & g, Golomb & g_zeros, int frame_matrix){
     Mat divisor;
     vector<int> residuals = {}, zero_residuals = {};
     int to_calculate_k = 0, zero_to_calculate_k = 0 ;
@@ -194,12 +197,10 @@ void Encoder::encode_lossy(Mat & matrix, Golomb & g, Golomb & g_zeros, int frame
     this->w.write_header_k(k);
     this->w.write_header_k(k0);
 
-    write_frame_component_lossy(g, g_zeros, write_vector);
-
-
+    return write_frame_component_lossy(g, g_zeros, write_vector);
 }
 
-void Encoder::encode_intra_lossy(Frame * frame, Golomb & g, Golomb & g_zeros, int frame_matrix){
+int Encoder::encode_intra_lossy(Frame * frame, Golomb & g, Golomb & g_zeros, int frame_matrix){
     Mat matrix;
 
     if(frame_matrix == 0){
@@ -212,11 +213,11 @@ void Encoder::encode_intra_lossy(Frame * frame, Golomb & g, Golomb & g_zeros, in
 
     matrix.convertTo(matrix, CV_16SC1);
 
-    encode_lossy(matrix, g, g_zeros, frame_matrix);
+    return encode_lossy(matrix, g, g_zeros, frame_matrix);
 }
 
 
-void Encoder::encode_non_intra_lossy(Frame * frame, Frame * previous_frame, Golomb & g, Golomb & g_zeros, int frame_matrix){
+int Encoder::encode_non_intra_lossy(Frame * frame, Frame * previous_frame, Golomb & g, Golomb & g_zeros, int frame_matrix){
     Mat residuals, matrix, previous_matrix, macroblock, tmp_matrix;
 
     if(frame_matrix == 0){
@@ -257,7 +258,7 @@ void Encoder::encode_non_intra_lossy(Frame * frame, Frame * previous_frame, Golo
 
     residuals = previous_matrix - matrix;
 
-    encode_lossy(residuals, g, g_zeros, frame_matrix);
+    return encode_lossy(residuals, g, g_zeros, frame_matrix);
 }
 
 
@@ -309,7 +310,9 @@ void Encoder::encode_and_write_lossy(){
     this->w.writeHeader(this->cols, this->rows, this->color_space, this->block_size, header['A'], header['F'], header['I']);
 
 
+    int bitrate;
     while(1){
+        bitrate = 0;
 
         current_frame->clear();
 
@@ -325,20 +328,20 @@ void Encoder::encode_and_write_lossy(){
 
         if( this->periodicity == 0 || frame_counter % this->periodicity == 0){
             this->w.write_header_type(0);
-            encode_intra_lossy(current_frame, g, g_zeros, 0);
-            encode_intra_lossy(current_frame, g, g_zeros, 1);
-            encode_intra_lossy(current_frame, g, g_zeros, 2);
+            bitrate += encode_intra_lossy(current_frame, g, g_zeros, 0);
+            bitrate += encode_intra_lossy(current_frame, g, g_zeros, 1);
+            bitrate += encode_intra_lossy(current_frame, g, g_zeros, 2);
         }else{
             this->w.write_header_type(1);
 
-            encode_non_intra_lossy(current_frame, previous_frame, g, g_zeros, 0);
-            encode_non_intra_lossy(current_frame, previous_frame, g, g_zeros, 1);
-            encode_non_intra_lossy(current_frame, previous_frame, g, g_zeros, 2);
+            bitrate += encode_non_intra_lossy(current_frame, previous_frame, g, g_zeros, 0);
+            bitrate += encode_non_intra_lossy(current_frame, previous_frame, g, g_zeros, 1);
+            bitrate += encode_non_intra_lossy(current_frame, previous_frame, g, g_zeros, 2);
         }
 
         std::swap(current_frame, previous_frame);
 
-        //printf("Done frame %d\n", frame_counter);
+        printf("%d %d\n", frame_counter, bitrate);
         frame_counter += 1 ;
 
 
